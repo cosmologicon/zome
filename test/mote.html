@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<title>Hill textures test</title>
+<title>Mote background test</title>
 <script src="http://ufx.space/UFX.js"></script>
 <script type="x-shader" id=vmote>
 uniform float tfrac;  // 0 <= tfrac < 1
@@ -72,10 +72,10 @@ for (var j = 0 ; j < Nmote ; ++j) {
 	motedata.push(
 		UFX.random(100, 160),
 //		UFX.random(50, 80),
-		UFX.random(-1, 1),
+		UFX.random(0, 2),
 		UFX.random(), UFX.random(),
-		UFX.random.choice([-10, -8, -5, 5, 8, 10]),
-		UFX.random.choice([-10, -8, -5, 5, 8, 10])
+		UFX.random.choice([-15, -10, -8, -5, 5, 8, 10, 15]),
+		UFX.random.choice([-15, -10, -8, -5, 5, 8, 10, 15])
 	)
 }
 var motebuffer = gl.makeArrayBuffer(motedata)
