@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<title>Hill textures test</title>
+<script src="http://ufx.space/UFX.js"></script>
+<script type="x-shader" id=vmote>
+uniform float tfrac;  // 0 <= tfrac < 1
+uniform vec2 vantage;
+attribute vec2 p0, Nmove;
+attribute float msize, depth;
+void main() {
+	vec2 pos = mod(p0 + Nmove * tfrac + vantage * depth, 1.0);
+	gl_Position = vec4(pos * 2.0 - 1.0, 0.0, 1.0);
+	gl_PointSize = msize;
+}
+</script>
+<script type="x-shader" id=fmote>
+precision highp float;
+uniform sampler2D motetexture;
+void main() {
+	gl_FragColor = texture2D(motetexture, gl_PointCoord);
+}
+</script>
+<canvas id=canvas>
+<script>
+window.onerror = function (error, url, line) { document.body.innerHTML = "<p>Error in: "+url+"<p>line "+line+"<pre>"+error+"</pre>" }
+var clamp = (x, a, b) => x < a ? a : x > b ? b : x
+function ease(f) {
+	f = clamp(f, 0, 1)
+	return f * f * (3 - 2 * f)
+}
+
+var canvas = document.getElementById("canvas")
+UFX.pointer(canvas)
+var gl = UFX.gl(canvas)
+gl.enable(gl.BLEND)
+gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, 0, 1)
+
+canvas.width = 160
+canvas.height = 90
+UFX.maximize.onadjust = function (canvas, x, y) {
+	gl.viewport(0, 0, x, y)
+}
+UFX.maximize.fill(canvas, "aspect")
+gl.clearColor(0, 0.3, 0.3, 1)
+UFX.gltext.init(gl)
+gl.addProgram("mote", "vmote", "fmote")
+
+
+function getmoteimg(s) {
+	var img = document.createElement("canvas")
+	img.width = s
+	img.height = s
+	var context = img.getContext("2d")
+	var idata = context.createImageData(s, s)
+	for (var py = 0, j = 0 ; py < s ; ++py) {
+		for (var px = 0 ; px < s ; ++px) {
+			var x = (px + 0.5) / s * 2 - 1
+			var y = (py + 0.5) / s * 2 - 1
+			var a = 0.06 * (1 - ease(Math.sqrt(x * x + y * y))) - UFX.random(0.03)
+			idata.data[j++] = 0
+			idata.data[j++] = 0
+			idata.data[j++] = 0
+			idata.data[j++] = 255 * a
+		}
+	}
+	context.putImageData(idata, 0, 0)
+	return img
+}
+var motetexture = gl.buildTexture({ source: getmoteimg(128), filter: gl.NEAREST })
+
+var Nmote = 500, motedata = []
+for (var j = 0 ; j < Nmote ; ++j) {
+	motedata.push(
+		UFX.random(100, 160),
+//		UFX.random(50, 80),
+		UFX.random(-1, 1),
+		UFX.random(), UFX.random(),
+		UFX.random.choice([-10, -8, -5, 5, 8, 10]),
+		UFX.random.choice([-10, -8, -5, 5, 8, 10])
+	)
+}
+var motebuffer = gl.makeArrayBuffer(motedata)
+
+var tfrac = 0
+var vantage = [0, 0]
+function think(dt) {
+	tfrac += 0.014 * dt
+	tfrac %= 1
+	UFX.pointer()
+	if (UFX.pointer.pos) {
+		var sx2 = canvas.width / 2, sy2 = canvas.height / 2
+		vantage = [
+			(UFX.pointer.pos[0] - sx2) / sy2,
+			-(UFX.pointer.pos[1] - sy2) / sy2,
+		]
+	}
+	gl.clear(gl.COLOR_BUFFER_BIT)
+	gl.progs.mote.use()
+	gl.progs.mote.set({
+		tfrac: tfrac,
+		motetexture: 0,
+		vantage: vantage,
+	})
+	motebuffer.bind()
+	gl.progs.mote.assignAttribOffsets({ msize: 0, depth: 1, p0: 2, Nmove: 4, })
+	gl.activeTexture(gl.TEXTURE0)
+	gl.bindTexture(gl.TEXTURE_2D, motetexture)
+	gl.drawArrays(gl.POINTS, 0, 200)
+}
+
+if (false) {
+	gl.dumpTexture(hilltextures[1])
+} else {
+	UFX.resource.onload = function () {
+		UFX.ticker.init(think, null, { maxups: 60 })
+	}
+}
+UFX.resource.loadwebfonts("Viga", "Skranji")
+</script>
