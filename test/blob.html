@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<script src="http://ufx.space/UFX.js"></script>
+<script type="x-shader" id=vblob>
+uniform vec2 Rview, center;
+uniform float Rblob;
+attribute vec2 pos;
+varying vec2 tpos;
+void main() {
+	gl_Position = vec4((center + Rblob * pos) / Rview, 0.0, 1.0);
+	tpos = (pos + 1.0) / 2.0;
+}
+</script>
+<script type="x-shader" id=fblob>
+precision highp float;
+// blob parameters
+uniform vec3 ocolor, color;
+uniform sampler2D btexture;
+varying vec2 tpos;
+uniform float dVdC;
+
+vec2 L = normalize(vec2(1.0, 1.0));
+
+void main() {
+	vec3 h = texture2D(btexture, tpos).xyz;
+	float z = (h.z - 127.0 / 255.0) / (100.0 / 255.0) * 3.0;
+	vec2 dh = (h.xy - 127.0 / 255.0) / (20.0 / 255.0) * 3.0;
+//	float dz = -dot(dh, L);
+//	dz = clamp(dz, -1.0, 1.0);
+//	dz *= 1.0 - smoothstep(0.4, 1.0, z);
+//	dz *= 0.3;
+	vec2 dhC = dh;
+	float DeltazV = length(dhC) * dVdC;
+//	DeltazV = dVdC;
+
+
+//	if (z < 0.2) {
+//		discard;
+	if (z < 0.3) {
+		float mu = clamp(0.5 + (z - 0.2) / DeltazV, 0.0, 1.0);
+		gl_FragColor = vec4(ocolor, mu);
+//	} else if (z < 0.4) {
+//		gl_FragColor = vec4(ocolor, smoothstep(0.25, 0.3, z));
+//		gl_FragColor = vec4(ocolor, clamp((z - 0.25) / 0.05, 0.0, 1.0));
+
+
+//		gl_FragColor = vec4(ocolor, 1.0);
+	} else {
+//		vec3 black = vec3(0.0);
+//		vec3 acolor = color * (1.0 + dz);
+//		acolor = mix(black, acolor, clamp((z - 0.4) / 0.05, 0.0, 1.0));
+//		gl_FragColor = vec4(acolor, 1.0);
+//		gl_FragColor = vec4(color, 1.0);
+		float mu = clamp(0.5 + (z - 0.4) / DeltazV, 0.0, 1.0);
+		gl_FragColor = vec4(mix(ocolor, color, mu), 1.0);
+
+	}
+}
+</script>
+<canvas id=canvas>
+<script>
+window.onerror = function (error, url, line) { document.body.innerHTML = "<p>Error in: "+url+"<p>line "+line+"<pre>"+error+"</pre>" }
+var clamp = (x, a, b) => x < a ? a : x > b ? b : x
+function ease(f) {
+	f = clamp(f, 0, 1)
+	return f * f * (3 - 2 * f)
+}
+
+var canvas = document.getElementById("canvas")
+UFX.pointer(canvas)
+var gl = UFX.gl(canvas)
+gl.enable(gl.BLEND)
+gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, 0, 1)
+
+canvas.width = 160
+canvas.height = 90
+var posbuffer = gl.makeArrayBuffer([-1, -1, 1, -1, 1, 1, -1, 1])
+UFX.maximize.onadjust = function (canvas, x, y) {
+	gl.viewport(0, 0, x, y)
+}
+UFX.maximize.fill(canvas, "aspect")
+
+gl.clearColor(0, 0.3, 0.3, 1)
+UFX.gltext.init(gl)
+gl.addProgram("blob", "vblob", "fblob")
+gl.progs.blob.set({
+	color: [0, 0.7, 0.7],
+	ocolor: [0, 0, 0],
+	btexture: 0,
+})
+
+var W = 2  // radius of hill texture in game units
+
+function h(x, y) {
+	var r = Math.sqrt(x * x + y * y)
+	var n = UFX.noise([4 * x, 4 * y])
+	return 1 - ease(r) + 0.2 * n
+}
+function dh(x, y) {
+	var d = 0.001
+	return [
+		(h(x + d, y) - h(x - d, y)) / (2 * d),
+		(h(x, y + d) - h(x, y - d)) / (2 * d),
+	]
+}
+function gethillimg(s) {
+	var img = document.createElement("canvas")
+	img.width = s
+	img.height = s
+	var context = img.getContext("2d")
+	var idata = context.createImageData(s, s)
+	for (var py = 0, j = 0 ; py < s ; ++py) {
+		for (var px = 0 ; px < s ; ++px) {
+			var x = W * (px / s * 2 - 1)
+			var y = W * (py / s * 2 - 1)
+			var [dhdx, dhdy] = dh(x, y)
+			idata.data[j++] = 127 + 20 * dhdx
+			idata.data[j++] = 127 + 20 * dhdy
+			idata.data[j++] = 127 + 100 * h(x, y)
+			idata.data[j++] = 255
+		}
+	}
+	context.putImageData(idata, 0, 0)
+	return img
+}
+var hilltexture = gl.buildTexture({ source: gethillimg(256), wrap: gl.CLAMP_TO_EDGE })
+gl.bindTexture(gl.TEXTURE_2D, hilltexture)
+
+function think(dt) {
+	gl.clear(gl.COLOR_BUFFER_BIT)
+	gl.progs.blob.use()
+	gl.progs.blob.set({
+		Rview: [canvas.width, canvas.height],
+		Rblob: 400,
+		dVdC: 8 * W / 400,
+		center: [0, 0],
+	})
+	posbuffer.bind()
+	gl.progs.blob.assignAttribOffsets({ pos: 0 })
+	gl.drawArrays(gl.TRIANGLE_FAN, 0, 4)
+}
+UFX.resource.onload = function () {
+	UFX.ticker.init(think, null, { maxups: 60 })
+}
+UFX.resource.loadwebfonts("Viga", "Skranji")
+</script>

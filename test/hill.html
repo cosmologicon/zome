@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<title>Hill textures test</title>
+<script src="http://ufx.space/UFX.js"></script>
+<script type="x-shader" id=vhill>
+uniform vec2 viewsize;  // viewport size in pixels.
+uniform float VconvertG; // size of a game unit in pixels.
+uniform vec2 centerG;  // center of texture in gamespace coordinates.
+attribute vec2 cornerG;
+varying vec2 tpos;
+void main() {
+	vec2 CconvertV = 2.0 / viewsize;
+	vec2 posG = centerG + cornerG;
+	gl_Position = vec4(CconvertV * VconvertG * posG, 0.0, 1.0);
+	tpos = (cornerG + 1.0) / 2.0;
+}
+</script>
+<script type="x-shader" id=fhill>
+precision highp float;
+const int Nhill = 4;  // number of hill textures
+uniform float A[Nhill + 1];
+uniform float Ad[Nhill + 1];
+
+const vec3 color = vec3(0.0, 0.6, 0.6);
+const vec3 ocolor = vec3(0.0, 0.0, 0.0);
+const float ksubpixel = 1.0, edgewidthV = 3.0;
+
+uniform float VconvertG;
+uniform sampler2D hilltextures[4];
+varying vec2 tpos;
+
+const vec2 L = normalize(vec2(1.0, 1.0));
+
+void main() {
+	float z = A[0];
+	vec2 dz = vec2(Ad[0]);
+	for (int i = 0; i < Nhill; ++i) {
+		vec3 h = texture2D(hilltextures[i], tpos).xyz;
+		z += h.z * A[i+1];
+		dz += h.xy * Ad[i+1];
+	}
+	float absdz = length(dz);
+	float p = abs(z) / absdz;
+
+	float zwidth = edgewidthV / (2.0 * VconvertG);
+	float lfactor = -0.2 * dot(dz, L);
+	lfactor = clamp(lfactor, -0.4, 0.4);
+//	lfactor *= 1.0 - smoothstep(0.1, 0.2, z);
+	lfactor *= 1.0 - smoothstep(15.0, 25.0, VconvertG * p);
+	vec3 lcolor = color * (1.0 + lfactor);
+
+	float a = clamp(ksubpixel * VconvertG * (p - zwidth), 0.0, 1.0);
+	vec4 color0 = vec4(ocolor, 1.0);
+	vec4 color1 = z > 0.0 ? vec4(lcolor, 1.0) : vec4(ocolor, 0.0);
+	gl_FragColor = mix(color0, color1, a);
+}
+</script>
+<canvas id=canvas>
+<script>
+window.onerror = function (error, url, line) { document.body.innerHTML = "<p>Error in: "+url+"<p>line "+line+"<pre>"+error+"</pre>" }
+var clamp = (x, a, b) => x < a ? a : x > b ? b : x
+function ease(f) {
+	f = clamp(f, 0, 1)
+	return f * f * (3 - 2 * f)
+}
+
+var canvas = document.getElementById("canvas")
+UFX.pointer(canvas)
+var gl = UFX.gl(canvas)
+gl.enable(gl.BLEND)
+gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, 0, 1)
+
+canvas.width = 160
+canvas.height = 90
+UFX.maximize.onadjust = function (canvas, x, y) {
+	gl.viewport(0, 0, x, y)
+}
+UFX.maximize.fill(canvas, "aspect")
+
+gl.clearColor(0, 0.3, 0.3, 1)
+UFX.gltext.init(gl)
+gl.addProgram("hill", "vhill", "fhill")
+var posbuffer = gl.makeArrayBuffer([-1, -1, 1, -1, 1, 1, -1, 1])
+posbuffer.bind()
+
+
+function h0(x, y) {
+	var E = (x0, y0, r) => Math.exp(-((x - x0) * (x - x0) + (y - y0) * (y - y0)) / (r * r))
+	return E(0.0, 0.0, 0.5)
+}
+function randomhill() {
+	var theta = UFX.random.angle(), R = UFX.random(0.4, 0.7)
+	return {
+		A: UFX.random(-0.3, 0.3),
+		x: R * Math.sin(theta),
+		y: R * Math.cos(theta),
+		r: UFX.random(0.2, 0.3),
+	}
+}
+var h1hills = [0,0,0,0,0,0].map(randomhill)
+function h1(x, y) {
+	var E = (x0, y0, r) => Math.exp(-((x - x0) * (x - x0) + (y - y0) * (y - y0)) / (r * r))
+	return h1hills.map(hill => hill.A * E(hill.x, hill.y, hill.r)).reduce((a, b) => a + b)
+}
+var h2hills = [0,0,0,0,0,0].map(randomhill)
+function h2(x, y) {
+	var E = (x0, y0, r) => Math.exp(-((x - x0) * (x - x0) + (y - y0) * (y - y0)) / (r * r))
+	return h2hills.map(hill => hill.A * E(hill.x, hill.y, hill.r)).reduce((a, b) => a + b)
+}
+function h3(x, y) {
+	return 0
+}
+function dh(h, x, y) {
+	var d = 0.001
+	return [
+		(h(x + d, y) - h(x - d, y)) / (2 * d),
+		(h(x, y + d) - h(x, y - d)) / (2 * d),
+	]
+}
+
+var hranges = [], dhranges = []
+;[h0, h1, h2, h3].forEach(function (h, j) {
+	var hmin = 0, hmax = 0, dhmin = 0, dhmax = 0
+	for (var x = -1 ; x < 1 ; x += 0.05) {
+		for (var y = -1 ; y < 1; y += 0.05) {
+			var z = h(x, y)
+			var [dhdx, dhdy] = dh(h, x, y)
+			if (z < hmin) hmin = z
+			if (z > hmax) hmax = z
+			if (dhdx < dhmin) dhmin = dhdx
+			if (dhdy < dhmin) dhmin = dhdy
+			if (dhdx > dhmax) dhmax = dhdx
+			if (dhdy > dhmax) dhmax = dhdy
+		}
+	}
+	hranges.push([hmin - 0.1, hmax + 0.1])
+	dhranges.push([dhmin - 0.1, dhmax + 0.1])
+})
+
+function gethillimg(h, hrange, dhrange, s) {
+	var img = document.createElement("canvas")
+	img.width = s
+	img.height = s
+	var context = img.getContext("2d")
+	var idata = context.createImageData(s, s)
+	for (var py = 0, j = 0 ; py < s ; ++py) {
+		for (var px = 0 ; px < s ; ++px) {
+			var x = (px + 0.5) / s * 2 - 1
+			var y = (py + 0.5) / s * 2 - 1
+			var z = h(x, y)
+			var [dhdx, dhdy] = dh(h, x, y)
+			idata.data[j++] = 255 * (dhdx - dhrange[0]) / (dhrange[1] - dhrange[0])
+			idata.data[j++] = 255 * (dhdy - dhrange[0]) / (dhrange[1] - dhrange[0])
+			idata.data[j++] = 255 * (z - hrange[0]) / (hrange[1] - hrange[0])
+			idata.data[j++] = 255
+		}
+	}
+	context.putImageData(idata, 0, 0)
+	return img
+}
+var hilltextures = []
+;[h0, h1, h2, h3].forEach(function (h, j) {
+	hilltextures.push(gl.buildTexture({
+		source: gethillimg(h, hranges[j], dhranges[j], 64),
+		wrap: gl.CLAMP_TO_EDGE,
+		filter: gl.LINEAR,
+	}))
+})
+var z0 = 0.3
+var A = [-z0 + hranges.map(r => r[0]).reduce((a, b) => a + b)]
+A.push.apply(A, hranges.map(r => r[1] - r[0]))
+var Ad = [dhranges.map(r => r[0]).reduce((a, b) => a + b)]
+Ad.push.apply(Ad, dhranges.map(r => r[1] - r[0]))
+
+
+UFX.pointer(canvas)
+function think(dt) {
+	UFX.pointer()
+	if (UFX.pointer.pos) {
+		rsubpixel = (UFX.pointer.pos[0] / canvas.width - 0.5) * 3
+		redgewidth = (0.5 - UFX.pointer.pos[1] / canvas.height) * 3
+	}
+	gl.clear(gl.COLOR_BUFFER_BIT)
+	gl.progs.hill.use()
+	gl.progs.hill.set({
+		viewsize: [canvas.width, canvas.height],
+		VconvertG: 300,
+		centerG: [0, 0],
+		hilltextures: [0, 1, 2, 3],
+		A: A,
+		Ad: Ad,
+	})
+	posbuffer.bind()
+	gl.progs.hill.assignAttribOffsets({ cornerG: 0 })
+	for (var i = 0 ; i < 4 ; ++i) {
+		gl.activeTexture(gl.TEXTURE0 + i)
+		gl.bindTexture(gl.TEXTURE_2D, hilltextures[i])
+	}
+	gl.drawArrays(gl.TRIANGLE_FAN, 0, 4)
+}
+
+if (false) {
+	gl.dumpTexture(hilltextures[1])
+} else {
+	UFX.resource.onload = function () {
+		UFX.ticker.init(think, null, { maxups: 60 })
+	}
+}
+UFX.resource.loadwebfonts("Viga", "Skranji")
+</script>

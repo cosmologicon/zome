@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<title>Subpixel edge test</title>
+<script src="http://ufx.space/UFX.js"></script>
+<script type="x-shader" id=vedge>
+uniform vec2 viewsize;  // viewport size in pixels.
+uniform float VconvertG; // size of a game unit in pixels.
+uniform vec2 centerG;  // center of texture in gamespace coordinates.
+attribute vec2 cornerG;
+varying vec2 tpos;
+void main() {
+	vec2 CconvertV = 2.0 / viewsize;
+	vec2 posG = centerG + cornerG;
+	gl_Position = vec4(CconvertV * VconvertG * posG, 0.0, 1.0);
+	tpos = (cornerG + 1.0) / 2.0;
+}
+</script>
+<script type="x-shader" id=fedge>
+precision highp float;
+const float A = 0.0, B = 1.0;
+const float Ad = 0.5, Bd = 0.01;
+const float z0 = 0.2;
+const vec3 color = vec3(0.0, 0.6, 0.6);
+const vec3 ocolor = vec3(0.0, 0.0, 0.0);
+const bool subpixel = true;
+
+uniform float ksubpixel, edgewidthV;
+uniform float VconvertG;
+uniform sampler2D hilltexture;
+varying vec2 tpos;
+
+vec2 L = normalize(vec2(1.0, 1.0));
+
+void main() {
+	vec3 h = texture2D(hilltexture, tpos).xyz;
+	float z = (h.z - A) / B;
+	vec2 dz = (h.xy - Ad) / Bd;
+	float absdz = length(dz);
+	float zwidth = edgewidthV / (2.0 * VconvertG);
+
+	if (subpixel) {
+		float p = abs(z - z0) / absdz;
+		float a = clamp(ksubpixel * VconvertG * (p - zwidth), 0.0, 1.0);
+		vec4 color0 = vec4(ocolor, 1.0);
+		vec4 color1 = z > z0 ? vec4(color, 1.0) : vec4(ocolor, 0.0);
+		gl_FragColor = mix(color0, color1, a);
+	} else {
+		if (abs(z - z0) / absdz < zwidth) {
+			gl_FragColor = vec4(ocolor, 1.0);
+		} else if (z < z0) {
+			discard;
+		} else {
+			gl_FragColor = vec4(color, 1.0);
+		}
+	}
+}
+</script>
+<canvas id=canvas>
+<script>
+window.onerror = function (error, url, line) { document.body.innerHTML = "<p>Error in: "+url+"<p>line "+line+"<pre>"+error+"</pre>" }
+var clamp = (x, a, b) => x < a ? a : x > b ? b : x
+function ease(f) {
+	f = clamp(f, 0, 1)
+	return f * f * (3 - 2 * f)
+}
+
+var canvas = document.getElementById("canvas")
+UFX.pointer(canvas)
+var gl = UFX.gl(canvas)
+gl.enable(gl.BLEND)
+gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, 0, 1)
+
+canvas.width = 160
+canvas.height = 90
+var posbuffer = gl.makeArrayBuffer([-1, -1, 1, -1, 1, 1, -1, 1])
+UFX.maximize.onadjust = function (canvas, x, y) {
+	gl.viewport(0, 0, x, y)
+}
+UFX.maximize.fill(canvas, "aspect")
+
+gl.clearColor(0, 0.3, 0.3, 1)
+UFX.gltext.init(gl)
+gl.addProgram("edge", "vedge", "fedge")
+
+var A = 0, B = 1
+var Ad = 0.5, Bd = 0.01
+
+function h(x, y) {
+	var E = (x0, y0, r) => Math.exp(-((x - x0) * (x - x0) + (y - y0) * (y - y0)) / (r * r))
+	return E(0.5, 0.0, 0.1) + E(-0.2, 0.4, 0.2) + E(-0.3, -0.5, 0.5) + 0.0 * UFX.noise([6 * x, 6 * y])
+}
+function dh(x, y) {
+	var d = 0.001
+	return [
+		(h(x + d, y) - h(x - d, y)) / (2 * d),
+		(h(x, y + d) - h(x, y - d)) / (2 * d),
+	]
+}
+function gethillimg(s) {
+	var img = document.createElement("canvas")
+	img.width = s
+	img.height = s
+	var context = img.getContext("2d")
+	var idata = context.createImageData(s, s)
+	for (var py = 0, j = 0 ; py < s ; ++py) {
+		for (var px = 0 ; px < s ; ++px) {
+			var x = (px + 0.5) / s * 2 - 1
+			var y = (py + 0.5) / s * 2 - 1
+			var [dhdx, dhdy] = dh(x, y)
+			idata.data[j++] = 255 * (Ad + Bd * dhdx)
+			idata.data[j++] = 255 * (Ad + Bd * dhdy)
+			idata.data[j++] = 255 * (A + B * h(x, y))
+			idata.data[j++] = 255
+		}
+	}
+	context.putImageData(idata, 0, 0)
+	return img
+}
+var hilltexture = gl.buildTexture({ source: gethillimg(64), wrap: gl.CLAMP_TO_EDGE, mag_filter: gl.LINEAR })
+gl.bindTexture(gl.TEXTURE_2D, hilltexture)
+
+if (false) {
+	gl.dumpTexture(hilltexture)
+}
+
+UFX.pointer(canvas)
+var rsubpixel = 0, redgewidth = 0
+function think(dt) {
+	UFX.pointer()
+	if (UFX.pointer.pos) {
+		rsubpixel = (UFX.pointer.pos[0] / canvas.width - 0.5) * 3
+		redgewidth = (0.5 - UFX.pointer.pos[1] / canvas.height) * 3
+	}
+	gl.clear(gl.COLOR_BUFFER_BIT)
+	gl.progs.edge.use()
+	var ksubpixel = Math.exp(-rsubpixel)
+	var edgewidthV = 4 * Math.exp(redgewidth)
+	gl.progs.edge.set({
+		viewsize: [canvas.width, canvas.height],
+		VconvertG: 300,
+		centerG: [0, 0],
+		hilltexture: 0,
+		ksubpixel: Math.exp(-rsubpixel),
+		edgewidthV: edgewidthV,
+	})
+	posbuffer.bind()
+	gl.progs.edge.assignAttribOffsets({ cornerG: 0 })
+	gl.bindTexture(gl.TEXTURE_2D, hilltexture)
+	gl.drawArrays(gl.TRIANGLE_FAN, 0, 4)
+	gl.progs.text.use()
+	var text = "Edgewidth: " + edgewidthV.toFixed(3) + "\nSubpixel factor: " + ksubpixel
+	gl.progs.text.draw(text, [10, 10])
+}
+UFX.resource.onload = function () {
+	UFX.ticker.init(think, null, { maxups: 60 })
+}
+UFX.resource.loadwebfonts("Viga", "Skranji")
+</script>
