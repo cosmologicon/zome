@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<script src="http://ufx.space/UFX.js"></script>
+<script src="../src/util.js"></script>
+<script src="../src/components.js"></script>
+<script src="../src/collision.js"></script>
+<canvas id=canvas></canvas>
+<script>
+var context = canvas.getContext("2d")
+canvas.width = 600
+canvas.height = 600
+UFX.draw.setcontext(context)
+
+function Ball(x, y) {
+	this.start({x: x, y: y})
+}
+Ball.prototype = UFX.Thing()
+	.addcomp(WorldBound)
+	.addcomp(Collideable, 10, 1)
+
+function LargeBall(x, y) {
+	this.start({x: x, y: y})
+}
+LargeBall.prototype = UFX.Thing()
+	.addcomp(WorldBound)
+	.addcomp(Collideable, 20, 10)
+
+
+var objs = []
+for (var i = 0 ; i < 100 ; ++i) objs.push(new Ball(UFX.random(-100, 100), UFX.random(-100, 100)))
+for (var i = 0 ; i < 10 ; ++i) objs.push(new LargeBall(UFX.random(-100, 100), UFX.random(-100, 100)))
+
+UFX.ticker.init(function (dt) {
+	adjust(objs, dt)
+	UFX.draw("fs black f0 [ t 300 300 z 3 3 ss orange lw 0.5")
+	objs.forEach(function (obj) {
+		UFX.draw("b o", obj.x, obj.y, obj.rcollide, "s")
+	})
+	UFX.draw("]")
+}, null, { ups: 60 })
+
+</script>
