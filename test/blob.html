@@ -9,22 +9,57 @@ uniform vec2 impulse;
 attribute vec2 pos;
 varying vec2 hillpos[4];
 
+const float tau = 6.283185307179586;
+
 mat2 R(float theta) {
 	float S = sin(theta), C = cos(theta);
 	return mat2(C, S, -S, C);
 }
 
-const float tau = 6.283185307179586;
+mat2 R(float omega, float toff) {
+	float theta = omega * tau * tsquirm + toff;
+	float S = sin(theta), C = cos(theta);
+	return mat2(C, S, -S, C);
+}
+
+float L(float omega, float toff) {
+	float theta = omega * tau * tsquirm + toff;
+	return 0.1 * sin(theta);
+}
+
+vec2 T(float omega, float toff) {
+	float theta = omega * tau * tsquirm + toff;
+	float S = 1.0 + 0.1 * sin(theta);
+	return vec2(S, 1.0 / S);
+}
+
 
 void main() {
 	gl_Position = vec4((center + Rblob * pos) / Rview, 0.0, 1.0);
 	hillpos[0] = (pos + 1.0) / 2.0;
-	mat2 R1 = R(-5.0 * tau * tsquirm + t0);
-	hillpos[1] = (R1 * (pos + 1.0 * impulse) + 1.0) / 2.0;
-	mat2 R2 = R(5.0 * tau * tsquirm + t0);
-	hillpos[2] = (R2 * (pos + 1.0 * impulse) + 1.0) / 2.0;
-	mat2 R3 = R(1.0 * tau * tsquirm);
-	hillpos[3] = (R3 * (pos + 3.0 * impulse) + 1.0) / 2.0;
+
+	vec2 pos1 = pos;
+	pos1 = T(7.0, t0 + 0.567) * pos1;
+	pos1 += 1.0 * impulse;
+	pos1.x *= 1.0 + 0.5 * impulse.y;
+//	pos1.x += L(6.0, t0 + 0.12);
+//	pos1.y += L(7.0, t0 - 0.12);
+	pos1 = R(-3.0, t0) * pos1;
+	hillpos[1] = (pos1 + 1.0) / 2.0;
+
+	vec2 pos2 = pos;
+	pos2 = T(2.0, t0 + 0.678) * pos2;
+	pos2 += 0.7 * impulse;
+	pos2.x *= 1.0 + 0.5 * impulse.y;
+//	pos2.x += L(4.0, t0 + 0.78);
+//	pos2.y += L(5.0, t0 - 0.78);
+	pos2 = R(5.0, t0 + 0.123) * pos2;
+	hillpos[2] = (pos2 + 1.0) / 2.0;
+
+
+//	mat2 R3 = R(1.0 * tau * tsquirm);
+	hillpos[3] = vec2(0.0, 0.0);
+//	hillpos[3] = (R3 * (pos + 3.0 * impulse) + 1.0) / 2.0;
 }
 </script>
 <script type="x-shader" id=fblob>
@@ -38,14 +73,21 @@ uniform float VconvertG;
 uniform sampler2D hilltextures[Nhill];
 varying vec2 hillpos[Nhill];
 
+const float shade = 0.04;
+
 void main() {
+	int nshade = 0;
 	float z = A[0];
 	for (int i = 0; i < Nhill; ++i) {
+		if (hillpos[i].x >= 0.0 && hillpos[i].x < 1.0 && hillpos[i].y >= 0.0 && hillpos[i].y < 1.0) ++nshade;
 		vec3 h = texture2D(hilltextures[i], hillpos[i]).xyz;
 		z += h.z * A[i+1];
 	}
-	if (z < 0.0) discard;
-	gl_FragColor = vec4(color, 1.0);
+	if (z < 0.0) {
+		gl_FragColor = vec4(0.0, 0.0, 0.0, shade * float(nshade));
+	} else {
+		gl_FragColor = vec4(color, 1.0);
+	}
 }
 </script>
 <canvas id=canvas>
@@ -102,7 +144,7 @@ function isohill(R, ktheta) {
 		r: r,
 	}
 }
-h1hills = [0,1,2,3].map(j => isohill(0.3 + 0.04 * j, j))
+h1hills = [0,1,2,3,4,5].map(j => isohill(0.3 + 0.02 * j, j))
 function h1(x, y) {
 	var E = (x0, y0, r) => Math.exp(-((x - x0) * (x - x0) + (y - y0) * (y - y0)) / (r * r))
 	return h1hills.map(hill => hill.A * E(hill.x, hill.y, hill.r)).reduce((a, b) => a + b)
@@ -111,7 +153,7 @@ var h2hills = [].concat(
 	[0,0,0,0].map(_ => randomhill(0.4, 0.1)),
 	[0,0,0,0].map(_ => randomhill(0.6, -0.1))
 )
-h2hills = [0,1,2].map(j => isohill(0.4 + 0.03 * j, j))
+h2hills = [0,1,2].map(j => isohill(0.4 + 0.01 * j, j))
 function h2(x, y) {
 	var E = (x0, y0, r) => Math.exp(-((x - x0) * (x - x0) + (y - y0) * (y - y0)) / (r * r))
 	return h2hills.map(hill => hill.A * E(hill.x, hill.y, hill.r)).reduce((a, b) => a + b)
@@ -197,20 +239,19 @@ function think(dt) {
 
 	gl.progs.blob.set({
 		center: [0, 0],
-		t0: 0,
-	})
-	gl.drawArrays(gl.TRIANGLE_FAN, 0, 4)
-	gl.progs.blob.set({
-		center: [600, 0],
 		t0: 1,
 	})
 	gl.drawArrays(gl.TRIANGLE_FAN, 0, 4)
 	gl.progs.blob.set({
-		center: [-600, 0],
+		center: [600, 0],
 		t0: 2,
-		tsquirm: tsquirm + 0.1235,
 	})
-	gl.drawArrays(gl.TRIANGLE_FAN, 0, 4)
+//	gl.drawArrays(gl.TRIANGLE_FAN, 0, 4)
+	gl.progs.blob.set({
+		center: [-600, 0],
+		t0: 3,
+	})
+//	gl.drawArrays(gl.TRIANGLE_FAN, 0, 4)
 	gl.progs.text.use()
 	gl.progs.text.draw("impulse: " + impulse, [10, 10])
 }

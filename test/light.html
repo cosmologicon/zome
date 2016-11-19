@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<script src="http://ufx.space/UFX.js"></script>
+<script type="x-shader" id=vglow>
+uniform vec2 Rview, center;
+uniform float Rblob;
+uniform float kappa, q, sigma;
+attribute vec2 pos;
+varying vec2 pT;
+varying mat2 MT;
+
+const float tau = 6.283185307179586;
+
+mat2 R(float theta) {
+	float S = sin(theta), C = cos(theta);
+	return mat2(C, S, -S, C);
+}
+mat2 S(float q, float sigma) {
+	return R(sigma) * mat2(q, 0.0, 0.0, 1.0 / q) * R(-sigma);
+}
+
+void main() {
+	vec2 pC = pos;
+	gl_Position = vec4((center + Rblob * pC) / Rview, 0.0, 1.0);
+
+	pT = pC;
+//	pos1 = T(7.0, t0 + 0.567) * pos1;
+//	pos1 += 1.0 * impulse;
+//	pos1.x *= 1.0 + 0.5 * impulse.y;
+//	pos1.x += L(6.0, t0 + 0.12);
+//	pos1.y += L(7.0, t0 - 0.12);
+	pT = S(q, sigma) * R(kappa) * pT;
+	pT = (pT + 1.0) / 2.0;
+
+	MT = R(-kappa) * S(q, sigma);
+}
+</script>
+<script type="x-shader" id=fglow>
+precision highp float;
+uniform float A[2], dA[2];
+
+const vec3 color = vec3(0.0, 0.6, 0.6);
+
+uniform float VconvertG;
+uniform sampler2D hilltexture;
+varying vec2 pT;
+varying mat2 MT;
+
+const float shade = 0.04;
+const vec2 L = normalize(vec2(0.0, 1.0));
+
+
+void main() {
+	int nshade = 0;
+	if (pT.x >= 0.0 && pT.x < 1.0 && pT.y >= 0.0 && pT.y < 1.0) ++nshade;
+	if (distance(pT, vec2(0.5)) <= 0.5) ++nshade;
+
+	vec3 h = texture2D(hilltexture, pT).xyz;
+	float z = A[0] + A[1] * h.z;
+	vec2 dz = dA[0] + dA[1] * h.xy;
+	dz = MT * dz;
+	float p = abs(z) / length(dz);
+	float lfactor = -0.05 * dot(dz, L);
+	lfactor = clamp(lfactor, -0.4, 0.4);
+	lfactor *= 1.0 - smoothstep(20.0, 25.0, VconvertG * p);
+	vec3 bcolor = color * (1.0 + lfactor);
+
+	if (z < 0.0) {
+		gl_FragColor = vec4(0.0, 0.0, 0.0, shade * float(nshade));
+	} else {
+		gl_FragColor = vec4(bcolor, 1.0);
+	}
+}
+</script>
+<canvas id=canvas>
+<script>
+window.onerror = function (error, url, line) { document.body.innerHTML = "<p>Error in: "+url+"<p>line "+line+"<pre>"+error+"</pre>" }
+var tau = 2 * Math.PI
+var clamp = (x, a, b) => x < a ? a : x > b ? b : x
+function ease(f) {
+	f = clamp(f, 0, 1)
+	return f * f * (3 - 2 * f)
+}
+
+var canvas = document.getElementById("canvas")
+UFX.pointer(canvas)
+var gl = UFX.gl(canvas)
+gl.enable(gl.BLEND)
+gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, 0, 1)
+
+canvas.width = 160
+canvas.height = 90
+var posbuffer = gl.makeArrayBuffer([-1, -1, 1, -1, 1, 1, -1, 1])
+UFX.maximize.onadjust = function (canvas, x, y) {
+	gl.viewport(0, 0, x, y)
+}
+UFX.maximize.fill(canvas, "aspect")
+
+gl.clearColor(0, 0.3, 0.3, 1)
+UFX.gltext.init(gl)
+gl.addProgram("glow", "vglow", "fglow")
+
+
+function E(dx, dy, R) {
+	var r = Math.sqrt(dx * dx + dy * dy)
+	return 1 - ease(r / R)
+}
+function h(x, y) {
+	return E(x, y, 0.3) + E(0.5 - x, 0.0 - y, 0.1) + E(-0.2 - x, 0.4 - y, 0.2) + E(-0.3 - x, -0.5 - y, 0.5)
+}
+function hdh(x, y) {
+	var d = 0.001
+	return [
+		h(x, y),
+		(h(x + d, y) - h(x - d, y)) / (2 * d),
+		(h(x, y + d) - h(x, y - d)) / (2 * d),
+	]
+}
+function gethillimg(s) {
+	var zs = []
+	var dzs = []
+	var A = Array(s).fill().map((_, p) => -1 + p * 2 / (s - 1))
+	for (var py = 0, j = 0 ; py < s ; ++py) {
+		for (var px = 0 ; px < s ; ++px) {
+			if (px == 0 || px == s - 1 || py == 0 || py == s - 1) {
+				zs.push(0)
+				dzs.push(0, 0)
+				continue
+			}
+			var [z, dzdx, dzdy] = hdh(A[px], A[py])
+			zs.push(z)
+			dzs.push(dzdx, dzdy)
+		}
+	}
+	var zmin = Math.min.apply(Math, zs), zmax = Math.max.apply(Math, zs)
+	var fzrange = 255 / (zmax - zmin)
+	var dzmin = Math.min.apply(Math, dzs), dzmax = Math.max.apply(Math, dzs)
+	var fdzrange = 255 / (dzmax - dzmin)
+	var img = document.createElement("canvas")
+	img.width = s
+	img.height = s
+	var context = img.getContext("2d")
+	var idata = context.createImageData(s, s)
+	for (var i = 0, j = 0, k = 0 ; k < zs.length ; ) {
+		idata.data[i++] = fdzrange * (dzs[j++] - dzmin)
+		idata.data[i++] = fdzrange * (dzs[j++] - dzmin)
+		idata.data[i++] = fzrange * (zs[k++] - zmin)
+		idata.data[i++] = 255
+	}
+	context.putImageData(idata, 0, 0)
+	return [img, zmin, zmax - zmin, dzmin, dzmax - dzmin]
+}
+
+var [hillimg, A0, A1, dA0, dA1] = gethillimg(64)
+var hilltexture = gl.buildTexture({
+	source: hillimg,
+	wrap: gl.CLAMP_TO_EDGE,
+	filter: gl.LINEAR,
+})
+var A = [-0.3 + A0, A1], dA = [dA0, dA1]
+
+UFX.key.init()
+UFX.key.watchlist = ["space"]
+function think(dt) {
+	var kstate = UFX.key.state()
+	gl.clear(gl.COLOR_BUFFER_BIT)
+	gl.progs.glow.use()
+	gl.progs.glow.set({
+		Rview: [canvas.width, canvas.height],
+		Rblob: 400,
+		VconvertG: 400,
+		hilltexture: 0,
+		A: A,
+		dA: dA,
+		center: [0, 0],
+//		kappa: 0.001 * Date.now() % tau,
+		kappa: 0,
+		q: 1 + 0.5 * Math.sin(0.0004 * Date.now()),
+		sigma: tau / 8,
+	})
+	posbuffer.bind()
+	gl.progs.glow.assignAttribOffsets({ pos: 0 })
+	gl.activeTexture(gl.TEXTURE0)
+	gl.bindTexture(gl.TEXTURE_2D, hilltexture)
+	gl.drawArrays(gl.TRIANGLE_FAN, 0, 4)
+}
+if (false) {
+	gl.dumpTexture(hilltexture)
+} else {
+	UFX.resource.onload = function () {
+		UFX.ticker.init(think, null, { maxups: 60 })
+	}
+}
+UFX.resource.loadwebfonts("Viga", "Skranji")
+</script>
