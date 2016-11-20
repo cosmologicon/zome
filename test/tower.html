@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<script src="http://ufx.space/UFX.js"></script>
+<script src="../src/util.js"></script>
+<script src="../src/components.js"></script>
+<script src="../src/thing.js"></script>
+<script src="../src/state.js"></script>
+<script src="../src/collision.js"></script>
+<script src="../src/control.js"></script>
+<canvas id=canvas></canvas>
+<script>
+var context = canvas.getContext("2d")
+canvas.width = 600
+canvas.height = 600
+UFX.draw.setcontext(context)
+
+var objs = [
+	new Cell({ x: 0, y: 0 }),
+	new Antibody({ x: 40, y: 40 }),
+	new Organelle({ x: 0, y: 0 }),
+]
+var cell = objs[0]
+objs[1].addobj(objs[2])
+
+state.addobj = obj => objs.push(obj)
+state.removeobj = obj => { objs = objs.filter(o => o !== obj) }
+
+UFX.ticker.init(function (dt) {
+	var pstate = UFX.pointer(canvas)
+	if (pstate.pos) {
+		control.pos = [(pstate.pos[0] - 300) / 3, (pstate.pos[1] - 300) / 3]
+	}
+	control.pointed = control.getpointed(objs)
+	if (pstate.down && control.pointed && !control.cursor) {
+		if (control.pointed.draggable && control.pointed.candrag()) {
+			control.pointed.drag()
+		}
+	}
+	if (pstate.rdown && control.pointed && !control.cursor) {
+		control.pointed.onrdown()
+	}
+	if (control.cursor) {
+		control.cursor.scootchto(control.pos[0], control.pos[1])
+	}
+	if (pstate.up && control.cursor) {
+		var target = control.pointed
+		if (target && target.container) target = target.container
+		control.cursor.drop(target)
+	}
+	if (pstate.down && !control.pointed && !control.cursor) {
+		if (pstate.pos[0] < 80 && pstate.pos[1] < 80) {
+			if (!cell.isfull()) {
+				obj = new Organelle({ x: UFX.random(-1, 1), y: UFX.random(-1, 1) })
+				state.addobj(obj)
+				cell.addobj(obj)
+			}
+		}
+	}
+
+	var colliders = objs.filter(obj => obj instanceof Cell || obj instanceof Antibody)
+	adjust(colliders, dt)
+	objs.forEach(obj => obj.think(dt))
+	if (control.cursor) control.cursor.think(dt)
+
+	UFX.draw("fs black f0 [ t 300 300 z 3 3 lw 0.5")
+	var drawobjs = objs.slice()
+	if (control.cursor) drawobjs.push(control.cursor)
+	if (control.cursor && control.cursor.slots) drawobjs = drawobjs.concat(control.cursor.slots)
+
+	drawobjs.forEach(function (obj) {
+		UFX.draw("b o", obj.x, obj.y, obj.rcollide, "ss", obj.color, "fs", obj.color, "[ alpha 0.2 f ] s")
+	})
+	UFX.draw("]")
+	UFX.draw("fs orange fr 0 0 80 80")
+	UFX.draw("fs black font 22px~'sans-serif' tab center middle ft Grow 40 40")
+
+	canvas.style.cursor = control.cursor ? "move" : control.pointed ? "pointer" : "default"
+}, null, { ups: 60 })
+
+</script>

@@ -1,70 +1,45 @@
-var Lives = {
-	start: function () {
-		this.alive = true
-		this.t = 0
-	},
-	think: function (dt) {
-		this.t += dt
-	},
-	die: function () {
-		this.alive = false
-	},
-}
+"use strict"
 
-var Lifetime = {
-	init: function (lifetime) {
-		this.lifetime = lifetime || 1
-	},
-	start: function () {
-		this.f = 0
-	},
-	think: function (dt) {
-		this.f = clamp(this.t / this.lifetime, 0, 1)
-		if (this.f == 1) this.die()
-	},
+function Cell(spec) {
+	this.start(spec)
+	this.color = "#006666"
 }
+Cell.prototype = UFX.Thing()
+	.addcomp(Lives)
+	.addcomp(WorldBound)
+	.addcomp(Collideable, 20, 100000000)
+	.addcomp(HasSlots, 7)
+	.addcomp(Mouseable, 20)
+	.addcomp(EjectsOnRightClick)
+	.definemethod("think")
 
-var WorldBound = {
-	start: function (obj) {
-		this.x = obj.x || 0
-		this.y = obj.y || 0
-	},
-	scootch: function (dx, dy) {
-		this.x += dx
-		this.y += dy
-	},
-	distanceto: function (p) {
-		var dx = p[0] - this.x, dy = p[1] - this.y
-		return Math.sqrt(dx * dx + dy * dy)
-	},
+function Antibody(spec) {
+	this.start(spec)
+	this.color = "#006666"
 }
+Antibody.prototype = UFX.Thing()
+	.addcomp(Lives)
+	.addcomp(WorldBound)
+	.addcomp(Collideable, 1, 1)
+	.addcomp(Kickable)
+	.addcomp(HasSlots)
+	.addcomp(ResizesWithSlots)
+	.addcomp(Draggable)
+	.addcomp(Mouseable)
+	.addcomp(SplitsOnRightClick)
+	.definemethod("think")
 
-var Collideable = {
-	init: function (m, r) {
-		this.mcollide = m
-		this.rcollide = r
-	},
-	collidespec: function () {
-		return [this.x, this.y, this.r, this.m]
-	},
+function Organelle(spec) {
+	this.start(spec)
+	this.color = "#660066"
 }
-
-var Kickable = {
-	start: function () {
-		this.ix = 0
-		this.iy = 0
-	},
-	kick: function (ix, iy) {
-		this.ix += ix
-		this.iy += iy
-	},
-	think: function (dt) {
-		if (this.ix || this.iy) {
-			this.scootch(this.ix * dt, this.iy * dt)
-			var f = Math.exp(-2 * dt)
-			this.ix *= f
-			this.iy *= f
-		}
-	},
-}
+Organelle.prototype = UFX.Thing()
+	.addcomp(Lives)
+	.addcomp(WorldBound)
+	.addcomp(Collideable, 6, 10)
+	.addcomp(Kickable)
+	.addcomp(Contained)
+	.addcomp(ContainedDraggable)
+	.addcomp(Mouseable, 6)
+	.definemethod("think")
 

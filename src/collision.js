@@ -56,6 +56,7 @@ function getbounce(objs, dt) {
 }
 
 function adjust(objs, dt) {
+	if (objs.length < 2) return
 	var ds = getbounce(objs.map(obj => obj.collidespec()), dt)
 	ds.forEach(function(d, j) {
 		objs[j].scootch(d[0], d[1])
