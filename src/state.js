@@ -27,16 +27,39 @@ var progress = {
 var state = {
 	reset: function (levelname) {
 		this.levelname = levelname
-		this.colliders = []
+		this.cell = null
+		this.organelles = []
+		this.antibodies = []
 		this.tlevel = 0
 	},
+	colliders: function () {
+		return [this.cell].concat(this.antibodies)
+	},
+	thinkers: function () {
+		return [this.cell].concat(this.organelles, this.antibodies)
+	},
+	pointables: function () {
+		return [this.cell].concat(this.organelles, this.antibodies)
+	},
+	// For 2d-context debugging
+	drawables: function () {
+		var objs = [this.cell].concat(this.antibodies, this.organelles)
+		if (control.cursor) objs.push(control.cursor)
+		if (control.cursor && control.cursor.slots) objs = objs.concat(control.cursor.slots)
+		return objs
+	},
 
+	gettype: function (obj) {
+		if (obj instanceof Organelle) return "organelles"
+		if (obj instanceof Antibody) return "antibodies"
+	},
 	addobj: function (obj) {
-		this.colliders.add(obj)
+		var type = this.gettype(obj)
+		this[type].push(obj)
 	},
 	removeobj: function (obj) {
-		var isntobj = o => o !== obj
-		this.colliders = this.colliders.filter(isntobj)
+		var type = this.gettype(obj)
+		this[type] = this[type].filter(o => o !== obj)
 	},
 }
 state.reset(1)
