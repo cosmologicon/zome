@@ -46,6 +46,10 @@ var WorldBound = {
 		var dx = p[0] - this.x, dy = p[1] - this.y
 		return Math.sqrt(dx * dx + dy * dy)
 	},
+	distancetoobj: function (obj) {
+		var dx = obj.x - this.x, dy = obj.y - this.y
+		return Math.sqrt(dx * dx + dy * dy)
+	},
 }
 
 var Collideable = {
@@ -93,6 +97,7 @@ var HasSlots = {
 	},
 	start: function (spec) {
 		this.slots = []
+		this.flavors = ""
 	},
 	isfull: function () {
 		return this.slots.length >= this.nslot
@@ -103,9 +108,11 @@ var HasSlots = {
 	addobj: function (obj) {
 		this.slots.push(obj)
 		obj.container = this
+		this.flavors = this.slots.map(obj => obj.flavor).sort().join("")
 	},
 	removeobj: function (obj) {
 		this.slots = this.slots.filter(o => o !== obj)
+		this.flavors = this.slots.map(obj => obj.flavor).sort().join("")
 	},
 	ejectall: function () {
 		this.slots.forEach(obj => {
@@ -128,9 +135,6 @@ var HasSlots = {
 	},
 	scootch: function (dx, dy) {
 		this.slots.forEach(obj => obj.scootch(dx, dy))
-	},
-	flavors: function () {
-		return this.slots.map(obj => obj.flavor).sort().join("")
 	},
 	think: function (dt) {
 		var f = 1 - Math.exp(-dt), x = this.x, y = this.y
@@ -263,4 +267,66 @@ var SplitsOnRightClick = {
 }
 
 
+// TARGETING
+
+var DiesOnArrival = {
+	arrive: function () {
+		this.die()
+	},
+}
+
+var HurtsTarget = {
+	start: function (obj) {
+		this.strength = obj.strength || 1
+		this.RNAprob = obj.RNAprob || 0
+		this.DNAprob = obj.DNAprob || 0
+	},
+	arrive: function () {
+		this.target.shoot(this.strength)
+	},
+}
+
+var KicksOnArrival = {
+	start: function (obj) {
+		this.tkick = obj.kick || 0
+	},
+	arrive: function () {
+		if (!this.tkick) return
+		var [ix, iy] = norm(this.target.x - this.x, this.target.y - this.y, this.tkick)
+		this.target.kick(ix, iy)
+	},
+}
+
+// returns true if you've arrived (i.e. the new distance is less than rarrive).
+function approachpos(obj, target, D, rarrive) {
+	var dx = target.x - obj.x, dy = target.y - obj.y
+	var dp = Math.sqrt(dx * dx + dy * dy)
+	if (dp <= D) {
+		obj.x = target.x
+		obj.y = target.y
+		return true
+	}
+	obj.x += dx * D / dp
+	obj.y += dy * D / dp
+	return dp - D < rarrive
+}
+
+var TargetsThing = {
+	init: function (speed0, dspeed) {
+		this.speed0 = speed0
+		this.dspeed = dspeed || 0
+	},
+	start: function () {
+		this.speed = this.speed0 * (1 + this.dspeed * UFX.random(-1, 1))
+		this.target = null
+	},
+	think: function (dt) {
+		if (this.alive && this.target) {
+			var dr = this.rcollide + this.target.rcollide
+			if (approachpos(this, this.target, this.speed * dt, dr)) {
+				this.arrive()
+			}
+		}
+	},
+}
 

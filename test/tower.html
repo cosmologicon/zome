@@ -2,7 +2,10 @@
 <script src="http://ufx.space/UFX.js"></script>
 <script src="../src/util.js"></script>
 <script src="../src/components.js"></script>
+<script src="../src/recipe.js"></script>
 <script src="../src/thing.js"></script>
+<script src="../src/virus.js"></script>
+<script src="../src/weapon.js"></script>
 <script src="../src/state.js"></script>
 <script src="../src/collision.js"></script>
 <script src="../src/control.js"></script>
@@ -47,9 +50,16 @@ UFX.ticker.init(function (dt) {
 		}
 	}
 
+	if (UFX.random() < dt) {
+		var a = UFX.random.angle()
+		var ant = new Ant({x: 100 * Math.sin(a), y: 100 * Math.cos(a)})
+		ant.target = state.cell
+		state.addobj(ant)
+	}
 	adjust(state.colliders(), dt)
 	state.thinkers().forEach(obj => obj.think(dt))
 	if (control.cursor) control.cursor.think(dt)
+	state.think(dt)
 
 	UFX.draw("fs black f0 [ t 300 300 z 3 3 lw 0.5")
 

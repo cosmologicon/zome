@@ -27,11 +27,12 @@ Antibody.prototype = UFX.Thing()
 	.addcomp(Draggable)
 	.addcomp(Mouseable)
 	.addcomp(SplitsOnRightClick)
-	.definemethod("think")
+	.addcomp(FollowsRecipe)
 
 function Organelle(spec) {
 	this.start(spec)
 	this.color = "#660066"
+	this.flavor = "X"
 }
 Organelle.prototype = UFX.Thing()
 	.addcomp(Lives)
