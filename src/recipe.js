@@ -35,11 +35,39 @@ var recipes = {
 	XX: function (dt) {
 		recipes.trytoshoot.call(this, mechanics.XX, recipes.targeting.strongest)
 	},
-
+	XY: function (dt) {
+		recipes.trytoshoot.call(this, mechanics.XY, recipes.targeting.frontmost)
+		recipes.spawnresource.call(this, mechanics.XY)
+	},
+	XXX: function (dt) {
+		recipes.trytoshoot.call(this, mechanics.XXX, recipes.targeting.weakest)
+	},
+	XXY: function (dt) {
+		recipes.trytoshoot.call(this, mechanics.XXY, recipes.targeting.frontmost)
+	},
+	XYY: function (dt) {
+		recipes.trytoshoot.call(this, mechanics.XYY, recipes.targeting.strongest)
+	},
+	Y: function (dt) {
+		recipes.spawnresource.call(this, mechanics.Y)
+	},
+	YYY: function (dt) {
+		recipes.spawnresource.call(this, mechanics.YYY)
+	},
+	YZ: function (dt) {
+		recipes.spawnresource.call(this, mechanics.YZ)
+	},
+	XZ: function (dt) {
+		recipes.trytoshoot.call(this, mechanics.XZ, recipes.targeting.strongest)
+	},
+	XXZ: function (dt) {
+		recipes.trytoshoot.call(this, mechanics.XXZ, recipes.targeting.strongest)
+	},
 
 	targeting: {
 		frontmost: obj => -state.cell.distancetoobj(obj),
 		strongest: obj => (state.bosses.includes(obj) ? 10000 : 0) + obj.hp,
+		weakest: obj => -((state.bosses.includes(obj) ? 10000 : 0) + obj.hp),
 	},
 	gettarget: function (objs, rmax, targeting) {
 		var target = null, tscore = 0
@@ -61,12 +89,24 @@ var recipes = {
 		state.addobj(new Bullet(this, target, mechanic))
 		this.lastshot = this.t + UFX.random(-0.2, 0.2)
 	},
+	spawnresource: function (mechanic) {
+		if (this.lastshot + mechanic.spawnrecharge > this.t) return
+		this.lastangle += tau / phi
+		this.lastshot = this.t
+		var dx = Math.sin(this.lastangle), dy = Math.cos(this.lastangle)
+		var rtype = mechanic.spawnsDNA ? DNA : RNA
+		var resource = new rtype({x: this.x + 6 * dx, y: this.y + 6 * dy})
+		var r = UFX.random(1, 2) * mechanic.spawnkick
+		resource.kick(r * dx, r * dy)
+		state.addobj(resource)
+	},
 }
 
 var mechanics = {
+	// Shoot bullets
 	X: {
 		recharge: 2,
-		range: 400,
+		range: 40,
 		strength: 1,
 		RNAprob: 0.2,
 		DNAprob: 0,
@@ -79,6 +119,88 @@ var mechanics = {
 		RNAprob: 0.2,
 		DNAprob: 0,
 		kick: 20,
+	},
+	XXX: {
+		recharge: 0.35,
+		range: 40,
+		strength: 1,
+		RNAprob: 0.2,
+		DNAprob: 0,
+		kick: 0,
+	},
+	XXY: {
+		recharge: 5,
+		range: 200,
+		strength: 10,
+		RNAprob: 0.2,
+		DNAprob: 0,
+		kick: 20,
+	},
+	XYY: {
+		recharge: 2,
+		range: 40,
+		strength: 1,
+		RNAprob: 0.1,
+		DNAprob: 0,
+		kick: 100,
+	},
+	// Shoot bullets with area of effect (AOE)
+	XZ: {
+		recharge: 1,
+		range: 60,
+		strength: 10,
+		kick: 0,
+		AOEstrength: 3,
+		AOEsize: 20,
+		AOEkick: 40,
+		RNAprob: 0.1,
+		DNAprob: 0,
+	},
+	XXZ: {
+		recharge: 3,
+		range: 60,
+		strength: 20,
+		kick: 0,
+		AOEstrength: 6,
+		AOEsize: 25,
+		AOEkick: 40,
+		RNAprob: 0,
+		DNAprob: 0,
+	},
+	// Spawn resources
+	Y: {
+		spawnrecharge: 6,
+		spawnkick: 40,
+	},
+	YYY: {
+		spawnsDNA: true,
+		spawnrecharge: 15,
+		spawnkick: 40,
+	},
+	YZ: {
+		spawnsDNA: true,
+		spawnrecharge: 5,
+		spawnkick: 40,
+	},
+	// Shoot bullets + spawn resources
+	XY: {
+		recharge: 1.5,
+		range: 40,
+		strength: 1,
+		RNAprob: 1,
+		DNAprob: 0,
+		kick: 20,
+		spawnrecharge: 12,
+		spawnkick: 40,
+	},
+
+
+	ant: {
+		hp: 1,
+		speed: 10,
+		strength: 1,
+		size: 6,
+		mass: 10,
 	},
 }
 

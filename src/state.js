@@ -18,6 +18,15 @@ var progress = {
 	learned: {
 		X: true,
 		XX: true,
+		XY: true,
+		XXX: true,
+		XXY: true,
+		XYY: true,
+		Y: true,
+		YYY: true,
+		YZ: true,
+		XZ: true,
+		XXZ: true,
 	},
 	// dialogs heard
 	heard: {},
@@ -28,11 +37,13 @@ var progress = {
 var state = {
 	reset: function (levelname) {
 		this.levelname = levelname
+		this.hp = 1000
 		this.cell = null
 		this.organelles = []
 		this.antibodies = []
 		this.viruses = []
 		this.bosses = []
+		this.resources = []
 		this.shots = []
 		this.tlevel = 0
 		this.RNA = 0
@@ -42,7 +53,7 @@ var state = {
 		return [this.cell].concat(this.antibodies, this.viruses, this.bosses)
 	},
 	thinkers: function () {
-		return [this.cell].concat(this.organelles, this.antibodies, this.viruses, this.bosses, this.shots)
+		return [this.cell].concat(this.organelles, this.antibodies, this.viruses, this.bosses, this.resources, this.shots)
 	},
 	pointables: function () {
 		return [this.cell].concat(this.organelles, this.antibodies)
@@ -50,9 +61,12 @@ var state = {
 	shootables: function () {
 		return this.viruses.concat(this.bosses)
 	},
+	collectibles: function () {
+		return this.resources
+	},
 	// For 2d-context debugging
 	drawables: function () {
-		var objs = [this.cell].concat(this.antibodies, this.organelles, this.viruses, this.bosses, this.shots)
+		var objs = [this.cell].concat(this.antibodies, this.organelles, this.viruses, this.bosses, this.resources, this.shots)
 		if (control.cursor) objs.push(control.cursor)
 		if (control.cursor && control.cursor.slots) objs = objs.concat(control.cursor.slots)
 		return objs
@@ -63,6 +77,9 @@ var state = {
 		if (obj instanceof Antibody) return "antibodies"
 		if (obj instanceof Ant) return "viruses"
 		if (obj instanceof Bullet) return "shots"
+		if (obj instanceof Explosion) return "shots"
+		if (obj instanceof RNA) return "resources"
+		if (obj instanceof DNA) return "resources"
 	},
 	addobj: function (obj) {
 		var type = this.gettype(obj)
@@ -72,6 +89,9 @@ var state = {
 		var type = this.gettype(obj)
 		this[type] = this[type].filter(o => o !== obj)
 	},
+	harm: function (strength) {
+		this.hp -= strength
+	},
 	think: function (dt) {
 		var isalive = obj => obj.alive
 		this.organelles = this.organelles.filter(isalive)
@@ -79,8 +99,8 @@ var state = {
 		this.viruses = this.viruses.filter(isalive)
 		this.bosses = this.bosses.filter(isalive)
 		this.shots = this.shots.filter(isalive)
+		this.resources = this.resources.filter(isalive)
 	},
-
 }
 state.reset(1)
 

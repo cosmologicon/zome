@@ -60,6 +60,11 @@ var Collideable = {
 	collidespec: function () {
 		return [this.x, this.y, this.rcollide, this.mass]
 	},
+	// Not to be used for collision detection between many objects - use collision.js for that.
+	colliding: function (obj) {
+		var dx = obj.x - this.x, dy = obj.y - this.y, r = obj.rcollide + this.rcollide
+		return dx * dx + dy * dy < r * r
+	},
 	constraintoworld: function () {
 		var d = Math.sqrt(this.x * this.x + this.y * this.y)
 		var r = state.R - this.rcollide
@@ -266,6 +271,17 @@ var SplitsOnRightClick = {
 	},
 }
 
+var CollectsOnHover = {
+	onhover: function () {
+		this.collectto(state.cell)
+	},
+	collectto: function (obj) {
+		if (!this.target) this.target = obj
+	},
+	think: function (dt) {
+		if (this.target) this.t = 0 // keep alive
+	},
+}
 
 // TARGETING
 
@@ -282,7 +298,7 @@ var HurtsTarget = {
 		this.DNAprob = obj.DNAprob || 0
 	},
 	arrive: function () {
-		this.target.shoot(this.strength)
+		this.target.shoot(this.strength, this.RNAprob, this.DNAprob)
 	},
 }
 
@@ -294,6 +310,17 @@ var KicksOnArrival = {
 		if (!this.tkick) return
 		var [ix, iy] = norm(this.target.x - this.x, this.target.y - this.y, this.tkick)
 		this.target.kick(ix, iy)
+	},
+}
+
+var ResourcesOnArrival = {
+	init: function (RNA, DNA) {
+		this.RNA = RNA || 0
+		this.DNA = DNA || 0
+	},
+	arrive: function () {
+		state.RNA += this.RNA
+		state.DNA += this.DNA
 	},
 }
 

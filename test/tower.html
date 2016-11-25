@@ -17,12 +17,22 @@ canvas.height = 600
 UFX.draw.setcontext(context)
 
 state.cell = new Cell({ x: 0, y: 0 })
+state.Rlevel = 150
+Z = 1
+
+var buttons = [
+	{ text: "X", x: 20, y: 20, w: 80, h: 80 },
+	{ text: "Y", x: 20, y: 120, w: 80, h: 80 },
+	{ text: "Z", x: 20, y: 220, w: 80, h: 80 },
+]
 
 UFX.ticker.init(function (dt) {
 	var pstate = UFX.pointer(canvas)
+	var zoom = Math.exp(Z)
 	if (pstate.pos) {
-		control.pos = [(pstate.pos[0] - 300) / 3, (pstate.pos[1] - 300) / 3]
+		control.pos = [(pstate.pos[0] - 300) / zoom, (pstate.pos[1] - 300) / zoom]
 	}
+	control.hoverall(state.collectibles())
 	control.pointed = control.getpointed(state.pointables())
 	if (pstate.down && control.pointed && !control.cursor) {
 		if (control.pointed.draggable && control.pointed.candrag()) {
@@ -41,11 +51,17 @@ UFX.ticker.init(function (dt) {
 		control.cursor.drop(target)
 	}
 	if (pstate.down && !control.pointed && !control.cursor) {
-		if (pstate.pos[0] < 80 && pstate.pos[1] < 80) {
-			if (!state.cell.isfull()) {
-				obj = new Organelle({ x: UFX.random(-1, 1), y: UFX.random(-1, 1) })
+		buttons.forEach(function (button) {
+			var xoff = pstate.pos[0] - button.x, yoff = pstate.pos[1] - button.y
+			if (xoff < 0 || xoff >= button.w || yoff < 0 || yoff >= button.h) return
+			if (["X", "Y", "Z"].includes(button.text)) {
+				obj = new Organelle({ x: UFX.random(-1, 1), y: UFX.random(-1, 1), flavor: button.text })
 				state.addobj(obj)
 				state.cell.addobj(obj)
+			}
+		})
+		if (pstate.pos[0] < 80 && pstate.pos[1] < 80) {
+			if (!state.cell.isfull()) {
 			}
 		}
 	}
@@ -61,14 +77,24 @@ UFX.ticker.init(function (dt) {
 	if (control.cursor) control.cursor.think(dt)
 	state.think(dt)
 
-	UFX.draw("fs black f0 [ t 300 300 z 3 3 lw 0.5")
+	UFX.draw("fs black f0 [ t 300 300 z", zoom, zoom, "lw 0.5")
+	UFX.draw("fs #003377 b o 0 0", state.Rlevel, "f")
 
 	state.drawables().forEach(function (obj) {
 		UFX.draw("b o", obj.x, obj.y, obj.rcollide, "ss", obj.color, "fs", obj.color, "[ alpha 0.2 f ] s")
+		var towrite = null
+		if (obj instanceof Ant) towrite = "ant"
+		if (obj instanceof Organelle) towrite = obj.flavor
+		if (towrite) UFX.draw("tab center middle font 4px~'sans-serif' ft", towrite, obj.x, obj.y)
 	})
 	UFX.draw("]")
-	UFX.draw("fs orange fr 0 0 80 80")
-	UFX.draw("fs black font 22px~'sans-serif' tab center middle ft Grow 40 40")
+	buttons.forEach(function (button) {
+		UFX.draw("[ t", button.x, button.y, "fs orange fr 0 0", button.w, button.h)
+		UFX.draw("fs black font 22px~'sans-serif' tab center middle ft", button.text, button.w/2, button.h/2, "]")
+	})
+	UFX.draw("fs white font 18px~'sans-serif' tab left bottom")
+	context.fillText("RNA:" + state.RNA + "   DNA:" + state.DNA + "   HP: " + state.hp, 10, 565)
+	context.fillText(UFX.ticker.getrates(), 10, 590)
 
 	canvas.style.cursor = control.cursor ? "move" : control.pointed ? "pointer" : "default"
 }, null, { ups: 60 })

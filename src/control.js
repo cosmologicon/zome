@@ -27,6 +27,13 @@ var control = {
 		})
 		return p
 	},
+
+	hoverall: function (objs) {
+		var pos = this.pos
+		objs.forEach(function (obj) {
+			if (obj.within(pos)) obj.onhover()
+		})
+	},
 }
 
 control.reset()
