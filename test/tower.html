@@ -16,10 +16,13 @@ canvas.width = 600
 canvas.height = 600
 UFX.draw.setcontext(context)
 UFX.maximize.fill(canvas, "aspect")
+UFX.key.init()
+UFX.key.remaparrows(true)
+UFX.key.watchlist = "up down left right 1 2".split(" ")
 
 state.cell = new Cell({ x: 0, y: 100 })
 state.Rlevel = 150
-Z = 0.5
+var x0 = 0, y0 = 0, Z = 0.5
 
 var buttons = [
 	{ text: "X", x: 20, y: 20, w: 80, h: 80 },
@@ -30,11 +33,17 @@ var buttons = [
 ]
 
 UFX.ticker.init(function (dt) {
-	UFX.draw("[ z", canvas.width / 600, canvas.height / 600)
-	var pstate = UFX.pointer(canvas)
+	var pstate = UFX.pointer(canvas), kstate = UFX.key.state()
 	var ppos = pstate.pos ? [pstate.pos[0] * 600 / canvas.width, pstate.pos[1] * 600 / canvas.height] : [0, 0]
+	if (kstate.down[1]) Z += 0.125
+	if (kstate.down[2]) Z -= 0.125
 	var zoom = Math.exp(Z)
-	control.pos = [(ppos[0] - 300) / zoom, (ppos[1] - 300) / zoom]
+	var d = 500 * dt / Math.sqrt(zoom)
+	if (kstate.pressed.up) y0 -= d
+	if (kstate.pressed.down) y0 += d
+	if (kstate.pressed.left) x0 -= d
+	if (kstate.pressed.right) x0 += d
+	control.pos = [(ppos[0] - 300) / zoom + x0, (ppos[1] - 300) / zoom + y0]
 	control.hoverall(state.collectibles())
 	control.pointed = control.getpointed(state.pointables())
 	if (pstate.down && control.pointed && !control.cursor) {
@@ -93,7 +102,9 @@ UFX.ticker.init(function (dt) {
 	if (control.cursor) control.cursor.think(dt)
 	state.think(dt)
 
-	UFX.draw("fs black f0 [ t 300 300 z", zoom, zoom, "lw 0.5")
+	UFX.draw("[ z", canvas.width / 600, canvas.height / 600)
+
+	UFX.draw("fs black f0 [ t", 300, 300, "z", zoom, zoom, "t", -x0, -y0, "lw 0.5")
 	UFX.draw("fs #003377 b o 0 0", state.Rlevel, "f")
 
 	state.drawables().forEach(function (obj) {
@@ -113,7 +124,8 @@ UFX.ticker.init(function (dt) {
 		UFX.draw("fs black font 22px~'sans-serif' tab center middle ft", button.text, button.w/2, button.h/2, "]")
 	})
 	UFX.draw("fs white font 18px~'sans-serif' tab left bottom")
-	context.fillText("RNA:" + state.RNA + "   DNA:" + state.DNA + "   HP: " + state.hp, 10, 565)
+	context.fillText("RNA:" + state.RNA + "   DNA:" + state.DNA + "   HP: " + state.hp, 10, 540)
+	context.fillText("[" + control.pos[0].toFixed(0) + ", " + control.pos[1].toFixed(0) + "]", 10, 565)
 	context.fillText(UFX.ticker.getrates(), 10, 590)
 
 	canvas.style.cursor = control.cursor ? "move" : control.pointed ? "pointer" : "default"
