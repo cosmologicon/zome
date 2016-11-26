@@ -27,6 +27,8 @@ var progress = {
 		YZ: true,
 		XZ: true,
 		XXZ: true,
+		Z: true,
+		YZZ: true,
 	},
 	// dialogs heard
 	heard: {},
@@ -76,8 +78,10 @@ var state = {
 		if (obj instanceof Organelle) return "organelles"
 		if (obj instanceof Antibody) return "antibodies"
 		if (obj instanceof Ant) return "viruses"
+		if (obj instanceof Bee) return "viruses"
 		if (obj instanceof Bullet) return "shots"
 		if (obj instanceof Explosion) return "shots"
+		if (obj instanceof HealRay) return "shots"
 		if (obj instanceof RNA) return "resources"
 		if (obj instanceof DNA) return "resources"
 	},

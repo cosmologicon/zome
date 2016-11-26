@@ -19,11 +19,33 @@ var FollowsRecipe = {
 		this.lastclick = null
 	},
 	think: function (dt) {
+		var [r, g, b] = this.getcolor()
+		this.color = "rgb(" + r + "," + g + "," + b + ")"
 		if (!progress.learned[this.flavors]) return
 		if (this.disabled) {
 			this.disabled = Math.max(this.disabled - dt, 0)
 		} else {
 			recipes[this.flavors].call(this, dt)
+		}
+	},
+	getcolor: function () {
+		if (this.disabled) return [Math.floor(100 + 80 * Math.sin(10 * this.disabled)), 0, 0]
+		if (!progress.learned[this.flavors]) return [30, 30, 30]
+		switch (this.flavors) {
+			case "X": case "XX": case "XY": case "XXX": case "XXY": case "XYY":
+				return [150, 0, 200]
+			case "XZ": case "XXZ":
+				return [200, 0, 150]
+			case "ZZ": case "XZZ":
+				return [200, 200, 0]
+			case "Y": case "YYY": case "YZ":
+				return [50, 200, 50]
+			case "XYZ": case "ZZZ":
+				return [50, 50, 255]
+			case "Z": case "YZZ":
+				return [0, 200, 200]
+			case "YY": case "YYZ":
+				return [0, 200, 0]
 		}
 	},
 }
@@ -63,6 +85,12 @@ var recipes = {
 	XXZ: function (dt) {
 		recipes.trytoshoot.call(this, mechanics.XXZ, recipes.targeting.strongest)
 	},
+	Z: function (dt) {
+		recipes.trytoheal.call(this, mechanics.Z)
+	},
+	YZZ: function (dt) {
+		recipes.trytoheal.call(this, mechanics.YZZ)
+	},
 
 	targeting: {
 		frontmost: obj => -state.cell.distancetoobj(obj),
@@ -71,7 +99,7 @@ var recipes = {
 	},
 	gettarget: function (objs, rmax, targeting) {
 		var target = null, tscore = 0
-		state.shootables().forEach(obj => {
+		objs.forEach(obj => {
 			var dx = obj.x - this.x, dy = obj.y - this.y, r = rmax + obj.rcollide
 			if (dx * dx + dy * dy > r * r) return
 			var score = targeting ? targeting(obj) : -(dx * dx + dy * dy)
@@ -84,7 +112,7 @@ var recipes = {
 	},
 	trytoshoot: function (mechanic, targeting) {
 		if (this.lastshot + mechanic.recharge > this.t) return
-		var target = recipes.gettarget.call(this, mechanic.range, targeting)
+		var target = recipes.gettarget.call(this, state.shootables(), mechanic.range, targeting)
 		if (!target) return
 		state.addobj(new Bullet(this, target, mechanic))
 		this.lastshot = this.t + UFX.random(-0.2, 0.2)
@@ -100,9 +128,19 @@ var recipes = {
 		resource.kick(r * dx, r * dy)
 		state.addobj(resource)
 	},
+	trytoheal: function (mechanic) {
+		if (this.lastshot + mechanic.healrecharge > this.t) return
+		var objs = state.antibodies.filter(obj => obj.disabled)
+		var target = recipes.gettarget.call(this, objs, mechanic.healrange)
+		if (!target) return
+		state.addobj(new HealRay(this, target, mechanic))
+		this.lastshot = this.t + UFX.random(-0.2, 0.2)
+	},
 }
 
 var mechanics = {
+	// ANTIBODY FORMULAS
+
 	// Shoot bullets
 	X: {
 		recharge: 2,
@@ -193,6 +231,17 @@ var mechanics = {
 		spawnrecharge: 12,
 		spawnkick: 40,
 	},
+	// Shoot heal rays at disabled antibodies
+	Z: {
+		healrecharge: 0.3,
+		healrange: 30,
+		healstrength: 2,
+	},
+	YZZ: {
+		healrecharge: 0.1,
+		healrange: 30,
+		healstrength: 99999,
+	},
 
 
 	ant: {
@@ -201,6 +250,16 @@ var mechanics = {
 		strength: 1,
 		size: 6,
 		mass: 10,
+	},
+	bee: {
+		hp: 2,
+		speed: 10,
+		strength: 2,
+		size: 6,
+		mass: 10,
+		tdisable: 20,
+		tretarget: 1,
+		targetrange: 50,
 	},
 }
 

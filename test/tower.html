@@ -68,7 +68,7 @@ UFX.ticker.init(function (dt) {
 
 	if (UFX.random() < dt) {
 		var a = UFX.random.angle()
-		var ant = new Ant({x: 100 * Math.sin(a), y: 100 * Math.cos(a)})
+		var ant = new Bee({x: 100 * Math.sin(a), y: 100 * Math.cos(a)})
 		ant.target = state.cell
 		state.addobj(ant)
 	}
@@ -84,6 +84,7 @@ UFX.ticker.init(function (dt) {
 		UFX.draw("b o", obj.x, obj.y, obj.rcollide, "ss", obj.color, "fs", obj.color, "[ alpha 0.2 f ] s")
 		var towrite = null
 		if (obj instanceof Ant) towrite = "ant"
+		if (obj instanceof Ant) towrite = "bee"
 		if (obj instanceof Organelle) towrite = obj.flavor
 		if (towrite) UFX.draw("tab center middle font 4px~'sans-serif' ft", towrite, obj.x, obj.y)
 	})

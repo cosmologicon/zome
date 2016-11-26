@@ -94,6 +94,15 @@ var Kickable = {
 	},
 }
 
+var Disableable = {
+	start: function () {
+		this.disabled = 0
+	},
+	think: function (dt) {
+		this.disabled = Math.max(0, this.disabled - dt)
+	},
+}
+
 // CONTAINER RELATIONSHIP BETWEEN ORGANELLES AND ANTIBODIES/CELL
 
 var HasSlots = {
@@ -321,6 +330,15 @@ var ResourcesOnArrival = {
 	arrive: function () {
 		state.RNA += this.RNA
 		state.DNA += this.DNA
+	},
+}
+
+var HealsOnArrival = {
+	start: function (spec) {
+		this.strength = spec.healstrength
+	},
+	arrive: function () {
+		this.target.disabled = Math.max(0, this.target.disabled - this.strength)
 	},
 }
 

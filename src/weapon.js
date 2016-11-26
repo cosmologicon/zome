@@ -66,3 +66,20 @@ Explosion.prototype = UFX.Thing()
 	.addcomp(Collideable, 3, null)
 	.addcomp(ExplodesIntoViruses)
 
+function HealRay(from, to, mechanic) {
+	var spec = Object.create(mechanic)
+	spec.x = from.x
+	spec.y = from.y
+	this.start(spec)
+	this.target = to
+	this.color = "blue"
+}
+HealRay.prototype = UFX.Thing()
+	.addcomp(Lives)
+	.addcomp(Lifetime, 5)
+	.addcomp(WorldBound)
+	.addcomp(Collideable, 1, null)
+	.addcomp(TargetsThing, 120)
+	.addcomp(HealsOnArrival)
+	.addcomp(DiesOnArrival)
+
