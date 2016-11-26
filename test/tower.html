@@ -37,6 +37,7 @@ UFX.ticker.init(function (dt) {
 	if (pstate.down && control.pointed && !control.cursor) {
 		if (control.pointed.draggable && control.pointed.candrag()) {
 			control.pointed.drag()
+			control.pointed = null
 		}
 	}
 	if (pstate.rdown && control.pointed && !control.cursor) {
@@ -44,6 +45,9 @@ UFX.ticker.init(function (dt) {
 	}
 	if (control.cursor) {
 		control.cursor.scootchto(control.pos[0], control.pos[1])
+	}
+	if (pstate.click && control.cursor) {
+		control.cursor.onclick()
 	}
 	if (pstate.up && control.cursor) {
 		var target = control.pointed
@@ -68,7 +72,8 @@ UFX.ticker.init(function (dt) {
 
 	if (UFX.random() < dt) {
 		var a = UFX.random.angle()
-		var ant = new Bee({x: 100 * Math.sin(a), y: 100 * Math.cos(a)})
+		var type = UFX.random.choice([Ant, Bee])
+		var ant = new type({x: 100 * Math.sin(a), y: 100 * Math.cos(a)})
 		ant.target = state.cell
 		state.addobj(ant)
 	}
@@ -84,9 +89,12 @@ UFX.ticker.init(function (dt) {
 		UFX.draw("b o", obj.x, obj.y, obj.rcollide, "ss", obj.color, "fs", obj.color, "[ alpha 0.2 f ] s")
 		var towrite = null
 		if (obj instanceof Ant) towrite = "ant"
-		if (obj instanceof Ant) towrite = "bee"
+		if (obj instanceof Bee) towrite = "bee"
 		if (obj instanceof Organelle) towrite = obj.flavor
 		if (towrite) UFX.draw("tab center middle font 4px~'sans-serif' ft", towrite, obj.x, obj.y)
+	})
+	state.lasers.forEach(function (obj) {
+		UFX.draw("b m", obj.x0, obj.y0, "l", obj.x1, obj.y1, "ss", obj.color, "s")
 	})
 	UFX.draw("]")
 	buttons.forEach(function (button) {

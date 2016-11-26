@@ -28,6 +28,10 @@ var FollowsRecipe = {
 			recipes[this.flavors].call(this, dt)
 		}
 	},
+	onclick: function () {
+		if (this.flavors == "XYZ" && progress.learned.XYZ) recipes.explode.call(this, mechanics.XYZ)
+		if (this.flavors == "ZZZ" && progress.learned.ZZZ) recipes.explode.call(this, mechanics.ZZZ)
+	},
 	getcolor: function () {
 		if (this.disabled) return [Math.floor(100 + 80 * Math.sin(10 * this.disabled)), 0, 0]
 		if (!progress.learned[this.flavors]) return [30, 30, 30]
@@ -70,6 +74,12 @@ var recipes = {
 	XYY: function (dt) {
 		recipes.trytoshoot.call(this, mechanics.XYY, recipes.targeting.strongest)
 	},
+	ZZ: function (dt) {
+		recipes.trytoshoot.call(this, mechanics.ZZ, recipes.targeting.strongest)
+	},
+	XZZ: function (dt) {
+		recipes.trytoshoot.call(this, mechanics.XZZ, recipes.targeting.strongest)
+	},
 	Y: function (dt) {
 		recipes.spawnresource.call(this, mechanics.Y)
 	},
@@ -78,6 +88,12 @@ var recipes = {
 	},
 	YZ: function (dt) {
 		recipes.spawnresource.call(this, mechanics.YZ)
+	},
+	YY: function (dt) {
+		recipes.collect.call(this, mechanics.YY)
+	},
+	YYZ: function (dt) {
+		recipes.collect.call(this, mechanics.YYZ)
 	},
 	XZ: function (dt) {
 		recipes.trytoshoot.call(this, mechanics.XZ, recipes.targeting.strongest)
@@ -91,6 +107,9 @@ var recipes = {
 	YZZ: function (dt) {
 		recipes.trytoheal.call(this, mechanics.YZZ)
 	},
+	// Bombs don't do anything on their own.
+	XYZ: function (dt) { },
+	ZZZ: function (dt) { },
 
 	targeting: {
 		frontmost: obj => -state.cell.distancetoobj(obj),
@@ -114,7 +133,8 @@ var recipes = {
 		if (this.lastshot + mechanic.recharge > this.t) return
 		var target = recipes.gettarget.call(this, state.shootables(), mechanic.range, targeting)
 		if (!target) return
-		state.addobj(new Bullet(this, target, mechanic))
+		var type = mechanic.laser ? Laser : Bullet
+		state.addobj(new type(this, target, mechanic))
 		this.lastshot = this.t + UFX.random(-0.2, 0.2)
 	},
 	spawnresource: function (mechanic) {
@@ -128,6 +148,13 @@ var recipes = {
 		resource.kick(r * dx, r * dy)
 		state.addobj(resource)
 	},
+	collect: function (mechanic) {
+		state.resources.forEach(obj => {
+			if (obj.distancetoobj(this) <= mechanic.range) {
+				obj.collectto(this)
+			}
+		})
+	},
 	trytoheal: function (mechanic) {
 		if (this.lastshot + mechanic.healrecharge > this.t) return
 		var objs = state.antibodies.filter(obj => obj.disabled)
@@ -135,6 +162,16 @@ var recipes = {
 		if (!target) return
 		state.addobj(new HealRay(this, target, mechanic))
 		this.lastshot = this.t + UFX.random(-0.2, 0.2)
+	},
+	explode: function (mechanic) {
+		if (this.lastclick !== null && this.t - this.lastclick < mechanics.tdoubleclick) {
+			this.die()
+			var obj = new Explosion({ x: this.x, y: this.y,
+				strength: mechanic.AOEstrength, size: mechanic.AOEsize, kick: mechanic.AOEkick })
+			state.addobj(obj)
+		} else {
+			this.lastclick = this.t
+		}
 	},
 }
 
@@ -205,6 +242,25 @@ var mechanics = {
 		RNAprob: 0,
 		DNAprob: 0,
 	},
+	// Shoot lasers
+	ZZ: {
+		laser: true,
+		recharge: 1,
+		range: 50,
+		strength: 5,
+		RNAprob: 0,
+		DNAprob: 0,
+		kick: 0,
+	},
+	XZZ: {
+		laser: true,
+		recharge: 3,
+		range: 70,
+		strength: 25,
+		RNAprob: 0,
+		DNAprob: 0,
+		kick: 0,
+	},
 	// Spawn resources
 	Y: {
 		spawnrecharge: 6,
@@ -231,6 +287,13 @@ var mechanics = {
 		spawnrecharge: 12,
 		spawnkick: 40,
 	},
+	// Resource collection
+	YY: {
+		range: 80,
+	},
+	YYZ: {
+		range: 240,
+	},
 	// Shoot heal rays at disabled antibodies
 	Z: {
 		healrecharge: 0.3,
@@ -242,7 +305,19 @@ var mechanics = {
 		healrange: 30,
 		healstrength: 99999,
 	},
+	// Bomba
+	XYZ: {
+		AOEstrength: 100,
+		AOEsize: 50,
+		AOEkick: 0,
+	},
+	ZZZ: {
+		AOEstrength: 200,
+		AOEsize: 80,
+		AOEkick: 0,
+	},
 
+	tdoubleclick: 0.6,
 
 	ant: {
 		hp: 1,

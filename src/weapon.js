@@ -55,6 +55,22 @@ Bullet.prototype = UFX.Thing()
 	.addcomp(KicksOnArrival)
 	.addcomp(DiesOnArrival)
 
+function Laser(from, to, mechanic) {
+	to.shoot(mechanic.strength)
+	if (mechanic.kick) {
+		var [ix, iy] = norm(to.x - from.x, to.y - from.y, mechanic.kick)
+	}
+	this.x0 = from.x
+	this.y0 = from.y
+	this.x1 = to.x
+	this.y1 = to.y
+	this.start()
+	this.color = "yellow"
+}
+Laser.prototype = UFX.Thing()
+	.addcomp(Lives)
+	.addcomp(Lifetime, 0.2)
+
 function Explosion(spec) {
 	this.start(spec)
 	this.color = "red"

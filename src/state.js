@@ -29,6 +29,12 @@ var progress = {
 		XXZ: true,
 		Z: true,
 		YZZ: true,
+		XYZ: true,
+		ZZZ: true,
+		YY: true,
+		YYZ: true,
+		ZZ: true,
+		XZZ: true,
 	},
 	// dialogs heard
 	heard: {},
@@ -47,6 +53,7 @@ var state = {
 		this.bosses = []
 		this.resources = []
 		this.shots = []
+		this.lasers = []
 		this.tlevel = 0
 		this.RNA = 0
 		this.DNA = 0
@@ -55,7 +62,7 @@ var state = {
 		return [this.cell].concat(this.antibodies, this.viruses, this.bosses)
 	},
 	thinkers: function () {
-		return [this.cell].concat(this.organelles, this.antibodies, this.viruses, this.bosses, this.resources, this.shots)
+		return [this.cell].concat(this.organelles, this.antibodies, this.viruses, this.bosses, this.resources, this.shots, this.lasers)
 	},
 	pointables: function () {
 		return [this.cell].concat(this.organelles, this.antibodies)
@@ -82,6 +89,7 @@ var state = {
 		if (obj instanceof Bullet) return "shots"
 		if (obj instanceof Explosion) return "shots"
 		if (obj instanceof HealRay) return "shots"
+		if (obj instanceof Laser) return "lasers"
 		if (obj instanceof RNA) return "resources"
 		if (obj instanceof DNA) return "resources"
 	},
@@ -103,6 +111,7 @@ var state = {
 		this.viruses = this.viruses.filter(isalive)
 		this.bosses = this.bosses.filter(isalive)
 		this.shots = this.shots.filter(isalive)
+		this.lasers = this.lasers.filter(isalive)
 		this.resources = this.resources.filter(isalive)
 	},
 }

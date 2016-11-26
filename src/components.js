@@ -231,6 +231,7 @@ var Draggable = {
 	},
 	drop: function (target) {
 		control.cursor = null
+		if (!this.alive) return
 		if (target && target.cantake(this)) {
 			this.slots.forEach(obj => target.addobj(obj))
 		} else {
