@@ -15,23 +15,26 @@ var context = canvas.getContext("2d")
 canvas.width = 600
 canvas.height = 600
 UFX.draw.setcontext(context)
+UFX.maximize.fill(canvas, "aspect")
 
-state.cell = new Cell({ x: 0, y: 0 })
+state.cell = new Cell({ x: 0, y: 100 })
 state.Rlevel = 150
-Z = 1
+Z = 0.5
 
 var buttons = [
 	{ text: "X", x: 20, y: 20, w: 80, h: 80 },
 	{ text: "Y", x: 20, y: 120, w: 80, h: 80 },
 	{ text: "Z", x: 20, y: 220, w: 80, h: 80 },
+	{ text: "ants", x: 500, y: 20, w: 80, h: 80 },
+	{ text: "bees", x: 500, y: 120, w: 80, h: 80 },
 ]
 
 UFX.ticker.init(function (dt) {
+	UFX.draw("[ z", canvas.width / 600, canvas.height / 600)
 	var pstate = UFX.pointer(canvas)
+	var ppos = pstate.pos ? [pstate.pos[0] * 600 / canvas.width, pstate.pos[1] * 600 / canvas.height] : [0, 0]
 	var zoom = Math.exp(Z)
-	if (pstate.pos) {
-		control.pos = [(pstate.pos[0] - 300) / zoom, (pstate.pos[1] - 300) / zoom]
-	}
+	control.pos = [(ppos[0] - 300) / zoom, (ppos[1] - 300) / zoom]
 	control.hoverall(state.collectibles())
 	control.pointed = control.getpointed(state.pointables())
 	if (pstate.down && control.pointed && !control.cursor) {
@@ -56,21 +59,29 @@ UFX.ticker.init(function (dt) {
 	}
 	if (pstate.down && !control.pointed && !control.cursor) {
 		buttons.forEach(function (button) {
-			var xoff = pstate.pos[0] - button.x, yoff = pstate.pos[1] - button.y
+			var xoff = ppos[0] - button.x, yoff = ppos[1] - button.y
 			if (xoff < 0 || xoff >= button.w || yoff < 0 || yoff >= button.h) return
 			if (["X", "Y", "Z"].includes(button.text)) {
-				obj = new Organelle({ x: UFX.random(-1, 1), y: UFX.random(-1, 1), flavor: button.text })
-				state.addobj(obj)
-				state.cell.addobj(obj)
+				if (!state.cell.isfull()) {
+					obj = new Organelle({
+						x: state.cell.x + UFX.random(-1, 1),
+						y: state.cell.y + UFX.random(-1, 1),
+						flavor: button.text
+					})
+					state.addobj(obj)
+					state.cell.addobj(obj)
+				}
+			}
+			if (button.text == "ants") {
+				state.launchwave([["ant", 20, 0.5]])
+			}
+			if (button.text == "bees") {
+				state.launchwave([["bee", 20, 0.5]])
 			}
 		})
-		if (pstate.pos[0] < 80 && pstate.pos[1] < 80) {
-			if (!state.cell.isfull()) {
-			}
-		}
 	}
 
-	if (UFX.random() < dt) {
+	if (UFX.random() < 0 * dt) {
 		var a = UFX.random.angle()
 		var type = UFX.random.choice([Ant, Bee])
 		var ant = new type({x: 100 * Math.sin(a), y: 100 * Math.cos(a)})
@@ -106,6 +117,8 @@ UFX.ticker.init(function (dt) {
 	context.fillText(UFX.ticker.getrates(), 10, 590)
 
 	canvas.style.cursor = control.cursor ? "move" : control.pointed ? "pointer" : "default"
+	
+	UFX.draw("]")
 }, null, { ups: 60 })
 
 </script>

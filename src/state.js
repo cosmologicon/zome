@@ -114,6 +114,30 @@ var state = {
 		this.lasers = this.lasers.filter(isalive)
 		this.resources = this.resources.filter(isalive)
 	},
+
+	addvirus: function (vtype, theta, step) {
+		step = step || UFX.random(30, 60)
+		theta *= tau
+		var dx = step * Math.sin(theta), dy = step * Math.cos(theta)
+		var x = this.cell.x, y = this.cell.y, r2 = (this.Rlevel + 10) * (this.Rlevel + 10)
+		while (x * x + y * y < r2) {
+			x += dx
+			y += dy
+		}
+		vtype = {
+			ant: Ant,
+			bee: Bee,
+		}[vtype]
+		var obj = new vtype({ x: x, y: y })
+		obj.target = this.cell
+		this.addobj(obj)
+	},
+	launchwave: function (wavespec) {
+		wavespec.forEach(wave => {
+			var [vtype, n, theta] = wave
+			for (var i = 0 ; i < n ; ++i) this.addvirus(vtype, theta + UFX.random(-0.05, 0.05))
+		})
+	},
 }
 state.reset(1)
 
