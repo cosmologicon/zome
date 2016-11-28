@@ -10,3 +10,7 @@ function norm (x, y, r) {
 	var f = r / Math.sqrt(d2)
 	return [f * x, y * f]
 }
+window.addEventListener("error", function (error, url, line) {
+	document.body.innerHTML = "<p>Error in: "+url+"<p>line "+line+"<pre>"+error+"</pre>"
+})
+

@@ -33,10 +33,17 @@ var buttons = [
 ]
 
 UFX.ticker.init(function (dt) {
+	var scale = canvas.width / 600
 	var pstate = UFX.pointer(canvas), kstate = UFX.key.state()
-	var ppos = pstate.pos ? [pstate.pos[0] * 600 / canvas.width, pstate.pos[1] * 600 / canvas.height] : [0, 0]
+	var ppos = pstate.pos ? [pstate.pos[0] / scale, pstate.pos[1] / scale] : [0, 0]
 	if (kstate.down[1]) Z += 0.125
 	if (kstate.down[2]) Z -= 0.125
+	if (pstate.wheel && pstate.wheel.dy) {
+		Z -= pstate.wheel.dy / 1024
+	}
+	if (pstate.pinch) {
+		Z += pstate.pinch.dlogsep
+	}
 	var zoom = Math.exp(Z)
 	var d = 500 * dt / Math.sqrt(zoom)
 	if (kstate.pressed.up) y0 -= d
@@ -61,15 +68,17 @@ UFX.ticker.init(function (dt) {
 	if (pstate.click && control.cursor) {
 		control.cursor.onclick()
 	}
-	if (pstate.up && control.cursor) {
+	if ((pstate.up || pstate.cancel) && control.cursor) {
 		var target = control.pointed
 		if (target && target.container) target = target.container
 		control.cursor.drop(target)
 	}
 	if (pstate.down && !control.pointed && !control.cursor) {
+		var clicked = false
 		buttons.forEach(function (button) {
 			var xoff = ppos[0] - button.x, yoff = ppos[1] - button.y
 			if (xoff < 0 || xoff >= button.w || yoff < 0 || yoff >= button.h) return
+			clicked = true
 			if (["X", "Y", "Z"].includes(button.text)) {
 				if (!state.cell.isfull()) {
 					obj = new Organelle({
@@ -89,6 +98,14 @@ UFX.ticker.init(function (dt) {
 			}
 		})
 	}
+	if (pstate.move && !UFX.pointer.touch && !control.cursor) {
+		x0 -= pstate.move.dpos[0] / zoom / scale
+		y0 -= pstate.move.dpos[1] / zoom / scale
+	}
+	if (pstate.dmove && !control.cursor) {
+		x0 -= pstate.dmove.dpos[0] / zoom / scale
+		y0 -= pstate.dmove.dpos[1] / zoom / scale
+	}
 
 	if (UFX.random() < 0 * dt) {
 		var a = UFX.random.angle()
@@ -101,8 +118,12 @@ UFX.ticker.init(function (dt) {
 	state.thinkers().forEach(obj => obj.think(dt))
 	if (control.cursor) control.cursor.think(dt)
 	state.think(dt)
+},
+function () {
+	var scale = canvas.width / 600
+	var zoom = Math.exp(Z)
 
-	UFX.draw("[ z", canvas.width / 600, canvas.height / 600)
+	UFX.draw("[ z", scale, scale)
 
 	UFX.draw("fs black f0 [ t", 300, 300, "z", zoom, zoom, "t", -x0, -y0, "lw 0.5")
 	UFX.draw("fs #003377 b o 0 0", state.Rlevel, "f")
@@ -124,9 +145,11 @@ UFX.ticker.init(function (dt) {
 		UFX.draw("fs black font 22px~'sans-serif' tab center middle ft", button.text, button.w/2, button.h/2, "]")
 	})
 	UFX.draw("fs white font 18px~'sans-serif' tab left bottom")
-	context.fillText("RNA:" + state.RNA + "   DNA:" + state.DNA + "   HP: " + state.hp, 10, 540)
-	context.fillText("[" + control.pos[0].toFixed(0) + ", " + control.pos[1].toFixed(0) + "]", 10, 565)
-	context.fillText(UFX.ticker.getrates(), 10, 590)
+	var y = 590
+	context.fillText(UFX.ticker.getrates(), 10, y)
+	context.fillText("[" + control.pos[0].toFixed(0) + ", " + control.pos[1].toFixed(0) + "]", 10, (y -= 25))
+	context.fillText("RNA:" + state.RNA + "   DNA:" + state.DNA + "   HP: " + state.hp, 10, (y -= 25))
+	context.fillText("touch: " + UFX.pointer.touch, 10, (y -= 25))
 
 	canvas.style.cursor = control.cursor ? "move" : control.pointed ? "pointer" : "default"
 	
