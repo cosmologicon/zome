@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<script src="http://ufx.space/UFX.js"></script>
+<canvas id=canvas>
+<script>
+window.onerror = function (error, url, line) { document.body.innerHTML = "<p>Error in: "+url+"<p>line "+line+"<pre>"+error+"</pre>" }
+var canvas = document.getElementById("canvas")
+canvas.width = 854
+canvas.height = 480
+var gl = UFX.gl(canvas)
+gl.enable(gl.BLEND)
+gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, 0, 1)
+gl.clearColor(0, 0, 0, 1)
+var data = []
+UFX.random.spread(1000, 0.15, 200, 200, -100, -100).forEach(function (p) {
+	var [x, y] = p
+	var r = UFX.random(0.5, 1), g = UFX.random(0.5, 1), b = UFX.random(0.5, 1)
+	data.push(
+		-1, -1, x, y, r, g, b,
+		-1, 1, x, y, r, g, b,
+		1, 1, x, y, r, g, b,
+		-1, -1, x, y, r, g, b,
+		1, 1, x, y, r, g, b,
+		1, -1, x, y, r, g, b
+	)
+})
+var t = Date.now()
+var buffer = gl.makeArrayBuffer(data)
+console.log(Date.now() - t)
+
+UFX.resource.onload = function () {
+	gl.addProgram("organelle", UFX.resource.data.organellevert, UFX.resource.data.organellefrag)
+	gl.clear(gl.COLOR_BUFFER_BIT)
+	var t = Date.now()
+	gl.progs.organelle.use()
+	gl.progs.organelle.set({
+		scenterG: [0, 0],
+		screensizeP: [854, 480],
+		PconvertG: 2,
+	})
+	buffer.bind()
+	gl.progs.organelle.assignAttribOffsets({
+		pU: 0,
+		centerG: 2,
+		color: 4,
+	})
+	gl.drawArrays(gl.TRIANGLES, 0, 6000)
+	console.log(Date.now() - t)
+}
+
+UFX.resource.load({
+	organellevert: "../shaders/organelle.vert",
+	organellefrag: "../shaders/organelle.frag",
+})
+
+</script>
