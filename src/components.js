@@ -67,8 +67,8 @@ var Collideable = {
 	},
 	constraintoworld: function () {
 		var d = Math.sqrt(this.x * this.x + this.y * this.y)
-		var r = state.R - this.rcollide
-		if (d > 0) {
+		var r = state.Rlevel - this.rcollide
+		if (d > r) {
 			var f = r / d - 1
 			this.scootch(this.x * f, this.y * f)
 		}

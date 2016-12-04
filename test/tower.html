@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<meta name=viewport content="width=device-width, initial-scale=1">
 <script src="http://ufx.space/UFX.js"></script>
 <script src="../src/util.js"></script>
 <script src="../src/components.js"></script>
@@ -116,16 +117,21 @@ UFX.ticker.init(function (dt) {
 	}
 	adjust(state.colliders(), dt)
 	state.thinkers().forEach(obj => obj.think(dt))
-	if (control.cursor) control.cursor.think(dt)
+	state.antibodies.forEach(obj => obj.constraintoworld())
+	if (control.cursor) {
+		control.cursor.think(dt)
+		control.cursor.reset()
+		control.cursor.constraintoworld()
+	}
 	state.think(dt)
 },
 function () {
 	var scale = canvas.width / 600
 	var zoom = Math.exp(Z)
 
-	UFX.draw("[ z", scale, scale)
+	UFX.draw("fs black f0 [ z", scale, scale)
 
-	UFX.draw("fs black f0 [ t", 300, 300, "z", zoom, zoom, "t", -x0, -y0, "lw 0.5")
+	UFX.draw("[ t", 300, 300, "z", zoom, zoom, "t", -x0, -y0, "lw 0.5")
 	UFX.draw("fs #003377 b o 0 0", state.Rlevel, "f")
 
 	state.drawables().forEach(function (obj) {
