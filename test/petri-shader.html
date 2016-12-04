@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<script src="http://ufx.space/UFX.js"></script>
+<canvas id=canvas>
+<script>
+window.onerror = function (error, url, line) { document.body.innerHTML = "<p>Error in: "+url+"<p>line "+line+"<pre>"+error+"</pre>" }
+var canvas = document.getElementById("canvas")
+canvas.width = 854
+canvas.height = 480
+var gl = UFX.gl(canvas)
+gl.enable(gl.BLEND)
+gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, 0, 1)
+gl.clearColor(0, 0.4, 0.4, 1)
+var buffer = gl.makeArrayBuffer([-1, -1, 1, -1, 1, 1, -1, 1])
+
+UFX.resource.onload = function () {
+	gl.addProgram("petri", UFX.resource.data.petrivert, UFX.resource.data.petrifrag)
+	gl.clear(gl.COLOR_BUFFER_BIT)
+	gl.progs.petri.use()
+	gl.progs.petri.set({
+		scenterG: [50, 50],
+		screensizeP: [854, 480],
+		PconvertG: 2,
+		Rlevel: 150,
+	})
+	buffer.bind()
+	gl.progs.petri.assignAttribOffsets({
+		pU: 0,
+	})
+	gl.drawArrays(gl.TRIANGLE_FAN, 0, 4)
+}
+
+UFX.resource.load({
+	petrivert: "../shaders/petri.vert",
+	petrifrag: "../shaders/petri.frag",
+})
+
+</script>
