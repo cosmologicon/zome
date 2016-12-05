@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<meta name=viewport content="width=device-width, initial-scale=1">
+<script src="http://ufx.space/UFX.js"></script>
+<script src="../src/util.js"></script>
+<script src="../src/state.js"></script>
+<script src="../src/view.js"></script>
+<canvas id=canvas></canvas>
+<script>
+view.init()
+UFX.key.init()
+UFX.key.remaparrows(true)
+UFX.key.watchlist = "up down left right 1 2".split(" ")
+
+var pUbuffer = gl.makeArrayBuffer([-1, -1, 1, -1, 1, 1, -1, 1])
+
+
+state.Rlevel = 150
+
+UFX.resource.onload = function () {
+	gl.addProgram("petri", UFX.resource.data.petrivert, UFX.resource.data.petrifrag)
+	UFX.ticker.init(think)
+}
+
+var cursorposG = null
+function think(dt) {
+	var pstate = UFX.pointer(canvas)
+	var pos = pstate.pos
+	var posG = pos ? view.GconvertV(pos) : null
+	if (pstate.wheel && pstate.wheel.dy) {
+		view.zoomat(-pstate.wheel.dy / 1024, posG)
+	}
+	if (pstate.down) cursorposG = posG
+	if (pstate.isdown) view.dragto(cursorposG, pos)
+	view.clear()
+	gl.progs.petri.use()
+	gl.enable(gl.BLEND)
+	gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, 0, 1)
+
+	gl.progs.petri.set({
+		scenterG: [view.xcenterG, view.ycenterG],
+		screensizeV: [view.wV, view.hV],
+		VscaleG: view.VscaleG,
+		Rlevel: state.Rlevel,
+	})
+	pUbuffer.bind()
+	gl.progs.petri.assignAttribOffsets({
+		pU: 0,
+	})
+	gl.drawArrays(gl.TRIANGLE_FAN, 0, 4)
+
+	gl.progs.text.use()
+	var text = "pV: " + pos + "\npG: " + posG
+	gl.progs.text.draw(text, { bottomleft: [10, 10] })
+}
+
+UFX.resource.load({
+	petrivert: "../shaders/petri.vert",
+	petrifrag: "../shaders/petri.frag",
+})
+
+</script>

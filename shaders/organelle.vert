@@ -9,9 +9,9 @@
 
 // G (game coordinates): Logical coordinate system of the game.
 
-// P (pixel coordinates): axis-aligned, offset from the center of the screen in units of pixels.
+// V (viewport coordinates): axis-aligned, offset from the center of the screen in units of pixels.
 
-// V (viewport coordinates): coordinates of gl_Position.
+// P (clipspace coordinates): coordinates of gl_Position.
 
 
 // Position in U coordinates, i.e. (±1, ±1) at the corners of the drawn triangle.
@@ -27,10 +27,10 @@ const float GrU = 6.0;
 uniform vec2 scenterG;
 
 // Size of screen in pixels.
-uniform vec2 screensizeP;
+uniform vec2 screensizeV;
 
 // Pixels per game unit.
-uniform float PconvertG;
+uniform float VscaleG;
 
 attribute vec3 color;
 
@@ -40,13 +40,13 @@ varying float radiusV;
 
 void main() {
 	vec2 pG = centerG + GrU * pU;
-	vec2 pP = PconvertG * (pG - scenterG);
-	vec2 VconvertP = 2.0 / screensizeP;
-	vec2 pV = VconvertP * pP;
-	gl_Position = vec4(pV, 0.0, 1.0);
+	vec2 pV = VscaleG * (pG - scenterG);
+	vec2 PscaleV = 2.0 / screensizeV;
+	vec2 pP = PscaleV * pV;
+	gl_Position = vec4(pP, 0.0, 1.0);
 	tpos = pU;
 	shadepos = 0.4 * (pU - vec2(0.2, 0.4));
 	fcolor = color;
-	radiusV = PconvertG * GrU;
+	radiusV = VscaleG * GrU;
 }
 
