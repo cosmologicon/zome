@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<script src="http://ufx.space/UFX.js"></script>
+<script type="x-shader" id=vkscope>
+
+uniform float T;
+attribute vec2 pU;
+uniform float R;
+uniform vec2 pos;
+
+varying vec2 tpos0;
+varying vec2 tdpos;
+varying float Rd, drx, dry, kx, ky;
+
+const float tau = 6.283185307179586;
+
+void main() {
+	gl_Position = vec4(pos + R * pU, 0.0, 1.0);
+	float dx = sin(4.0 * tau * T + 0.1);
+	float dy = sin(7.0 * tau * T + 0.2);
+	float dr = 3.0 * tau * T + 0.3 + 2.0 * sin(2.0 * tau * T);
+	float k = 1.0 * tau * T + 0.4 + 3.0 * sin(1.0 * tau * T);
+
+	tpos0 = vec2(0.5) + 0.2 * vec2(dx, dy);
+	tdpos = pU;
+	Rd = 0.2;
+	drx = sin(dr);
+	dry = cos(dr);
+	kx = sin(k);
+	ky = cos(k);
+}
+</script>
+<script type="x-shader" id=fkscope>
+precision highp float;
+
+uniform sampler2D texture;
+varying vec2 tpos0, tdpos;
+varying float Rd, drx, dry, kx, ky;
+
+const float s3 = sqrt(3.0);
+
+void main() {
+	vec2 dpos = tdpos;
+	dpos = mat2(kx, -ky, ky, kx) * dpos;
+	dpos = abs(dpos);
+	if (false) {  // 4x symmetry
+		if (dpos.x < dpos.y) dpos = dpos.yx;
+	} else {  // 6x symmetry
+		if (dpos.y > (1.0 / s3) * dpos.x) {
+			dpos = mat2(0.5, 0.5 * s3, 0.5 * s3, -0.5) * dpos;
+		}
+		dpos.y = abs(dpos.y);
+	}
+	dpos = sqrt(dpos);
+	float a = dpos.x + 0.2 * dpos.y;
+	float alpha = smoothstep(1.0, 0.0, a * 6.0 - 5.0);
+	dpos = mat2(dry, -drx, drx, dry) * dpos;
+	vec4 color = texture2D(texture, tpos0 + dpos * Rd);
+	color.a *= alpha;
+	gl_FragColor = color;
+}
+</script>
+<canvas id=canvas>
+<script>
+window.onerror = function (error, url, line) { document.body.innerHTML = "<p>Error in: "+url+"<p>line "+line+"<pre>"+error+"</pre>" }
+var canvas = document.getElementById("canvas")
+canvas.width = 800
+canvas.height = 800
+var gl = UFX.gl(canvas)
+gl.enable(gl.BLEND)
+gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, 0, 1)
+var pUbuffer = gl.makeArrayBuffer([-1, -1, 1, -1, 1, 1, -1, 1])
+gl.clearColor(0, 0.5, 0.5, 1)
+gl.addProgram("kscope", "vkscope", "fkscope")
+
+function getkimg(s) {
+	var kimg = document.createElement("canvas")
+	kimg.width = kimg.height = s
+	var kcontext = kimg.getContext("2d")
+//	UFX.draw(kcontext, "[ alpha 0.4 fs black f0 ]")
+	for (var i = 0 ; i < 10 * s ; ++i) {
+		UFX.draw(kcontext, "lw", UFX.random(1, 4), "ss", UFX.random.choice(["black", "white", "gray"]), // UFX.random.color(),
+			"b m", UFX.random(0, s), UFX.random(0, s),
+			"l", UFX.random(0, s), UFX.random(0, s),
+			"s"
+		)
+	}
+	return kimg
+}
+var texture512 = gl.buildTexture({
+	source: getkimg(512),
+})
+var texture64 = gl.buildTexture({
+	source: getkimg(128),
+})
+
+
+function think(dt) {
+	gl.clear(gl.COLOR_BUFFER_BIT)
+	gl.progs.kscope.use()
+	pUbuffer.bind()
+	gl.progs.kscope.assignAttribOffsets({ pU: 0 })
+	gl.activeTexture(gl.TEXTURE0)
+	gl.bindTexture(gl.TEXTURE_2D, texture512)
+	gl.activeTexture(gl.TEXTURE0 + 1)
+	gl.bindTexture(gl.TEXTURE_2D, texture64)
+	gl.progs.kscope.set({
+		texture: 0,
+		pos: [-0.1, 0],
+		R: 0.8,
+		T: Date.now() * 0.00001 % 1,
+	})
+	gl.drawArrays(gl.TRIANGLE_FAN, 0, 4)
+	gl.progs.kscope.set({
+		texture: 1,
+		pos: [0.7, 0.7],
+		R: 0.06,
+		T: Date.now() * 0.00001 % 1,
+	})
+	gl.drawArrays(gl.TRIANGLE_FAN, 0, 4)
+}
+//gl.dumpTexture(texture512)
+UFX.ticker.init(think)
+</script>
