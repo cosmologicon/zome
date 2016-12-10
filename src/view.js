@@ -2,6 +2,7 @@
 
 var canvas = null
 var gl = null
+let pUbuffer = null
 
 var view = {
 	xcenterG: 0,
@@ -30,7 +31,10 @@ var view = {
 			this.setVscaleG()
 		}
 		UFX.maximize.fill(canvas, "aspect")
-		
+		pUbuffer = gl.makeArrayBuffer([-1, -1, 1, -1, 1, 1, -1, 1])
+		;"organelle petri circle".split(" ").forEach(name => {
+			gl.addProgram(name, shaders[name].vert, shaders[name].frag)
+		})
 		this.xcenterG = 0
 		this.ycenterG = 0
 		this.Z = 0

@@ -38,6 +38,15 @@ varying float Rd, drx, dry, kx, ky;
 
 const float s3 = sqrt(3.0);
 
+const vec3 color0 = vec3(0.5, 0.5, 1.0);
+const vec3 color1 = vec3(1.0, 0.8, 0.3);
+
+const vec2 Dp = normalize(vec2(1.0, 0.8));
+const float D0 = 0.74;
+
+const float KscaleV = 400.0;
+uniform float R;
+
 void main() {
 	vec2 dpos = tdpos;
 	dpos = mat2(kx, -ky, ky, kx) * dpos;
@@ -50,13 +59,18 @@ void main() {
 		}
 		dpos.y = abs(dpos.y);
 	}
+//	vec3 dcolor = mix(color0, color1, smoothstep(0.4, 0.7, length(dpos)));
+	vec3 dcolor = mix(color0, color1, smoothstep(0.8, 1.9, dpos.x + 6.0 * dpos.y));
+	float D = dot(dpos, Dp) - D0;
 	dpos = sqrt(dpos);
 	float a = dpos.x + 0.2 * dpos.y;
-	float alpha = smoothstep(1.0, 0.0, a * 6.0 - 5.0);
 	dpos = mat2(dry, -drx, drx, dry) * dpos;
 	vec4 color = texture2D(texture, tpos0 + dpos * Rd);
-	color.a *= alpha;
-	gl_FragColor = color;
+	color.rgb *= dcolor;
+	if (D > 0.0) color = vec4(0.0, 0.0, 0.0, 0.1);
+	float m = clamp((abs(D) - 0.01) * KscaleV * R, 0.0, 1.0);
+	if (m < 0.0) color = vec4(0.0, 0.0, 0.0, 1.0);
+	gl_FragColor = mix(vec4(0.0, 0.0, 0.0, 1.0), color, m);
 }
 </script>
 <canvas id=canvas>
@@ -66,6 +80,7 @@ var canvas = document.getElementById("canvas")
 canvas.width = 800
 canvas.height = 800
 var gl = UFX.gl(canvas)
+UFX.gltext.init(gl)
 gl.enable(gl.BLEND)
 gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, 0, 1)
 var pUbuffer = gl.makeArrayBuffer([-1, -1, 1, -1, 1, 1, -1, 1])
@@ -86,11 +101,26 @@ function getkimg(s) {
 	}
 	return kimg
 }
+function getkimg(s, colors) {
+	var kimg = document.createElement("canvas")
+	kimg.width = kimg.height = s
+	var kcontext = kimg.getContext("2d")
+//	UFX.draw(kcontext, "[ alpha 0.4 fs black f0 ]")
+	for (var i = 0 ; i < 10 * s ; ++i) {
+		UFX.draw(kcontext, "lw", UFX.random(1, 2),
+			"ss", UFX.random.choice(colors), // UFX.random.color(),
+			"b o", UFX.random(0, s), UFX.random(0, s), UFX.random(s / 4),
+			"s"
+		)
+	}
+	return kimg
+}
+
 var texture512 = gl.buildTexture({
-	source: getkimg(512),
+	source: getkimg(512, ["#222", "#666", "#AAA", "white"]),
 })
 var texture64 = gl.buildTexture({
-	source: getkimg(128),
+	source: getkimg(128, ["#777", "#BBB"]),
 })
 
 
@@ -113,11 +143,13 @@ function think(dt) {
 	gl.progs.kscope.set({
 		texture: 1,
 		pos: [0.7, 0.7],
-		R: 0.06,
+		R: 0.02,
 		T: Date.now() * 0.00001 % 1,
 	})
 	gl.drawArrays(gl.TRIANGLE_FAN, 0, 4)
+	gl.progs.text.use()
+	gl.progs.text.draw(UFX.ticker.getrates(), { top: 790, left: 10, color: "black" })
 }
 //gl.dumpTexture(texture512)
-UFX.ticker.init(think)
+UFX.ticker.init(think, null, { maxups: 240 })
 </script>

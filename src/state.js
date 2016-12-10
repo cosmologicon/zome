@@ -80,6 +80,9 @@ var state = {
 		if (control.cursor && control.cursor.slots) objs = objs.concat(control.cursor.slots)
 		return objs
 	},
+	drawblobs: function () {
+		return this.antibodies.concat([this.cell])
+	},
 
 	gettype: function (obj) {
 		if (obj instanceof Organelle) return "organelles"

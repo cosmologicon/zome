@@ -3,6 +3,7 @@
 function Cell(spec) {
 	this.start(spec)
 	this.color = "#006666"
+	this.blobcolor = [0.0, 0.4, 0.4]
 }
 Cell.prototype = UFX.Thing()
 	.addcomp(Lives)

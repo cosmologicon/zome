@@ -3,7 +3,7 @@
 
 "use strict"
 
-var FollowsRecipe = {
+const FollowsRecipe = {
 	start: function () {
 		this.fullreset()
 	},
@@ -19,8 +19,8 @@ var FollowsRecipe = {
 		this.lastclick = null
 	},
 	think: function (dt) {
-		var [r, g, b] = this.getcolor()
-		this.color = "rgb(" + r + "," + g + "," + b + ")"
+		const [r, g, b] = this.blobcolor = this.getcolor()
+		this.color = "rgb(" + r * 256 + "," + g * 256 + "," + b * 256 + ")"
 		if (!progress.learned[this.flavors]) return
 		if (this.disabled) {
 			this.disabled = Math.max(this.disabled - dt, 0)
@@ -37,24 +37,24 @@ var FollowsRecipe = {
 		if (!progress.learned[this.flavors]) return [30, 30, 30]
 		switch (this.flavors) {
 			case "X": case "XX": case "XY": case "XXX": case "XXY": case "XYY":
-				return [150, 0, 200]
+				return [0.6, 0.0, 0.8]
 			case "XZ": case "XXZ":
-				return [200, 0, 150]
+				return [0.8, 0.0, 0.6]
 			case "ZZ": case "XZZ":
-				return [200, 200, 0]
+				return [0.8, 0.8, 0.0]
 			case "Y": case "YYY": case "YZ":
-				return [50, 200, 50]
+				return [0.2, 0.8, 0.2]
 			case "XYZ": case "ZZZ":
-				return [50, 50, 255]
+				return [0.2, 0.2, 1.0]
 			case "Z": case "YZZ":
-				return [0, 200, 200]
+				return [0.0, 0.8, 0.8]
 			case "YY": case "YYZ":
-				return [0, 200, 0]
+				return [0.0, 0.8, 0.0]
 		}
 	},
 }
 
-var recipes = {
+const recipes = {
 	X: function (dt) {
 		recipes.trytoshoot.call(this, mechanics.X, recipes.targeting.frontmost)
 	},

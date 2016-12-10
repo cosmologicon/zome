@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<meta name=viewport content="width=device-width, initial-scale=1">
+<script src="http://ufx.space/UFX.js"></script>
+<script src="../src/util.js"></script>
+<script src="../src/settings.js"></script>
+<script src="../src/components.js"></script>
+<script src="../src/recipe.js"></script>
+<script src="../src/thing.js"></script>
+<script src="../src/virus.js"></script>
+<script src="../src/weapon.js"></script>
+<script src="../src/state.js"></script>
+<script src="../src/collision.js"></script>
+<script src="../src/control.js"></script>
+<script src="../src/view.js"></script>
+<script src="../src/shaders.js"></script>
+<script src="../src/draw.js"></script>
+<canvas id=canvas></canvas>
+<script>
+view.init()
+
+state.Rlevel = 150
+state.cell = new Cell({ x: 0, y: -60 })
+
+new Organelle({
+	x: state.cell.x + UFX.random(-1, 1),
+	y: state.cell.y + UFX.random(-1, 1),
+	flavor: "X",
+}).toantibody().drop(state.cell)
+
+new Organelle({
+	x: 10,
+	y: 20,
+	flavor: "Y",
+}).toantibody().drop()
+
+new Organelle({ x: 0, y: 0, flavor: "Z" }).toantibody().drop(state.cell)
+
+state.thinkers().forEach(obj => obj.think(0))
+
+UFX.ticker.init(function (dt) {
+	adjust(state.colliders(), dt)
+	state.thinkers().forEach(obj => obj.think(dt))
+	state.antibodies.forEach(obj => obj.constraintoworld())
+	if (control.cursor) {
+		control.cursor.think(dt)
+		control.cursor.reset()
+		control.cursor.constraintoworld()
+	}
+	state.think(dt)
+
+	drawscene()
+})
+
+</script>
