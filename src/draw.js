@@ -4,6 +4,8 @@
 
 // TEXTURE0: reserved for gltext
 // TEXTURE1: virus kscope texture
+// TEXTURE2: mote texture
+
 
 
 "use strict"
@@ -128,6 +130,28 @@ function drawscene() {
 	gl.progs.petri.assignAttribOffsets({ pU: 0 })
 	gl.drawArrays(gl.TRIANGLE_FAN, 0, 4)
 
+
+	// Motes
+	gl.progs.mote.use()
+	const Nmote = 60
+	const mtexture = getmotetexture()
+	gl.activeTexture(gl.TEXTURE2)
+	gl.bindTexture(gl.TEXTURE_2D, mtexture)
+	getmotebuffer(Nmote).bind()
+	gl.progs.mote.set({
+		T: Date.now() * 0.001 / 80 % 1,
+		offsetV: [view.VscaleG * view.xcenterG, view.VscaleG * view.ycenterG],
+		screensizeV: [view.wV, view.hV],
+		mtexture: 2,
+	})
+	gl.progs.mote.assignAttribOffsets({
+		pU: 0,
+		fR: 2,
+		pos0: 3,
+		Nmove: 5,
+	})
+	gl.drawArrays(gl.TRIANGLES, 0, 6 * Nmote)
+
 }
 
 const kscopetextures = {}
@@ -147,6 +171,56 @@ function getkscopetexture(s) {
 	const ktexture = gl.buildTexture({ source: kimg })
 	kscopetextures[s] = ktexture
 	return ktexture
+}
+
+let motetexture = null
+function getmotetexture() {
+	if (motetexture) return motetexture
+	const s = 128
+	const img = document.createElement("canvas")
+	img.width = s
+	img.height = s
+	const context = img.getContext("2d")
+	const idata = context.createImageData(s, s)
+	for (let py = 0, j = 0 ; py < s ; ++py) {
+		let y = (py + 0.5) / s * 2 - 1
+		for (let px = 0 ; px < s ; ++px) {
+			let x = (px + 0.5) / s * 2 - 1
+			let a = 0.06 * (1 - ease(Math.sqrt(x * x + y * y))) - UFX.random(0.03)
+			idata.data[j++] = 0
+			idata.data[j++] = 0
+			idata.data[j++] = 0
+			idata.data[j++] = 255 * a
+		}
+	}
+	context.putImageData(idata, 0, 0)
+	motetexture = gl.buildTexture({ source: img, filter: gl.NEAREST })
+	return motetexture
+}
+
+const motebuffer = {}
+function getmotebuffer(n) {
+	let N = 2
+	while (N < n) N <<= 1
+	if (motebuffer[N]) return motebuffer[N]
+	const data = []
+	for (let j = 0 ; j < N ; ++j) {
+		const s = UFX.random(1, 2)
+		const x0 = UFX.random(), y0 = UFX.random()
+		const Nx = UFX.random.choice([-1, 1]) * UFX.random.rand(5, 15)
+		const Ny = UFX.random.choice([-1, 1]) * UFX.random.rand(5, 15)
+		data.push(
+			-1, -1, s, x0, y0, Nx, Ny,
+			-1, 1, s, x0, y0, Nx, Ny,
+			1, 1, s, x0, y0, Nx, Ny,
+			-1, -1, s, x0, y0, Nx, Ny,
+			1, 1, s, x0, y0, Nx, Ny,
+			1, -1, s, x0, y0, Nx, Ny
+		)
+	}
+	const buffer = gl.makeArrayBuffer(data)
+	motebuffer[N] = buffer
+	return buffer
 }
 
 

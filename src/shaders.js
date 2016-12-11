@@ -5,6 +5,7 @@ const shaders = {
 	organelle: {},
 	petri: {},
 	virus: {},
+	mote: {},
 }
 
 shaders.circle.vert = `
@@ -272,5 +273,39 @@ void main() {
 	float m = clamp((abs(D) - borderwidth) * VscaleU, 0.0, 1.0);
 	gl_FragColor = mix(vec4(bordercolor, 1.0), color, m);
 }
+`
 
+
+
+shaders.mote.vert = `
+uniform float T;
+uniform vec2 offsetV;
+uniform vec2 screensizeV;
+
+attribute float fR;
+attribute vec2 pU, pos0, Nmove;
+
+varying vec2 tpos;
+
+void main() {
+	// Minimum mote radius in pixels
+	float r0V = 0.08 * min(screensizeV.x, screensizeV.y);
+	
+	vec2 Tpos = mod(pos0 + Nmove * T + offsetV * (2.0 * fR), 1.0);
+	vec2 centerV = Tpos * (4.0 * r0V + screensizeV) - 2.0 * r0V;
+	
+	vec2 pV = centerV + pU * fR * r0V;
+
+	gl_Position = vec4((pV / screensizeV) * 2.0 - 1.0, 0.0, 1.0);
+
+	tpos = pU * 0.5 + 0.5;
+}
+`
+shaders.mote.frag = `
+precision highp float;
+uniform sampler2D mtexture;
+varying vec2 tpos;
+void main() {
+	gl_FragColor = texture2D(mtexture, tpos);
+}
 `
