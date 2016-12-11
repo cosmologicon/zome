@@ -63,6 +63,7 @@ var TargetsAntibodies = {
 function Ant(spec) {
 	this.start(spec)
 	this.color = "#999999"
+	this.vcolor0 = [0.8, 0.8, 0.8]
 }
 Ant.prototype = UFX.Thing()
 	.addcomp(Lives)
@@ -73,10 +74,12 @@ Ant.prototype = UFX.Thing()
 	.addcomp(HarmsOnArrival, mechanics.ant.strength)
 	.addcomp(DiesOnArrival)
 	.addcomp(TargetsThing, mechanics.ant.speed, 0.3)
+	.addcomp(AnimationTicker, 100)
 
 function Bee(spec) {
 	this.start(spec)
 	this.color = "#AAAA44"
+	this.vcolor0 = [1.0, 1.0, 0.3]
 }
 Bee.prototype = UFX.Thing()
 	.addcomp(Lives)
@@ -89,5 +92,6 @@ Bee.prototype = UFX.Thing()
 	.addcomp(DiesOnArrival)
 	.addcomp(TargetsThing, mechanics.bee.speed, 0.3)
 	.addcomp(TargetsAntibodies, mechanics.bee.tretarget, mechanics.bee.targetrange)
+	.addcomp(AnimationTicker, 100)
 
 

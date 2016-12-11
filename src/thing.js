@@ -44,7 +44,7 @@ Organelle.prototype = UFX.Thing()
 	.addcomp(Contained)
 	.addcomp(ContainedDraggable)
 	.addcomp(Mouseable, 6)
-	.definemethod("think")
+	.addcomp(Jitters, 10)
 
 function RNA(spec) {
 	this.start(spec)

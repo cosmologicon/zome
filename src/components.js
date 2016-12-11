@@ -28,6 +28,21 @@ var Lifetime = {
 	},
 }
 
+const AnimationTicker = {
+	// Has a timer T that loops within the interval [0, 1) with the given period, and which starts
+	// at a random point.
+	init: function (Tanim) {
+		this.fanim = 1 / (Tanim || 1)
+	},
+	start: function () {
+		this.T = UFX.random()
+	},
+	think: function (dt) {
+		this.T += dt * this.fanim
+		while (this.T >= 1) this.T -= 1
+	},
+}
+
 // POSITION IN THE GAME AND COLLISION
 
 var WorldBound = {
@@ -102,6 +117,28 @@ var Disableable = {
 		this.disabled = Math.max(0, this.disabled - dt)
 	},
 }
+
+const Jitters = {
+	init: function (djitter) {
+		this.djitter = djitter
+		this.bjitter = 1
+	},
+	start: function () {
+		this.xjitter = 0
+		this.yjitter = 0
+	},
+	think: function (dt) {
+		this.xjitter += UFX.random(-dt, dt)
+		this.yjitter += UFX.random(-dt, dt)
+		const f = Math.exp(-this.bjitter * dt)
+		this.xjitter *= f
+		this.yjitter *= f
+	},
+	drawpos: function () {
+		return [this.x + this.djitter * this.xjitter, this.y + this.djitter * this.yjitter]
+	},
+}
+
 
 // CONTAINER RELATIONSHIP BETWEEN ORGANELLES AND ANTIBODIES/CELL
 
