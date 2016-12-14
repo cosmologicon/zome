@@ -7,6 +7,8 @@ uniform vec2 scenterG;
 uniform vec2 screensizeV;
 uniform float VscaleG;
 
+attribute vec2 pU;
+
 // Animation ticker, in the range [0, 1)
 attribute float T;
 
@@ -16,33 +18,44 @@ attribute float GradiusU;
 attribute float t0;
 attribute vec3 color;
 
+// Impulse vector, used to determine the "dragging" effect when a blob is in motion. This should
+// be 0 when the blob is motionless, and have a maximum length of 1.
 attribute vec2 impulse;
-attribute vec2 pU;
+
+// The main purpose of this shader is to determine the posH texture positions, and the J inverse
+// transformation matrices. posH is the location on the hill texture from which the z-value and
+// the grad(z)-value will be read. J is the inverse transformation matrix to be applied to the
+// grad(z) value after it's read from the texture. That is, J is the Jacobian from posH1/posH2
+// coordinates back to posH0 coordinates.
 varying vec2 posH[3];
-varying mat2 J[3];
+varying mat2 J1, J2;
+
+// Base color
 varying vec3 fcolor;
 varying float GscaleU;
 
 const float tau = 6.283185307179586;
 
-mat2 R(float omega, float toff) {
-	float theta = omega * tau * T + toff;
-	float S = sin(theta), C = cos(theta);
-	return mat2(C, S, -S, C);
-}
-
-mat2 Rinv(float omega, float toff) {
-	float theta = omega * tau * T + toff;
-	float S = sin(theta), C = cos(theta);
-	return mat2(C, -S, S, C);
-}
-
-mat2 S(float omega, float toff) {
+void applyS(float omega, float toff, inout vec2 pos, inout mat2 J) {
 	float theta = omega * tau * T + toff;
 	float sigma = 1.0 + 0.1 * sin(theta);
-	return mat2(sigma, 0.0, 0.0, 1.0 / sigma);
+	pos = vec2(sigma, 1.0 / sigma) * pos;
+	J = J * mat2(sigma, 0.0, 0.0, 1.0 / sigma);
 }
 
+void applyI(vec2 impulse, inout vec2 pos, inout mat2 J) {
+	vec2 isqueeze = 1.0 + abs(impulse).yx;
+	pos *= isqueeze;
+	pos += impulse;
+	J = J * mat2(1.0 / isqueeze.x, 0.0, 0.0, 1.0 / isqueeze.y);
+}
+
+void applyR(float omega, float toff, inout vec2 pos, inout mat2 J) {
+	float theta = omega * tau * T + toff;
+	float S = sin(theta), C = cos(theta);
+	pos = mat2(C, S, -S, C) * pos;
+	J = J * mat2(C, -S, S, C);
+}
 
 void main() {
 	vec2 pG = centerG + GradiusU * pU;
@@ -51,28 +64,22 @@ void main() {
 	vec2 pP = PscaleV * pV;
 	gl_Position = vec4(pP, 0.0, 1.0);
 
+	// Texture #0 is simply a single peak that never gets skewed or stretched.
 	posH[0] = (pU + 1.0) / 2.0;
-	J[0] = mat2(1.0, 0.0, 0.0, 1.0);
-//	J[0] = mat2(0.0, 1.0, -1.0, 0.0);
-
-	vec2 isqueeze = 1.0 + 0.3 * abs(impulse).yx;
-	mat2 Ji = mat2(1.0 / isqueeze.x, 0.0, 0.0, 1.0 / isqueeze.y);
 
 	vec2 pos1 = pU;
-	pos1 = S(7.0, t0 + 0.567) * pos1;
-	pos1 *= isqueeze;
-	pos1 += 0.3 * impulse;
-	pos1 = R(-3.0, t0) * pos1;
+	J1 = mat2(1.0, 0.0, 0.0, 1.0);
+	applyS(7.0, t0 + 0.567, pos1, J1);
+	applyI(0.3 * impulse, pos1, J1);
+	applyR(-3.0, t0, pos1, J1);
 	posH[1] = (pos1 + 1.0) / 2.0;
-	J[1] = S(7.0, t0 + 0.567) * Ji * Rinv(-3.0, t0);
 
 	vec2 pos2 = pU;
-	pos2 = S(2.0, t0 + 0.678) * pos2;
-	pos2 *= isqueeze;
-	pos2 += 0.2 * impulse;
-	pos2 = R(5.0, t0 + 0.123) * pos2;
+	J2 = mat2(1.0, 0.0, 0.0, 1.0);
+	applyS(2.0, t0 + 0.678, pos2, J2);
+	applyI(0.2 * impulse, pos2, J2);
+	applyR(5.0, t0 + 0.123, pos2, J2);
 	posH[2] = (pos2 + 1.0) / 2.0;
-	J[2] = S(2.0, t0 + 0.678) * Ji * Rinv(5.0, t0 + 0.123);
 
 	fcolor = color;
 	GscaleU = GradiusU;
@@ -89,26 +96,30 @@ varying vec3 fcolor;
 uniform float VscaleG;
 uniform sampler2D hilltextures[Nhill];
 varying vec2 posH[Nhill];
-varying mat2 J[Nhill];
+varying mat2 J1, J2;
 varying float GscaleU;
 
 const vec3 bordercolor = vec3(0.0, 0.0, 0.0);
 const float borderwidthG = 0.1;
 
 const float shadewidthU = 0.1;
+const float shadefactor = 0.4;
 
 // lighting direction
-const vec2 L = normalize(vec2(0.0, 1.0));
+const vec2 L = normalize(vec2(0.2, 0.4));
 
 void main() {
-	float z = A[0];
-	vec2 gradz = vec2(0.0);
-	for (int i = 0; i < Nhill; ++i) {
-		vec3 h = texture2D(hilltextures[i], posH[i]).xyz;
-		z += h.z * A[i+1];
-		gradz += J[i] * (h.xy - 0.5) * Ad[i];
-	}
+	// The values of the vector-valued function z(pU) are stored in the z channel of the three hill
+	// textures. The values of grad(z) = <dz/dxU, dz/dyU> are stored in the x and y channels. In
+	// each case the stored value is transformed to its actual value by a scaling parameter A or Ad.
+	// grad(z) values are stored such that a value of 0.5 corresponds to an actual value of 0.
 
+	// Get z and grad(z) from the hill textures, applying the J-transformations to grad(z).
+	vec3 h0 = texture2D(hilltextures[0], posH[0]).xyz;
+	vec3 h1 = texture2D(hilltextures[1], posH[1]).xyz;
+	vec3 h2 = texture2D(hilltextures[2], posH[2]).xyz;
+	float z = A[0] + h0.z * A[1] + h1.z * A[2] + h2.z * A[3];
+	vec2 gradz = (h0.xy - 0.5) * Ad[0] + J1 * (h1.xy - 0.5) * Ad[1] + J2 * (h2.xy - 0.5) * Ad[2];
 
 	// The m factor estimates how far we are from the edge (defined as z = 0), using a first-order
 	// approximation, ie, assuming grad z is constant over the local area. The approximation gets
@@ -120,15 +131,19 @@ void main() {
 	float mG = GscaleU * mU;
 	float mV = VscaleG * mG;
 
-	float lfactor = -0.7 * dot(gradz, L);
-//	lfactor *= 2.0 - smoothstep(0.0, 0.05, mU);  // Makes it better around the edges.
+	// Lighting factor for the edge shading effect. Higher means facing in the direction of the
+	// light (i.e. the gradient is in the direction opposite the light).
+	float lfactor = -shadefactor * dot(gradz, L);
+	lfactor *= 2.0 - smoothstep(0.0, 2.0 * shadewidthU, mU);  // Makes it better around the edges.
 	lfactor = clamp(lfactor, -1.0, 1.0);
 	lfactor *= 1.0 - smoothstep(shadewidthU, 2.0 * shadewidthU, mU);
-	vec3 lcolor = fcolor * (1.0 + 0.4 * lfactor);
+	vec3 lcolor = fcolor * (1.0 + 0.4 * lfactor);  // Apply lighting factor.
 
+	// Black border effect. The a value is used for subpixel anti-aliasing, like the m value in the
+	// virus fragment shader.
 	vec4 color1 = z > 0.0 ? vec4(lcolor, 1.0) : vec4(bordercolor, 0.0);
 	float borderwidthV = VscaleG * borderwidthG;
-	float a = clamp(0.5 * mV - borderwidthV, 0.0, 1.0);
+	float a = clamp(0.5 * mV - borderwidthV, 0.0, 1.0);  // Not sure why 0.5 here?
 	gl_FragColor = mix(vec4(bordercolor, 1.0), color1, a);
 }
 </script>
@@ -156,109 +171,89 @@ gl.clearColor(0, 0.3, 0.3, 1)
 UFX.gltext.init(gl)
 gl.addProgram("blob", "vblob", "fblob")
 
-function h0(x, y) {
-	var E = (x0, y0, r) => Math.exp(-((x - x0) * (x - x0) + (y - y0) * (y - y0)) / (r * r))
-	return 2 * E(0.0, 0.0, 0.3)
-}
-function randomhill(R0, A0) {
-	var theta = UFX.random.angle(), R = UFX.random(0.8, 1.2) * R0
-	return {
-		A: UFX.random(0.8, 1.2) * A0,
-		x: R * Math.sin(theta),
-		y: R * Math.cos(theta),
-		r: UFX.random(0.15, 0.2),
+function joinxys(xys) {
+	const N = xys.length, Nx = xys[0][0].length, Ny = xys[0][1].length
+	let data = new Array(Nx * Ny).fill(0).map(_ => [0, 0, 0])
+	for (let k = 0 ; k < N ; ++k) {
+		const xs = xys[k][0], ys = xys[k][1]
+		for (let j = 0, a = 0 ; j < Ny ; ++j) {
+			const [y, dy] = ys[j]
+			for (let i = 0 ; i < Nx ; ++i) {
+				const [x, dx] = xs[i]
+				let d = data[a++]
+				d[0] += x * y
+				d[1] += dx * y
+				d[2] += x * dy
+			}
+		}
 	}
+	return data
 }
-var h1hills = [].concat(
-	[0,0,0,0].map(_ => randomhill(0.3, 0.2)),
-	[0,0,0,0].map(_ => randomhill(0.5, -0.2))
-)
-function isohill(R, ktheta) {
-	var theta = ktheta * tau * 0.618034
-	var r = Math.exp(-4 * R), A = 6 * Math.exp(-4 * R)
-	r = 0.16
-	return {
-		A: A,
-		x: R * Math.cos(theta),
-		y: R * Math.sin(theta),
-		r: r,
+function range(N, a0, a1) {
+	return new Array(N).fill(0).map((_, j) => (j + 0.5) / N * (a1 - a0) + a0)
+}
+function hillxys(Nx, Ny, h, x0, y0, r) {
+	function hdh(a, h) {
+		const e = h * Math.exp(-a * a)
+		return [e, -2 * a * e / r]
 	}
-}
-h1hills = [0,1,2,3,4,5].map(j => isohill(0.3 + 0.02 * j, j))
-function h1(x, y) {
-	var E = (x0, y0, r) => Math.exp(-((x - x0) * (x - x0) + (y - y0) * (y - y0)) / (r * r))
-	return h1hills.map(hill => hill.A * E(hill.x, hill.y, hill.r)).reduce((a, b) => a + b)
-}
-var h2hills = [].concat(
-	[0,0,0,0].map(_ => randomhill(0.4, 0.1)),
-	[0,0,0,0].map(_ => randomhill(0.6, -0.1))
-)
-h2hills = [0,1,2].map(j => isohill(0.4 + 0.01 * j, j))
-function h2(x, y) {
-	var E = (x0, y0, r) => Math.exp(-((x - x0) * (x - x0) + (y - y0) * (y - y0)) / (r * r))
-	return h2hills.map(hill => hill.A * E(hill.x, hill.y, hill.r)).reduce((a, b) => a + b)
-}
-
-function dh(h, x, y) {
-	var d = 0.001
 	return [
-		(h(x + d, y) - h(x - d, y)) / (2 * d),
-		(h(x, y + d) - h(x, y - d)) / (2 * d),
+		range(Nx, (-1 - x0) / r, (1 - x0) / r).map(a => hdh(a, h)),
+		range(Ny, (-1 - y0) / r, (1 - y0) / r).map(a => hdh(a, 1)),
 	]
 }
 
-var hranges = [], dhranges = []
-;[h0, h1, h2].forEach(function (h, j) {
-	var hmin = 0, hmax = 0, dhmax = 0
-	for (var x = -1 ; x < 1 ; x += 0.05) {
-		for (var y = -1 ; y < 1; y += 0.05) {
-			var z = h(x, y)
-			var [dhdx, dhdy] = dh(h, x, y)
-			if (z < hmin) hmin = z
-			if (z > hmax) hmax = z
-			dhdx = Math.abs(dhdx)
-			dhdy = Math.abs(dhdy)
-			if (dhdx > dhmax) dhmax = dhdx
-			if (dhdy > dhmax) dhmax = dhdy
-		}
-	}
-	hranges.push([hmin - 0.1, hmax + 0.1])
-	dhranges.push([-dhmax - 0.1, dhmax + 0.1])
-})
+function h0data(Nx, Ny) {
+	return joinxys([
+		hillxys(Nx, Ny, 2, 0, 0, 0.3),
+	])
+}
+function isohilldata(Nx, Ny, R, ktheta) {
+	const theta = ktheta * tau * 0.618034
+	const r = 0.16, A = 6 * Math.exp(-4 * R)
+	return hillxys(Nx, Ny, A, R * Math.cos(theta), R * Math.sin(theta), r)
+}
+function h1data(Nx, Ny) {
+	return joinxys([0,1,2,3,4,5].map(j => isohilldata(Nx, Ny, 0.3 + 0.02 * j, j)))
+}
+function h2data(Nx, Ny) {
+	return joinxys([0,1,2].map(j => isohilldata(Nx, Ny, 0.4 + 0.01 * j, j)))
+}
 
-function gethillimg(h, hrange, dhrange, s) {
-	var img = document.createElement("canvas")
+function gethillimg(hdata, s) {
+	const adata = hdata(s, s)
+	let zmax = adata.map(a => a[0]).reduce((a, b) => Math.max(a, b))
+	let dzdxmax = adata.map(a => a[1]).reduce((a, b) => Math.max(a, b))
+	let dzdymax = adata.map(a => a[2]).reduce((a, b) => Math.max(a, b))
+	let dzmax = Math.max(dzdxmax, dzdymax)
+	const img = document.createElement("canvas")
 	img.width = s
 	img.height = s
-	var context = img.getContext("2d")
-	var idata = context.createImageData(s, s)
-	for (var py = 0, j = 0 ; py < s ; ++py) {
-		for (var px = 0 ; px < s ; ++px) {
-			var x = (px + 0.5) / s * 2 - 1
-			var y = (py + 0.5) / s * 2 - 1
-			var z = h(x, y)
-			var [dhdx, dhdy] = dh(h, x, y)
-			idata.data[j++] = 255 * (dhdx - dhrange[0]) / (dhrange[1] - dhrange[0])
-			idata.data[j++] = 255 * (dhdy - dhrange[0]) / (dhrange[1] - dhrange[0])
-			idata.data[j++] = 255 * (z - hrange[0]) / (hrange[1] - hrange[0])
-			idata.data[j++] = 255
-		}
+	const context = img.getContext("2d")
+	const idata = context.createImageData(s, s)
+	for (let i = 0, j = 0 ; i < adata.length ; ++i) {
+		let [z, dzdx, dzdy] = adata[i]
+		idata.data[j++] = 255 * (dzdx / dzmax + 1) / 2
+		idata.data[j++] = 255 * (dzdy / dzmax + 1) / 2
+		idata.data[j++] = 255 * z / zmax
+		idata.data[j++] = 255
 	}
 	context.putImageData(idata, 0, 0)
-	return img
-}
-var hilltextures = []
-;[h0, h1, h2].forEach(function (h, j) {
+	return [img, zmax, dzmax]
+}	
+
+let z0 = 0.3
+let hilltextures = [], A = [-z0], Ad = []
+;[h0data, h1data, h2data].forEach(function (hdata, j) {
+	let [img, zmax, dzmax] = gethillimg(hdata, 64)
+	A.push(zmax)
+	Ad.push(dzmax)
 	hilltextures.push(gl.buildTexture({
-		source: gethillimg(h, hranges[j], dhranges[j], 128),
+		source: img,
 		wrap: gl.CLAMP_TO_EDGE,
 		filter: gl.LINEAR,
 	}))
 })
-var z0 = 0.3
-var A = [-z0 + hranges.map(r => r[0]).reduce((a, b) => a + b)]
-A.push.apply(A, hranges.map(r => r[1] - r[0]))
-var Ad = dhranges.map(r => (r[1] - r[0]) / 2)
 
 UFX.key.init()
 UFX.key.watchlist = "up down left right".split(" ")
@@ -280,7 +275,7 @@ function think(dt) {
 	gl.progs.blob.set({
 		screensizeV: [canvas.width, canvas.height],
 		scenterG: [0, 0],
-		VscaleG: 6,
+		VscaleG: 40,
 		hilltextures: [0, 1, 2],
 		A: A,
 		Ad: Ad,
@@ -313,7 +308,7 @@ function think(dt) {
 	gl.progs.text.draw("impulse: " + ix.toFixed(4) + " " + iy.toFixed(4), [10, 10])
 }
 if (false) {
-	gl.dumpTexture(hilltextures[1])
+	gl.dumpTexture(hilltextures[0])
 } else {
 	UFX.resource.onload = function () {
 		UFX.maximize.fill(canvas, "aspect")
