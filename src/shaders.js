@@ -312,95 +312,152 @@ void main() {
 `
 
 
+
 shaders.blob.vert = `
-// Blob vertex shader
+// Screen parameters
+uniform vec2 scenterG;
+uniform vec2 screensizeV;
+uniform float VscaleG;
+
+attribute vec2 pU;
+
+// Animation ticker, in the range [0, 1)
 attribute float T;
 
-uniform vec2 Rview, center;
-uniform float Rblob;
-uniform float t0;
-uniform vec2 impulse;
-attribute vec2 pos;
+// Blob constants
+attribute vec2 centerG;
+attribute float GradiusU;
+attribute float t0;
+attribute vec3 color;
+
+// Impulse vector, used to determine the "dragging" effect when a blob is in motion. This should
+// be 0 when the blob is motionless, and have a maximum length of 1.
+attribute vec2 impulse;
+
+// The main purpose of this shader is to determine the posH texture positions, and the J inverse
+// transformation matrices. posH is the location on the hill texture from which the z-value and
+// the grad(z)-value will be read. J is the inverse transformation matrix to be applied to the
+// grad(z) value after it's read from the texture. That is, J is the Jacobian from posH1/posH2
+// coordinates back to posH0 coordinates.
 varying vec2 posH[3];
+varying mat2 J1, J2;
+
+// Base color
+varying vec3 fcolor;
+varying float GscaleU;
 
 const float tau = 6.283185307179586;
 
-mat2 R(float theta) {
-	float S = sin(theta), C = cos(theta);
-	return mat2(C, S, -S, C);
+void applyS(float omega, float toff, inout vec2 pos, inout mat2 J) {
+	float theta = omega * tau * T + toff;
+	float sigma = 1.0 + 0.1 * sin(theta);
+	pos = vec2(sigma, 1.0 / sigma) * pos;
+	J = J * mat2(sigma, 0.0, 0.0, 1.0 / sigma);
 }
 
-mat2 R(float omega, float toff) {
+void applyI(vec2 impulse, inout vec2 pos, inout mat2 J) {
+	vec2 isqueeze = 1.0 + abs(impulse).yx;
+	pos *= isqueeze;
+	pos += impulse;
+	J = J * mat2(1.0 / isqueeze.x, 0.0, 0.0, 1.0 / isqueeze.y);
+}
+
+void applyR(float omega, float toff, inout vec2 pos, inout mat2 J) {
 	float theta = omega * tau * T + toff;
 	float S = sin(theta), C = cos(theta);
-	return mat2(C, S, -S, C);
+	pos = mat2(C, S, -S, C) * pos;
+	J = J * mat2(C, -S, S, C);
 }
-
-float L(float omega, float toff) {
-	float theta = omega * tau * T + toff;
-	return 0.1 * sin(theta);
-}
-
-vec2 T(float omega, float toff) {
-	float theta = omega * tau * T + toff;
-	float S = 1.0 + 0.1 * sin(theta);
-	return vec2(S, 1.0 / S);
-}
-
 
 void main() {
-	gl_Position = vec4((center + Rblob * pos) / Rview, 0.0, 1.0);
-	posH[0] = (pos + 1.0) / 2.0;
+	vec2 pG = centerG + GradiusU * pU;
+	vec2 pV = VscaleG * (pG - scenterG);
+	vec2 PscaleV = 2.0 / screensizeV;
+	vec2 pP = PscaleV * pV;
+	gl_Position = vec4(pP, 0.0, 1.0);
 
-	vec2 pos1 = pos;
-	pos1 = T(7.0, t0 + 0.567) * pos1;
-	pos1 += 1.0 * impulse;
-	pos1.x *= 1.0 + 0.5 * impulse.y;
-//	pos1.x += L(6.0, t0 + 0.12);
-//	pos1.y += L(7.0, t0 - 0.12);
-	pos1 = R(-3.0, t0) * pos1;
-	hillpos[1] = (pos1 + 1.0) / 2.0;
+	// Texture #0 is simply a single peak that never gets skewed or stretched.
+	posH[0] = (pU + 1.0) / 2.0;
 
-	vec2 pos2 = pos;
-	pos2 = T(2.0, t0 + 0.678) * pos2;
-	pos2 += 0.7 * impulse;
-	pos2.x *= 1.0 + 0.5 * impulse.y;
-//	pos2.x += L(4.0, t0 + 0.78);
-//	pos2.y += L(5.0, t0 - 0.78);
-	pos2 = R(5.0, t0 + 0.123) * pos2;
-	hillpos[2] = (pos2 + 1.0) / 2.0;
+	vec2 pos1 = pU;
+	J1 = mat2(1.0, 0.0, 0.0, 1.0);
+	applyS(7.0, t0 + 0.567, pos1, J1);
+	applyI(0.3 * impulse, pos1, J1);
+	applyR(-3.0, t0, pos1, J1);
+	posH[1] = (pos1 + 1.0) / 2.0;
 
+	vec2 pos2 = pU;
+	J2 = mat2(1.0, 0.0, 0.0, 1.0);
+	applyS(2.0, t0 + 0.678, pos2, J2);
+	applyI(0.2 * impulse, pos2, J2);
+	applyR(5.0, t0 + 0.123, pos2, J2);
+	posH[2] = (pos2 + 1.0) / 2.0;
 
+	fcolor = color;
+	GscaleU = GradiusU;
 }
 `
 
 shaders.blob.frag = `
 precision highp float;
-const int Nhill = 4;  // number of hill textures
-uniform float A[Nhill + 1];
+const int Nhill = 3;  // number of hill textures
+uniform float A[Nhill + 1], Ad[Nhill];
 
-const vec3 color = vec3(0.0, 0.6, 0.6);
+// Basic blob color, before any lighting effect applied
+varying vec3 fcolor;
 
-uniform float VconvertG;
+uniform float VscaleG;
 uniform sampler2D hilltextures[Nhill];
-varying vec2 hillpos[Nhill];
+varying vec2 posH[Nhill];
+varying mat2 J1, J2;
+varying float GscaleU;
 
-const float shade = 0.04;
+const vec3 bordercolor = vec3(0.0, 0.0, 0.0);
+const float borderwidthG = 0.1;
+
+const float shadewidthU = 0.1;
+const float shadefactor = 0.4;
+
+// lighting direction
+const vec2 L = normalize(vec2(0.2, 0.4));
 
 void main() {
-	int nshade = 0;
-	float z = A[0];
-	for (int i = 0; i < Nhill; ++i) {
-		if (hillpos[i].x >= 0.0 && hillpos[i].x < 1.0 && hillpos[i].y >= 0.0 && hillpos[i].y < 1.0) ++nshade;
-		vec3 h = texture2D(hilltextures[i], hillpos[i]).xyz;
-		z += h.z * A[i+1];
-	}
-	if (z < 0.0) {
-		gl_FragColor = vec4(0.0, 0.0, 0.0, shade * float(nshade));
-	} else {
-		gl_FragColor = vec4(color, 1.0);
-	}
-}
-</script>
+	// The values of the vector-valued function z(pU) are stored in the z channel of the three hill
+	// textures. The values of grad(z) = <dz/dxU, dz/dyU> are stored in the x and y channels. In
+	// each case the stored value is transformed to its actual value by a scaling parameter A or Ad.
+	// grad(z) values are stored such that a value of 0.5 corresponds to an actual value of 0.
 
+	// Get z and grad(z) from the hill textures, applying the J-transformations to grad(z).
+	vec3 h0 = texture2D(hilltextures[0], posH[0]).xyz;
+	vec3 h1 = texture2D(hilltextures[1], posH[1]).xyz;
+	vec3 h2 = texture2D(hilltextures[2], posH[2]).xyz;
+	float z = A[0] + h0.z * A[1] + h1.z * A[2] + h2.z * A[3];
+	vec2 gradz = (h0.xy - 0.5) * Ad[0] + J1 * (h1.xy - 0.5) * Ad[1] + J2 * (h2.xy - 0.5) * Ad[2];
+
+	// The m factor estimates how far we are from the edge (defined as z = 0), using a first-order
+	// approximation, ie, assuming grad z is constant over the local area. The approximation gets
+	// much worse far from the edge, but fortunately we don't need it there.
+	
+	// z is unitless, and gradz in this case is the derivative with respect to pU.
+	// Thus |z| / |grad(z)| has units of U's.
+	float mU = abs(z) / length(gradz);
+	float mG = GscaleU * mU;
+	float mV = VscaleG * mG;
+
+	// Lighting factor for the edge shading effect. Higher means facing in the direction of the
+	// light (i.e. the gradient is in the direction opposite the light).
+	float lfactor = -shadefactor * dot(gradz, L);
+	lfactor *= 2.0 - smoothstep(0.0, 2.0 * shadewidthU, mU);  // Makes it better around the edges.
+	lfactor = clamp(lfactor, -1.0, 1.0);
+	lfactor *= 1.0 - smoothstep(shadewidthU, 2.0 * shadewidthU, mU);
+	vec3 lcolor = fcolor * (1.0 + 0.4 * lfactor);  // Apply lighting factor.
+
+	// Black border effect. The a value is used for subpixel anti-aliasing, like the m value in the
+	// virus fragment shader.
+	vec4 color1 = z > 0.0 ? vec4(lcolor, 1.0) : vec4(bordercolor, 0.0);
+	float borderwidthV = VscaleG * borderwidthG;
+	float a = clamp(0.5 * mV - borderwidthV, 0.0, 1.0);  // Not sure why 0.5 here?
+	gl_FragColor = mix(vec4(bordercolor, 1.0), color1, a);
+}
+`
 

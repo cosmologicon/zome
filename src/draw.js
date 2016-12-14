@@ -3,10 +3,9 @@
 // Reserved textures:
 
 // TEXTURE0: reserved for gltext
-// TEXTURE1: virus kscope texture
-// TEXTURE2: mote texture
-// TEXTURE3-4: blob hill textures
-
+// TEXTURE1-3: blob hill texture
+// TEXTURE4: virus kscope texture
+// TEXTURE5: mote texture
 
 
 "use strict"
@@ -19,73 +18,45 @@ function drawscene() {
 	gl.clearColor(0, 0.4, 0.4, 1)
 	gl.clear(gl.COLOR_BUFFER_BIT)
 
-	// Non-boss viruses
-	let data = [], objs = state.viruses
-	objs.forEach(function (obj) {
-		const x = obj.x, y = obj.y, R = obj.rcollide * 1.25, T = obj.T
-		const [r, g, b] = obj.vcolor0
-		data.push(
-			T, -1, -1, x, y, R, r, g, b,
-			T, -1, 1, x, y, R, r, g, b,
-			T, 1, 1, x, y, R, r, g, b,
-			T, -1, -1, x, y, R, r, g, b,
-			T, 1, 1, x, y, R, r, g, b,
-			T, 1, -1, x, y, R, r, g, b
-		)
-		
-	})
-	if (data.length) {
-		gl.progs.virus.use()
-		const ktexture = getkscopetexture(64)
-		gl.activeTexture(gl.TEXTURE1)
-		gl.bindTexture(gl.TEXTURE_2D, ktexture)
-		gl.progs.virus.set({
-			scenterG: [view.xcenterG, view.ycenterG],
-			screensizeV: [view.wV, view.hV],
-			VscaleG: view.VscaleG,
-			ktexture: 1,
-		})
-		gl.makeArrayBuffer(data).bind()
-		gl.progs.virus.assignAttribOffsets({
-			T: 0,
-			pU: 1,
-			centerG: 3,
-			RG: 5,
-			vcolor: 6,
-		})
-		gl.drawArrays(gl.TRIANGLES, 0, 6*objs.length)
-	}
-
-
 	// cell and state-bound antibodies
-	gl.progs.circle.use()
-	data = [], objs = state.drawblobs()
+	let data = [], objs = state.drawblobs()
 	objs.forEach(function (obj) {
-		const x = obj.x, y = obj.y, R = obj.rcollide
+		const x = obj.x, y = obj.y, R = obj.rcollide * 1.8, T = obj.T, t0 = 0.1, ix = 0, iy = 0
 		const [r, g, b] = obj.blobcolor
 		data.push(
-			-1, -1, x, y, R, r, g, b,
-			-1, 1, x, y, R, r, g, b,
-			1, 1, x, y, R, r, g, b,
-			-1, -1, x, y, R, r, g, b,
-			1, 1, x, y, R, r, g, b,
-			1, -1, x, y, R, r, g, b
+			-1, -1, x, y, R, r, g, b, ix, iy, t0, T,
+			1, -1, x, y, R, r, g, b, ix, iy, t0, T,
+			1, 1, x, y, R, r, g, b, ix, iy, t0, T,
+			-1, -1, x, y, R, r, g, b, ix, iy, t0, T,
+			1, 1, x, y, R, r, g, b, ix, iy, t0, T,
+			-1, 1, x, y, R, r, g, b, ix, iy, t0, T
 		)
 	})
 	if (data.length) {
-		gl.progs.circle.set({
-			scenterG: [view.xcenterG, view.ycenterG],
+		gl.progs.blob.use()
+		gl.progs.blob.set({
 			screensizeV: [view.wV, view.hV],
+			scenterG: [view.xcenterG, view.ycenterG],
 			VscaleG: view.VscaleG,
+			hilltextures: [1, 2, 3],
+			A: hill.A,
+			Ad: hill.Ad,
+		})
+		hill.textures.forEach(function (texture, j) {
+			gl.activeTexture(gl.TEXTURE1 + j)
+			gl.bindTexture(gl.TEXTURE_2D, texture)
 		})
 		gl.makeArrayBuffer(data).bind()
-		gl.progs.circle.assignAttribOffsets({
+		gl.progs.blob.assignAttribOffsets({
 			pU: 0,
 			centerG: 2,
-			RG: 4,
+			GradiusU: 4,
 			color: 5,
+			impulse: 8,
+			t0: 10,
+			T: 11,
 		})
-		gl.drawArrays(gl.TRIANGLES, 0, 6*objs.length)
+		gl.drawArrays(gl.TRIANGLES, 0, 6 * objs.length)
 	}
 
 	// state-bound organelles
@@ -119,6 +90,43 @@ function drawscene() {
 		gl.drawArrays(gl.TRIANGLES, 0, 6*N)
 	}
 
+	// Non-boss viruses
+	data = [], objs = state.viruses
+	objs.forEach(function (obj) {
+		const x = obj.x, y = obj.y, R = obj.rcollide * 1.25, T = obj.T
+		const [r, g, b] = obj.vcolor0
+		data.push(
+			T, -1, -1, x, y, R, r, g, b,
+			T, -1, 1, x, y, R, r, g, b,
+			T, 1, 1, x, y, R, r, g, b,
+			T, -1, -1, x, y, R, r, g, b,
+			T, 1, 1, x, y, R, r, g, b,
+			T, 1, -1, x, y, R, r, g, b
+		)
+		
+	})
+	if (data.length) {
+		gl.progs.virus.use()
+		const ktexture = getkscopetexture(64)
+		gl.activeTexture(gl.TEXTURE4)
+		gl.bindTexture(gl.TEXTURE_2D, ktexture)
+		gl.progs.virus.set({
+			scenterG: [view.xcenterG, view.ycenterG],
+			screensizeV: [view.wV, view.hV],
+			VscaleG: view.VscaleG,
+			ktexture: 4,
+		})
+		gl.makeArrayBuffer(data).bind()
+		gl.progs.virus.assignAttribOffsets({
+			T: 0,
+			pU: 1,
+			centerG: 3,
+			RG: 5,
+			vcolor: 6,
+		})
+		gl.drawArrays(gl.TRIANGLES, 0, 6*objs.length)
+	}
+
 	// Petri dish
 	gl.progs.petri.use()
 	gl.progs.petri.set({
@@ -136,14 +144,14 @@ function drawscene() {
 	gl.progs.mote.use()
 	const Nmote = 60
 	const mtexture = getmotetexture()
-	gl.activeTexture(gl.TEXTURE2)
+	gl.activeTexture(gl.TEXTURE5)
 	gl.bindTexture(gl.TEXTURE_2D, mtexture)
 	getmotebuffer(Nmote).bind()
 	gl.progs.mote.set({
 		T: Date.now() * 0.001 / 80 % 1,
 		offsetV: [view.VscaleG * view.xcenterG, view.VscaleG * view.ycenterG],
 		screensizeV: [view.wV, view.hV],
-		mtexture: 2,
+		mtexture: 5,
 	})
 	gl.progs.mote.assignAttribOffsets({
 		pU: 0,

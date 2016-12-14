@@ -33,7 +33,7 @@ const FollowsRecipe = {
 		if (this.flavors == "ZZZ" && progress.learned.ZZZ) recipes.explode.call(this, mechanics.ZZZ)
 	},
 	getcolor: function () {
-		if (this.disabled) return [Math.floor(100 + 80 * Math.sin(10 * this.disabled)), 0, 0]
+		if (this.disabled) return [0.4 + 0.3 * Math.sin(6 * this.disabled), 0, 0]
 		if (!progress.learned[this.flavors]) return [30, 30, 30]
 		switch (this.flavors) {
 			case "X": case "XX": case "XY": case "XXX": case "XXY": case "XYY":
@@ -45,7 +45,7 @@ const FollowsRecipe = {
 			case "Y": case "YYY": case "YZ":
 				return [0.2, 0.8, 0.2]
 			case "XYZ": case "ZZZ":
-				return [0.2, 0.2, 1.0]
+				return [0.2, 0.2, 0.8]
 			case "Z": case "YZZ":
 				return [0.0, 0.8, 0.8]
 			case "YY": case "YYZ":
