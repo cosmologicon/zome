@@ -5,6 +5,7 @@
 // TEXTURE0: reserved for gltext
 // TEXTURE1: virus kscope texture
 // TEXTURE2: mote texture
+// TEXTURE3-4: blob hill textures
 
 
 

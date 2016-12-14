@@ -6,6 +6,7 @@ const shaders = {
 	petri: {},
 	virus: {},
 	mote: {},
+	blob: {},
 }
 
 shaders.circle.vert = `
@@ -309,3 +310,97 @@ void main() {
 	gl_FragColor = texture2D(mtexture, tpos);
 }
 `
+
+
+shaders.blob.vert = `
+// Blob vertex shader
+attribute float T;
+
+uniform vec2 Rview, center;
+uniform float Rblob;
+uniform float t0;
+uniform vec2 impulse;
+attribute vec2 pos;
+varying vec2 posH[3];
+
+const float tau = 6.283185307179586;
+
+mat2 R(float theta) {
+	float S = sin(theta), C = cos(theta);
+	return mat2(C, S, -S, C);
+}
+
+mat2 R(float omega, float toff) {
+	float theta = omega * tau * T + toff;
+	float S = sin(theta), C = cos(theta);
+	return mat2(C, S, -S, C);
+}
+
+float L(float omega, float toff) {
+	float theta = omega * tau * T + toff;
+	return 0.1 * sin(theta);
+}
+
+vec2 T(float omega, float toff) {
+	float theta = omega * tau * T + toff;
+	float S = 1.0 + 0.1 * sin(theta);
+	return vec2(S, 1.0 / S);
+}
+
+
+void main() {
+	gl_Position = vec4((center + Rblob * pos) / Rview, 0.0, 1.0);
+	posH[0] = (pos + 1.0) / 2.0;
+
+	vec2 pos1 = pos;
+	pos1 = T(7.0, t0 + 0.567) * pos1;
+	pos1 += 1.0 * impulse;
+	pos1.x *= 1.0 + 0.5 * impulse.y;
+//	pos1.x += L(6.0, t0 + 0.12);
+//	pos1.y += L(7.0, t0 - 0.12);
+	pos1 = R(-3.0, t0) * pos1;
+	hillpos[1] = (pos1 + 1.0) / 2.0;
+
+	vec2 pos2 = pos;
+	pos2 = T(2.0, t0 + 0.678) * pos2;
+	pos2 += 0.7 * impulse;
+	pos2.x *= 1.0 + 0.5 * impulse.y;
+//	pos2.x += L(4.0, t0 + 0.78);
+//	pos2.y += L(5.0, t0 - 0.78);
+	pos2 = R(5.0, t0 + 0.123) * pos2;
+	hillpos[2] = (pos2 + 1.0) / 2.0;
+
+
+}
+`
+
+shaders.blob.frag = `
+precision highp float;
+const int Nhill = 4;  // number of hill textures
+uniform float A[Nhill + 1];
+
+const vec3 color = vec3(0.0, 0.6, 0.6);
+
+uniform float VconvertG;
+uniform sampler2D hilltextures[Nhill];
+varying vec2 hillpos[Nhill];
+
+const float shade = 0.04;
+
+void main() {
+	int nshade = 0;
+	float z = A[0];
+	for (int i = 0; i < Nhill; ++i) {
+		if (hillpos[i].x >= 0.0 && hillpos[i].x < 1.0 && hillpos[i].y >= 0.0 && hillpos[i].y < 1.0) ++nshade;
+		vec3 h = texture2D(hilltextures[i], hillpos[i]).xyz;
+		z += h.z * A[i+1];
+	}
+	if (z < 0.0) {
+		gl_FragColor = vec4(0.0, 0.0, 0.0, shade * float(nshade));
+	} else {
+		gl_FragColor = vec4(color, 1.0);
+	}
+}
+</script>
+
+

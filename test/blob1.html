@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<script src="http://ufx.space/UFX.js"></script>
+<script type="x-shader" id=vblob>
+
+// Screen parameters
+uniform vec2 scenterG;
+uniform vec2 screensizeV;
+uniform float VscaleG;
+
+// Animation ticker, in the range [0, 1)
+attribute float T;
+
+// Blob constants
+attribute vec2 centerG;
+attribute float GradiusU;
+attribute float t0;
+attribute vec3 color;
+
+attribute vec2 impulse;
+attribute vec2 pU;
+varying vec2 posH[3];
+varying mat2 J[3];
+varying vec3 fcolor;
+varying float GscaleU;
+
+const float tau = 6.283185307179586;
+
+mat2 R(float omega, float toff) {
+	float theta = omega * tau * T + toff;
+	float S = sin(theta), C = cos(theta);
+	return mat2(C, S, -S, C);
+}
+
+mat2 Rinv(float omega, float toff) {
+	float theta = omega * tau * T + toff;
+	float S = sin(theta), C = cos(theta);
+	return mat2(C, -S, S, C);
+}
+
+mat2 S(float omega, float toff) {
+	float theta = omega * tau * T + toff;
+	float sigma = 1.0 + 0.1 * sin(theta);
+	return mat2(sigma, 0.0, 0.0, 1.0 / sigma);
+}
+
+
+void main() {
+	vec2 pG = centerG + GradiusU * pU;
+	vec2 pV = VscaleG * (pG - scenterG);
+	vec2 PscaleV = 2.0 / screensizeV;
+	vec2 pP = PscaleV * pV;
+	gl_Position = vec4(pP, 0.0, 1.0);
+
+	posH[0] = (pU + 1.0) / 2.0;
+	J[0] = mat2(1.0, 0.0, 0.0, 1.0);
+//	J[0] = mat2(0.0, 1.0, -1.0, 0.0);
+
+	vec2 isqueeze = 1.0 + 0.3 * abs(impulse).yx;
+	mat2 Ji = mat2(1.0 / isqueeze.x, 0.0, 0.0, 1.0 / isqueeze.y);
+
+	vec2 pos1 = pU;
+	pos1 = S(7.0, t0 + 0.567) * pos1;
+	pos1 *= isqueeze;
+	pos1 += 0.3 * impulse;
+	pos1 = R(-3.0, t0) * pos1;
+	posH[1] = (pos1 + 1.0) / 2.0;
+	J[1] = S(7.0, t0 + 0.567) * Ji * Rinv(-3.0, t0);
+
+	vec2 pos2 = pU;
+	pos2 = S(2.0, t0 + 0.678) * pos2;
+	pos2 *= isqueeze;
+	pos2 += 0.2 * impulse;
+	pos2 = R(5.0, t0 + 0.123) * pos2;
+	posH[2] = (pos2 + 1.0) / 2.0;
+	J[2] = S(2.0, t0 + 0.678) * Ji * Rinv(5.0, t0 + 0.123);
+
+	fcolor = color;
+	GscaleU = GradiusU;
+}
+</script>
+<script type="x-shader" id=fblob>
+precision highp float;
+const int Nhill = 3;  // number of hill textures
+uniform float A[Nhill + 1], Ad[Nhill];
+
+// Basic blob color, before any lighting effect applied
+varying vec3 fcolor;
+
+uniform float VscaleG;
+uniform sampler2D hilltextures[Nhill];
+varying vec2 posH[Nhill];
+varying mat2 J[Nhill];
+varying float GscaleU;
+
+const vec3 bordercolor = vec3(0.0, 0.0, 0.0);
+const float borderwidthG = 0.1;
+
+const float shadewidthU = 0.1;
+
+// lighting direction
+const vec2 L = normalize(vec2(0.0, 1.0));
+
+void main() {
+	float z = A[0];
+	vec2 gradz = vec2(0.0);
+	for (int i = 0; i < Nhill; ++i) {
+		vec3 h = texture2D(hilltextures[i], posH[i]).xyz;
+		z += h.z * A[i+1];
+		gradz += J[i] * (h.xy - 0.5) * Ad[i];
+	}
+
+
+	// The m factor estimates how far we are from the edge (defined as z = 0), using a first-order
+	// approximation, ie, assuming grad z is constant over the local area. The approximation gets
+	// much worse far from the edge, but fortunately we don't need it there.
+	
+	// z is unitless, and gradz in this case is the derivative with respect to pU.
+	// Thus |z| / |grad(z)| has units of U's.
+	float mU = abs(z) / length(gradz);
+	float mG = GscaleU * mU;
+	float mV = VscaleG * mG;
+
+	float lfactor = -0.7 * dot(gradz, L);
+//	lfactor *= 2.0 - smoothstep(0.0, 0.05, mU);  // Makes it better around the edges.
+	lfactor = clamp(lfactor, -1.0, 1.0);
+	lfactor *= 1.0 - smoothstep(shadewidthU, 2.0 * shadewidthU, mU);
+	vec3 lcolor = fcolor * (1.0 + 0.4 * lfactor);
+
+	vec4 color1 = z > 0.0 ? vec4(lcolor, 1.0) : vec4(bordercolor, 0.0);
+	float borderwidthV = VscaleG * borderwidthG;
+	float a = clamp(0.5 * mV - borderwidthV, 0.0, 1.0);
+	gl_FragColor = mix(vec4(bordercolor, 1.0), color1, a);
+}
+</script>
+<canvas id=canvas>
+<script>
+window.onerror = function (error, url, line) { document.body.innerHTML = "<p>Error in: "+url+"<p>line "+line+"<pre>"+error+"</pre>" }
+var tau = 2 * Math.PI
+var clamp = (x, a, b) => x < a ? a : x > b ? b : x
+function ease(f) {
+	f = clamp(f, 0, 1)
+	return f * f * (3 - 2 * f)
+}
+
+var canvas = document.getElementById("canvas")
+UFX.pointer(canvas)
+var gl = UFX.gl(canvas)
+
+canvas.width = 160
+canvas.height = 90
+UFX.maximize.onadjust = function (canvas, x, y) {
+	gl.viewport(0, 0, x, y)
+}
+
+gl.clearColor(0, 0.3, 0.3, 1)
+UFX.gltext.init(gl)
+gl.addProgram("blob", "vblob", "fblob")
+
+function h0(x, y) {
+	var E = (x0, y0, r) => Math.exp(-((x - x0) * (x - x0) + (y - y0) * (y - y0)) / (r * r))
+	return 2 * E(0.0, 0.0, 0.3)
+}
+function randomhill(R0, A0) {
+	var theta = UFX.random.angle(), R = UFX.random(0.8, 1.2) * R0
+	return {
+		A: UFX.random(0.8, 1.2) * A0,
+		x: R * Math.sin(theta),
+		y: R * Math.cos(theta),
+		r: UFX.random(0.15, 0.2),
+	}
+}
+var h1hills = [].concat(
+	[0,0,0,0].map(_ => randomhill(0.3, 0.2)),
+	[0,0,0,0].map(_ => randomhill(0.5, -0.2))
+)
+function isohill(R, ktheta) {
+	var theta = ktheta * tau * 0.618034
+	var r = Math.exp(-4 * R), A = 6 * Math.exp(-4 * R)
+	r = 0.16
+	return {
+		A: A,
+		x: R * Math.cos(theta),
+		y: R * Math.sin(theta),
+		r: r,
+	}
+}
+h1hills = [0,1,2,3,4,5].map(j => isohill(0.3 + 0.02 * j, j))
+function h1(x, y) {
+	var E = (x0, y0, r) => Math.exp(-((x - x0) * (x - x0) + (y - y0) * (y - y0)) / (r * r))
+	return h1hills.map(hill => hill.A * E(hill.x, hill.y, hill.r)).reduce((a, b) => a + b)
+}
+var h2hills = [].concat(
+	[0,0,0,0].map(_ => randomhill(0.4, 0.1)),
+	[0,0,0,0].map(_ => randomhill(0.6, -0.1))
+)
+h2hills = [0,1,2].map(j => isohill(0.4 + 0.01 * j, j))
+function h2(x, y) {
+	var E = (x0, y0, r) => Math.exp(-((x - x0) * (x - x0) + (y - y0) * (y - y0)) / (r * r))
+	return h2hills.map(hill => hill.A * E(hill.x, hill.y, hill.r)).reduce((a, b) => a + b)
+}
+
+function dh(h, x, y) {
+	var d = 0.001
+	return [
+		(h(x + d, y) - h(x - d, y)) / (2 * d),
+		(h(x, y + d) - h(x, y - d)) / (2 * d),
+	]
+}
+
+var hranges = [], dhranges = []
+;[h0, h1, h2].forEach(function (h, j) {
+	var hmin = 0, hmax = 0, dhmax = 0
+	for (var x = -1 ; x < 1 ; x += 0.05) {
+		for (var y = -1 ; y < 1; y += 0.05) {
+			var z = h(x, y)
+			var [dhdx, dhdy] = dh(h, x, y)
+			if (z < hmin) hmin = z
+			if (z > hmax) hmax = z
+			dhdx = Math.abs(dhdx)
+			dhdy = Math.abs(dhdy)
+			if (dhdx > dhmax) dhmax = dhdx
+			if (dhdy > dhmax) dhmax = dhdy
+		}
+	}
+	hranges.push([hmin - 0.1, hmax + 0.1])
+	dhranges.push([-dhmax - 0.1, dhmax + 0.1])
+})
+
+function gethillimg(h, hrange, dhrange, s) {
+	var img = document.createElement("canvas")
+	img.width = s
+	img.height = s
+	var context = img.getContext("2d")
+	var idata = context.createImageData(s, s)
+	for (var py = 0, j = 0 ; py < s ; ++py) {
+		for (var px = 0 ; px < s ; ++px) {
+			var x = (px + 0.5) / s * 2 - 1
+			var y = (py + 0.5) / s * 2 - 1
+			var z = h(x, y)
+			var [dhdx, dhdy] = dh(h, x, y)
+			idata.data[j++] = 255 * (dhdx - dhrange[0]) / (dhrange[1] - dhrange[0])
+			idata.data[j++] = 255 * (dhdy - dhrange[0]) / (dhrange[1] - dhrange[0])
+			idata.data[j++] = 255 * (z - hrange[0]) / (hrange[1] - hrange[0])
+			idata.data[j++] = 255
+		}
+	}
+	context.putImageData(idata, 0, 0)
+	return img
+}
+var hilltextures = []
+;[h0, h1, h2].forEach(function (h, j) {
+	hilltextures.push(gl.buildTexture({
+		source: gethillimg(h, hranges[j], dhranges[j], 128),
+		wrap: gl.CLAMP_TO_EDGE,
+		filter: gl.LINEAR,
+	}))
+})
+var z0 = 0.3
+var A = [-z0 + hranges.map(r => r[0]).reduce((a, b) => a + b)]
+A.push.apply(A, hranges.map(r => r[1] - r[0]))
+var Ad = dhranges.map(r => (r[1] - r[0]) / 2)
+
+UFX.key.init()
+UFX.key.watchlist = "up down left right".split(" ")
+var T = 0
+var ix = 0, iy = 0
+function think(dt) {
+	var kstate = UFX.key.state()
+	if (kstate) {
+		ix += 3 * dt * ((kstate.pressed.right || 0) - (kstate.pressed.left || 0))
+		iy += 3 * dt * ((kstate.pressed.up || 0) - (kstate.pressed.down || 0))
+	}
+	ix *= Math.exp(-3 * dt)
+	iy *= Math.exp(-3 * dt)
+	
+	T += 0.02 * dt
+	T %= 1
+	gl.clear(gl.COLOR_BUFFER_BIT)
+	gl.progs.blob.use()
+	gl.progs.blob.set({
+		screensizeV: [canvas.width, canvas.height],
+		scenterG: [0, 0],
+		VscaleG: 6,
+		hilltextures: [0, 1, 2],
+		A: A,
+		Ad: Ad,
+	})
+	const x0 = 0, y0 = 0, R = 10, r = 0, g = 0.6, b = 0.6, t0 = 0.1
+	let buffer = gl.makeArrayBuffer([
+		-1, -1, x0, y0, R, r, g, b, ix, iy, t0, T,
+		1, -1, x0, y0, R, r, g, b, ix, iy, t0, T,
+		1, 1, x0, y0, R, r, g, b, ix, iy, t0, T,
+		-1, -1, x0, y0, R, r, g, b, ix, iy, t0, T,
+		1, 1, x0, y0, R, r, g, b, ix, iy, t0, T,
+		-1, 1, x0, y0, R, r, g, b, ix, iy, t0, T,
+	])
+	buffer.bind()
+	gl.progs.blob.assignAttribOffsets({
+		pU: 0,
+		centerG: 2,
+		GradiusU: 4,
+		color: 5,
+		impulse: 8,
+		t0: 10,
+		T: 11,
+	})
+	for (var i = 0 ; i < 3 ; ++i) {
+		gl.activeTexture(gl.TEXTURE0 + i)
+		gl.bindTexture(gl.TEXTURE_2D, hilltextures[i])
+	}
+	gl.drawArrays(gl.TRIANGLES, 0, 6)
+	gl.progs.text.use()
+	gl.progs.text.draw("impulse: " + ix.toFixed(4) + " " + iy.toFixed(4), [10, 10])
+}
+if (false) {
+	gl.dumpTexture(hilltextures[1])
+} else {
+	UFX.resource.onload = function () {
+		UFX.maximize.fill(canvas, "aspect")
+		UFX.ticker.init(think, null, { maxups: 60 })
+	}
+}
+UFX.resource.loadwebfonts("Viga", "Skranji")
+</script>

@@ -12,7 +12,7 @@ Cell.prototype = UFX.Thing()
 	.addcomp(HasSlots, 7)
 	.addcomp(Mouseable, 20)
 	.addcomp(EjectsOnRightClick)
-	.definemethod("think")
+	.addcomp(AnimationTicker, 100)
 
 function Antibody(spec) {
 	this.start(spec)
@@ -30,6 +30,7 @@ Antibody.prototype = UFX.Thing()
 	.addcomp(Mouseable)
 	.addcomp(SplitsOnRightClick)
 	.addcomp(FollowsRecipe)
+	.addcomp(AnimationTicker, 100)
 
 function Organelle(spec) {
 	this.start(spec)

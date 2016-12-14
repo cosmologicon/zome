@@ -32,9 +32,9 @@ var view = {
 		}
 		UFX.maximize.fill(canvas, "aspect")
 		pUbuffer = gl.makeArrayBuffer([-1, -1, 1, -1, 1, 1, -1, 1])
-		;"organelle petri circle virus mote".split(" ").forEach(name => {
+		for (let name in shaders) {
 			gl.addProgram(name, shaders[name].vert, shaders[name].frag)
-		})
+		}
 		this.xcenterG = 0
 		this.ycenterG = 0
 		this.Z = 0
