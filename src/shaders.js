@@ -340,7 +340,7 @@ attribute vec2 impulse;
 // grad(z) value after it's read from the texture. That is, J is the Jacobian from posH1/posH2
 // coordinates back to posH0 coordinates.
 varying vec2 posH[3];
-varying mat2 J1, J2;
+varying vec4 Jv1, Jv2;
 
 // Base color
 varying vec3 fcolor;
@@ -380,19 +380,23 @@ void main() {
 	posH[0] = (pU + 1.0) / 2.0;
 
 	vec2 pos1 = pU;
-	J1 = mat2(1.0, 0.0, 0.0, 1.0);
+	mat2 J1 = mat2(1.0, 0.0, 0.0, 1.0);
 	applyS(7.0, t0 + 0.567, pos1, J1);
 	applyI(0.3 * impulse, pos1, J1);
 	applyR(-3.0, t0, pos1, J1);
 	posH[1] = (pos1 + 1.0) / 2.0;
 
 	vec2 pos2 = pU;
-	J2 = mat2(1.0, 0.0, 0.0, 1.0);
+	mat2 J2 = mat2(1.0, 0.0, 0.0, 1.0);
 	applyS(2.0, t0 + 0.678, pos2, J2);
 	applyI(0.2 * impulse, pos2, J2);
 	applyR(5.0, t0 + 0.123, pos2, J2);
 	posH[2] = (pos2 + 1.0) / 2.0;
 
+	// Convert the transformation matrices to vec4 for transit. For some reason Chrome on Android
+	// lost it when they were matrices.
+	Jv1 = vec4(J1);
+	Jv2 = vec4(J2);
 	fcolor = color;
 	GscaleU = GradiusU;
 }
@@ -409,7 +413,7 @@ varying vec3 fcolor;
 uniform float VscaleG;
 uniform sampler2D hilltextures[Nhill];
 varying vec2 posH[Nhill];
-varying mat2 J1, J2;
+varying vec4 Jv1, Jv2;
 varying float GscaleU;
 
 const vec3 bordercolor = vec3(0.0, 0.0, 0.0);
@@ -422,6 +426,8 @@ const float shadefactor = 0.4;
 const vec2 L = normalize(vec2(0.2, 0.4));
 
 void main() {
+	mat2 J1 = mat2(Jv1), J2 = mat2(Jv2);
+
 	// The values of the vector-valued function z(pU) are stored in the z channel of the three hill
 	// textures. The values of grad(z) = <dz/dxU, dz/dyU> are stored in the x and y channels. In
 	// each case the stored value is transformed to its actual value by a scaling parameter A or Ad.
