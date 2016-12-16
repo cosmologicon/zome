@@ -127,6 +127,36 @@ function drawscene() {
 		gl.drawArrays(gl.TRIANGLES, 0, 6*objs.length)
 	}
 
+	// Bullets
+	data = [], objs = state.shots
+	objs.forEach(function (obj) {
+		const x = obj.x, y = obj.y, T = obj.T
+		data.push(
+			-1, -1, x, y, T,
+			1, -1, x, y, T,
+			1, 1, x, y, T,
+			-1, -1, x, y, T,
+			1, 1, x, y, T,
+			-1, 1, x, y, T
+		)
+	})
+	if (data.length) {
+		gl.progs.bullet.use()
+		gl.progs.bullet.set({
+			scenterG: [view.xcenterG, view.ycenterG],
+			screensizeV: [view.wV, view.hV],
+			VscaleG: view.VscaleG,
+		})
+		gl.makeArrayBuffer(data).bind()
+		gl.progs.bullet.assignAttribOffsets({
+			pU: 0,
+			centerG: 2,
+			T: 4,
+		}, {stride: 5})
+		gl.drawArrays(gl.TRIANGLES, 0, 6 * objs.length)
+	}
+
+
 	// Petri dish
 	gl.progs.petri.use()
 	gl.progs.petri.set({
@@ -138,7 +168,6 @@ function drawscene() {
 	pUbuffer.bind()
 	gl.progs.petri.assignAttribOffsets({ pU: 0 })
 	gl.drawArrays(gl.TRIANGLE_FAN, 0, 4)
-
 
 	// Motes
 	gl.progs.mote.use()

@@ -29,33 +29,34 @@ new Organelle({
 	flavor: "X",
 }).toantibody().drop(state.cell)
 
-new Organelle({
-	x: 10,
-	y: 20,
-	flavor: "Y",
-}).toantibody().drop()
-
-new Organelle({ x: 0, y: 0, flavor: "Z" }).toantibody().drop(state.cell)
+new Organelle({ x: 10, y: 20, flavor: "Y", }).toantibody().drop()
+new Organelle({ x: 0, y: 40, flavor: "X", }).toantibody().drop()
+new Organelle({ x: 0, y: -60, flavor: "Z" }).toantibody().drop(state.cell)
 
 for (let i = 0 ; i < 40 ; ++i) {
 	state.addobj(new Ant({ x: UFX.random(40, 80), y: UFX.random(0, 40), }))
-	state.addobj(new Bee({ x: UFX.random(40, 80), y: UFX.random(0, 40), }))
+//	state.addobj(new Bee({ x: UFX.random(40, 80), y: UFX.random(0, 40), }))
 }
 
 state.thinkers().forEach(obj => obj.think(0))
 
-UFX.ticker.init(function (dt) {
+UFX.ticker.init(function (dt, j, n) {
 	adjust(state.colliders(), dt)
-	state.thinkers().forEach(obj => obj.think(dt))
-	state.antibodies.forEach(obj => obj.constraintoworld())
-	if (control.cursor) {
-		control.cursor.think(dt)
-		control.cursor.reset()
-		control.cursor.constraintoworld()
+	if (j == 0) {
+		dt *= n
+		state.thinkers().forEach(obj => obj.think(dt))
+		state.antibodies.forEach(obj => obj.constraintoworld())
+		if (control.cursor) {
+			control.cursor.think(dt)
+			control.cursor.reset()
+			control.cursor.constraintoworld()
+		}
+		state.think(dt)
 	}
-	state.think(dt)
-
+}, function () {
 	drawscene()
-})
+	gl.progs.text.use()
+	gl.progs.text.draw(UFX.ticker.getrates(), { left: 10, bottom: 10 })
+}, { minups: 200, maxupf: 20, maxfps: 30, })
 
 </script>

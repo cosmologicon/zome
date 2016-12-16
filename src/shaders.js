@@ -7,6 +7,7 @@ const shaders = {
 	virus: {},
 	mote: {},
 	blob: {},
+	bullet: {},
 }
 
 shaders.circle.vert = `
@@ -464,6 +465,45 @@ void main() {
 	float borderwidthV = VscaleG * borderwidthG;
 	float a = clamp(0.5 * mV - borderwidthV, 0.0, 1.0);  // Not sure why 0.5 here?
 	gl_FragColor = mix(vec4(bordercolor, 1.0), color1, a);
+}
+`
+
+
+shaders.bullet.vert = `
+uniform vec2 scenterG;
+uniform vec2 screensizeV;
+uniform float VscaleG;
+attribute vec2 pU, centerG;
+attribute float T;
+const float GradiusU = 5.0;
+const float tau = 6.283185307179586;
+varying vec2 pT;
+varying vec3 fcolor;
+mat2 Q(float q, float kappa) {
+	float S = sin(kappa), C = cos(kappa);
+	return mat2(C, S, -S, C) * mat2(q, 0.0, 0.0, 1.0/q) * mat2(C, -S, S, C);
+}
+void main() {
+	vec2 pG = centerG + GradiusU * pU;
+	vec2 pV = VscaleG * (pG - scenterG);
+	vec2 PscaleV = 2.0 / screensizeV;
+	vec2 pP = PscaleV * pV;
+	gl_Position = vec4(pP, 0.0, 1.0);
+	float q = 1.0 + 0.2 * sin(3.0 * T * tau + 1.0), kappa = 1.0 * T * tau + 2.0;
+	q = 1.3;
+	pT = Q(q, kappa) * 2.0 * pU;
+	float t = 15.0 * T * tau;
+	fcolor = vec3(0.8 + 0.2 * sin(t), 0.6 - 0.2 * sin(t), 0.3);
+}
+`
+
+shaders.bullet.frag = `
+precision highp float;
+varying vec2 pT;
+varying vec3 fcolor;
+void main() {
+	if (length(pT) > 1.0) discard;
+	gl_FragColor = vec4(fcolor, 1.0);
 }
 `
 

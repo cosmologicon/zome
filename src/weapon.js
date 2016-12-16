@@ -54,6 +54,7 @@ Bullet.prototype = UFX.Thing()
 	.addcomp(HurtsTarget)
 	.addcomp(KicksOnArrival)
 	.addcomp(DiesOnArrival)
+	.addcomp(AnimationTicker, 0.2)
 
 function Laser(from, to, mechanic) {
 	to.shoot(mechanic.strength)

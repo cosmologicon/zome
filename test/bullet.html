@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<script src="http://ufx.space/UFX.js"></script>
+<canvas id=canvas>
+<script>
+window.onerror = function (error, url, line) { document.body.innerHTML = "<p>Error in: "+url+"<p>line "+line+"<pre>"+error+"</pre>" }
+var tau = 2 * Math.PI
+var clamp = (x, a, b) => x < a ? a : x > b ? b : x
+
+var canvas = document.getElementById("canvas")
+UFX.pointer(canvas)
+var gl = UFX.gl(canvas)
+
+canvas.width = 800
+canvas.height = 500
+gl.viewport(0, 0, 800, 500)
+gl.clearColor(0, 0.4, 0.4, 1)
+
+let vert = `
+uniform vec2 scenterG;
+uniform vec2 screensizeV;
+uniform float VscaleG;
+attribute vec2 pU, centerG;
+attribute float T;
+const float GradiusU = 5.0;
+const float tau = 6.283185307179586;
+varying vec2 pT;
+varying vec3 fcolor;
+mat2 Q(float q, float kappa) {
+	float S = sin(kappa), C = cos(kappa);
+	return mat2(C, S, -S, C) * mat2(q, 0.0, 0.0, 1.0/q) * mat2(C, -S, S, C);
+}
+void main() {
+	vec2 pG = centerG + GradiusU * pU;
+	vec2 pV = VscaleG * (pG - scenterG);
+	vec2 PscaleV = 2.0 / screensizeV;
+	vec2 pP = PscaleV * pV;
+	gl_Position = vec4(pP, 0.0, 1.0);
+	float q = 1.0 + 0.2 * sin(3.0 * T * tau + 1.0), kappa = 1.0 * T * tau + 2.0;
+	pT = Q(q, kappa) * 2.0 * pU;
+	float t = 5.0 * T * tau;
+	fcolor = vec3(0.9 + 0.1 * sin(t), 0.7 + 0.1 * cos(t), 0.3);
+}
+`
+
+let frag = `
+precision highp float;
+varying vec2 pT;
+varying vec3 fcolor;
+void main() {
+	if (length(pT) > 1.0) discard;
+	gl_FragColor = vec4(fcolor, 1.0);
+}
+`
+
+gl.addProgram("bullet", vert, frag)
+
+UFX.ticker.init(function (dt) {
+	gl.clear(gl.COLOR_BUFFER_BIT)
+	gl.progs.bullet.use()
+	gl.progs.bullet.set({
+		scenterG: [0, 0],
+		screensizeV: [800, 500],
+		VscaleG: 6,
+	})
+
+	let x = Date.now() * 0.001 * 60 % 60
+	let y = 0
+	let T = Date.now() * 0.001 / 4 % 1
+	let buffer = gl.makeArrayBuffer([
+		-1, -1, x, y, T,
+		1, -1, x, y, T,
+		1, 1, x, y, T,
+		-1, -1, x, y, T,
+		1, 1, x, y, T,
+		-1, 1, x, y, T,
+	])
+	buffer.bind()
+	gl.progs.bullet.assignAttribOffsets({ pU: 0, centerG: 2, T: 4, })
+	gl.drawArrays(gl.TRIANGLES, 0, 6)
+})
+</script>
