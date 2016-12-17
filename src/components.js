@@ -28,6 +28,27 @@ var Lifetime = {
 	},
 }
 
+const FadesOut = {
+	start: function () {
+		this.alpha = 1
+	},
+	think: function (dt) {
+		this.alpha = 1 - this.f
+	},
+}
+
+const Expands = {
+	init: function (efactor) {
+		this.efactor = efactor
+	},
+	start: function () {
+		this.rcollide = this.rcollide0
+	},
+	think: function () {
+		this.rcollide = this.rcollide0 * (1 + Math.sqrt(this.f) * (this.efactor - 1))
+	},
+}
+
 const AnimationTicker = {
 	// Has a timer T that loops within the interval [0, 1) with the given period, and which starts
 	// at a random point.
@@ -91,6 +112,9 @@ var Collideable = {
 }
 
 var Kickable = {
+	init: function (kdecay) {
+		this.kdecay = kdecay === undefined ? 2 : kdecay
+	},
 	start: function () {
 		this.ix = 0
 		this.iy = 0
@@ -102,7 +126,7 @@ var Kickable = {
 	think: function (dt) {
 		if (this.ix || this.iy) {
 			this.scootch(this.ix * dt, this.iy * dt)
-			var f = Math.exp(-2 * dt)
+			var f = Math.exp(-this.kdecay * dt)
 			this.ix *= f
 			this.iy *= f
 		}

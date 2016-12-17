@@ -115,7 +115,9 @@ function drawscene() {
 			screensizeV: [view.wV, view.hV],
 			VscaleG: view.VscaleG,
 			ktexture: 4,
+			alpha: 1,
 		})
+		gl.disableVertexAttribArray(gl.progs.virus.attribs.alpha)
 		gl.makeArrayBuffer(data).bind()
 		gl.progs.virus.assignAttribOffsets({
 			T: 0,
@@ -123,7 +125,7 @@ function drawscene() {
 			centerG: 3,
 			RG: 5,
 			vcolor: 6,
-		})
+		}, {stride: 9})
 		gl.drawArrays(gl.TRIANGLES, 0, 6*objs.length)
 	}
 
@@ -154,6 +156,45 @@ function drawscene() {
 			T: 4,
 		}, {stride: 5})
 		gl.drawArrays(gl.TRIANGLES, 0, 6 * objs.length)
+	}
+
+
+	// Non-boss virus corpses
+	data = [], objs = state.vcorpses
+	objs.forEach(function (obj) {
+		const x = obj.x, y = obj.y, R = obj.rcollide * 1.25, T = obj.T
+		const [r, g, b] = obj.vcolor0, alpha = obj.alpha
+		data.push(
+			T, -1, -1, x, y, R, r, g, b, alpha,
+			T, -1, 1, x, y, R, r, g, b, alpha,
+			T, 1, 1, x, y, R, r, g, b, alpha,
+			T, -1, -1, x, y, R, r, g, b, alpha,
+			T, 1, 1, x, y, R, r, g, b, alpha,
+			T, 1, -1, x, y, R, r, g, b, alpha
+		)
+		
+	})
+	if (data.length) {
+		gl.progs.virus.use()
+		const ktexture = getkscopetexture(64)
+		gl.activeTexture(gl.TEXTURE4)
+		gl.bindTexture(gl.TEXTURE_2D, ktexture)
+		gl.progs.virus.set({
+			scenterG: [view.xcenterG, view.ycenterG],
+			screensizeV: [view.wV, view.hV],
+			VscaleG: view.VscaleG,
+			ktexture: 4,
+		})
+		gl.makeArrayBuffer(data).bind()
+		gl.progs.virus.assignAttribOffsets({
+			T: 0,
+			pU: 1,
+			centerG: 3,
+			RG: 5,
+			vcolor: 6,
+			alpha: 9,
+		}, {stride: 10})
+		gl.drawArrays(gl.TRIANGLES, 0, 6*objs.length)
 	}
 
 

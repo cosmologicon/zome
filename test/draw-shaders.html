@@ -35,7 +35,7 @@ new Organelle({ x: 0, y: -60, flavor: "Z" }).toantibody().drop(state.cell)
 
 for (let i = 0 ; i < 40 ; ++i) {
 	state.addobj(new Ant({ x: UFX.random(40, 80), y: UFX.random(0, 40), }))
-//	state.addobj(new Bee({ x: UFX.random(40, 80), y: UFX.random(0, 40), }))
+	state.addobj(new Bee({ x: UFX.random(40, 80), y: UFX.random(0, 40), }))
 }
 
 state.thinkers().forEach(obj => obj.think(0))

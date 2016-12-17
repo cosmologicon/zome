@@ -184,6 +184,7 @@ attribute vec2 pU;
 attribute vec2 centerG;
 attribute float RG;
 attribute vec3 vcolor;
+attribute float alpha;
 
 uniform vec2 scenterG;
 uniform vec2 screensizeV;
@@ -194,6 +195,7 @@ varying vec2 tpos0;
 varying vec2 tdpos;
 varying float Rd, drx, dry;
 varying float VscaleU;
+varying float falpha;
 
 const float tau = 6.283185307179586;
 
@@ -218,6 +220,7 @@ void main() {
 	drx = sin(dr);
 	dry = cos(dr);
 	VscaleU = VscaleG * RG;
+	falpha = alpha;
 }
 `
 
@@ -231,6 +234,7 @@ varying vec3 fvcolor;
 varying vec2 tpos0, tdpos;
 varying float Rd, drx, dry;
 varying float VscaleU;
+varying float falpha;
 
 const float s3 = sqrt(3.0);
 
@@ -274,6 +278,7 @@ void main() {
 	// either edge of the border.
 	float m = clamp((abs(D) - borderwidth) * VscaleU, 0.0, 1.0);
 	gl_FragColor = mix(vec4(bordercolor, 1.0), color, m);
+	gl_FragColor.a *= falpha;
 }
 `
 

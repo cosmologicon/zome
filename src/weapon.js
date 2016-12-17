@@ -51,9 +51,9 @@ Bullet.prototype = UFX.Thing()
 	.addcomp(Collideable, 3, null)
 	.addcomp(TargetsThing, 80)
 	.addcomp(ExplodesOnArrival)
-	.addcomp(HurtsTarget)
 	.addcomp(KicksOnArrival)
 	.addcomp(DiesOnArrival)
+	.addcomp(HurtsTarget)
 	.addcomp(AnimationTicker, 0.2)
 
 function Laser(from, to, mechanic) {
