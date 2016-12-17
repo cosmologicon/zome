@@ -8,6 +8,7 @@ const shaders = {
 	mote: {},
 	blob: {},
 	bullet: {},
+	laser: {},
 }
 
 shaders.circle.vert = `
@@ -509,6 +510,27 @@ varying vec3 fcolor;
 void main() {
 	if (length(pT) > 1.0) discard;
 	gl_FragColor = vec4(fcolor, 1.0);
+}
+`
+
+shaders.laser.vert = `
+uniform vec2 scenterG;
+uniform vec2 screensizeV;
+uniform float VscaleG;
+attribute vec2 pG;
+void main() {
+	vec2 pV = VscaleG * (pG - scenterG);
+	vec2 PscaleV = 2.0 / screensizeV;
+	vec2 pP = PscaleV * pV;
+	gl_Position = vec4(pP, 0.0, 1.0);
+}
+`
+shaders.laser.frag = `
+precision highp float;
+uniform float alpha;
+const vec3 color = vec3(0.8, 0.8, 1.0);
+void main() {
+	gl_FragColor = vec4(color, alpha);
 }
 `
 

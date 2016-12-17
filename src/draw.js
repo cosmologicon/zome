@@ -158,6 +158,40 @@ function drawscene() {
 		gl.drawArrays(gl.TRIANGLES, 0, 6 * objs.length)
 	}
 
+	// lasers
+	data = [], objs = state.lasers
+	function subdivide(x0, y0, x1, y1) {
+		let dx = x1 - x0, dy = y1 - y0, d = Math.sqrt(dx * dx + dy * dy)
+		if (d < 5) {
+			data.push(x0, y0, x1, y1)
+			return
+		}
+		let f = UFX.random.choice([1/phi, 1 - 1/phi])
+		let x = x0 + dx * f + UFX.random(-0.3, 0.3) * d
+		let y = y0 + dy * f + UFX.random(-0.3, 0.3) * d
+		subdivide(x0, y0, x, y)
+		subdivide(x, y, x1, y1)
+	}
+	objs.forEach(function (obj) {
+		subdivide(obj.x0, obj.y0, obj.x1, obj.y1)
+	})
+	if (data.length) {
+		let width = 3 * view.VscaleG
+		gl.lineWidth(Math.ceil(width))
+		gl.progs.laser.use()
+		gl.progs.laser.set({
+			scenterG: [view.xcenterG, view.ycenterG],
+			screensizeV: [view.wV, view.hV],
+			VscaleG: view.VscaleG,
+			alpha: width / Math.ceil(width),
+		})
+		gl.makeArrayBuffer(data).bind()
+		gl.progs.laser.assignAttribOffsets({
+			pG: 0,
+		}, {stride: 2})
+		gl.drawArrays(gl.LINES, 0, data.length / 2)
+	}
+
 
 	// Non-boss virus corpses
 	data = [], objs = state.vcorpses
