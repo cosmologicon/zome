@@ -47,6 +47,35 @@ Organelle.prototype = UFX.Thing()
 	.addcomp(Mouseable, 6)
 	.addcomp(Jitters, 10)
 
+function Egg(spec) {
+	this.start(spec)
+	this.flavor = spec.flavor
+	this.color = "brown"
+	this.lifetime = mechanics.hatchtime[this.flavor]
+}
+Egg.prototype = UFX.Thing()
+	.addcomp(Lives)
+	.addcomp(Lifetime)
+	.addcomp(WorldBound)
+	.addcomp(Hatches)
+	.addcomp(Collideable, 8, 30)
+	.addcomp(Contained)
+	.addcomp(Jitters, 10)
+	.addcomp(AnimationTicker, 10)
+
+function EggCorpse(obj) {
+	this.rcollide0 = obj.rcollide
+	this.T = obj.T
+	this.start({ x: obj.x, y: obj.y })
+	this.flavor = obj.flavor
+}
+EggCorpse.prototype = UFX.Thing()
+	.addcomp(Lives)
+	.addcomp(Lifetime, 0.5)
+	.addcomp(FadesOut)
+	.addcomp(Expands, 3)
+	.addcomp(WorldBound)
+
 function RNA(spec) {
 	this.start(spec)
 	this.color = "#AA0000"

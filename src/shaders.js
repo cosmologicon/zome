@@ -75,7 +75,7 @@ attribute vec2 pU;
 attribute vec2 centerG;
 
 // Radius of an organelle in game coordinates.
-const float GrU = 6.0;
+attribute float GradiusU;
 
 // screen center
 uniform vec2 scenterG;
@@ -87,13 +87,25 @@ uniform vec2 screensizeV;
 uniform float VscaleG;
 
 attribute vec3 color;
+attribute float alpha;
+// Set to 0 for organelles (only used for egg animation).
+attribute float T;
+
+mat2 Q(float q, float kappa) {
+	float S = sin(kappa), C = cos(kappa);
+	return mat2(C, S, -S, C) * mat2(q, 0.0, 0.0, 1.0/q) * mat2(C, -S, S, C);
+}
 
 varying vec2 tpos, shadepos;
 varying vec3 fcolor;
 varying float radiusV;
+varying float falpha;
+
+const float tau = 6.283185307179586;
 
 void main() {
-	vec2 pG = centerG + GrU * pU;
+	float q = 1.0 + 0.3 * sin(7.0 * tau * T), kappa = 3.0 * tau * T;
+	vec2 pG = centerG + GradiusU * Q(q, kappa) * pU;
 	vec2 pV = VscaleG * (pG - scenterG);
 	vec2 PscaleV = 2.0 / screensizeV;
 	vec2 pP = PscaleV * pV;
@@ -101,7 +113,8 @@ void main() {
 	tpos = pU;
 	shadepos = 0.4 * (pU - vec2(0.2, 0.4));
 	fcolor = color;
-	radiusV = VscaleG * GrU;
+	radiusV = VscaleG * GradiusU;
+	falpha = alpha;
 }
 `
 
@@ -116,13 +129,14 @@ uniform float PconvertG;
 varying vec2 tpos, shadepos;
 varying vec3 fcolor;
 varying float radiusV;
+varying float falpha;
 
 void main () {
 	if (length(tpos) > 1.0) discard;
 	vec3 color = fcolor;
 	float alpha = clamp((1.0 - length(tpos)) * radiusV, 0.0, 1.0);
 	float shade = clamp(1.0 - length(shadepos), 0.0, 1.0);
-	gl_FragColor = vec4(color * shade, alpha);
+	gl_FragColor = vec4(color * shade, falpha * alpha);
 }
 `
 

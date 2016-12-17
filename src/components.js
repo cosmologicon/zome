@@ -189,8 +189,13 @@ var HasSlots = {
 		this.slots = this.slots.filter(o => o !== obj)
 		this.flavors = this.slots.map(obj => obj.flavor).sort().join("")
 	},
+	countflavors: function (flavor) {
+		// Organelles only, no eggs
+		return this.slots.filter(obj => obj.flavor == flavor && obj instanceof Organelle).length
+	},
 	ejectall: function () {
 		this.slots.forEach(obj => {
+			if (!(obj instanceof Organelle)) return
 			this.removeobj(obj)
 			var antibody = obj.toantibody()
 			var [ix, iy] = norm(obj.x - this.x, obj.y - this.y, 30)
@@ -258,6 +263,22 @@ var Contained = {
 		this.container.removeobj(this)
 	},
 }
+
+const Hatches = {
+	think: function (dt) {
+		let n = state.cell.countflavors("Y")
+		this.t += ((1 << n) - 1) * dt
+	},
+	die: function () {
+		if (!this.container.slots.includes(this)) return
+		let obj = new Organelle({ x: this.x, y: this.y, flavor: this.flavor })
+		this.container.removeobj(this)
+		this.container.addobj(obj)
+		state.addobj(obj)
+		state.addobj(new EggCorpse(this))
+	},
+}
+
 
 // CONTROL
 

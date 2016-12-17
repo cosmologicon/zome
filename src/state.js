@@ -55,6 +55,8 @@ var state = {
 		this.shots = []
 		this.lasers = []
 		this.vcorpses = []
+		this.eggs = []
+		this.ecorpses = []
 		this.tlevel = 0
 		this.RNA = 0
 		this.DNA = 0
@@ -64,7 +66,7 @@ var state = {
 	},
 	thinkers: function () {
 		return [this.cell].concat(this.organelles, this.antibodies, this.viruses, this.bosses,
-			this.resources, this.shots, this.lasers, this.vcorpses)
+			this.resources, this.shots, this.lasers, this.vcorpses, this.eggs, this.ecorpses)
 	},
 	pointables: function () {
 		return [this.cell].concat(this.organelles, this.antibodies)
@@ -99,6 +101,8 @@ var state = {
 		if (obj instanceof DNA) return "resources"
 		if (obj instanceof VirusCorpse) return "vcorpses"
 		if (obj instanceof Injection) return "vcorpses"
+		if (obj instanceof Egg) return "eggs"
+		if (obj instanceof EggCorpse) return "ecorpses"
 	},
 	addobj: function (obj) {
 		var type = this.gettype(obj)
@@ -120,6 +124,9 @@ var state = {
 		this.shots = this.shots.filter(isalive)
 		this.lasers = this.lasers.filter(isalive)
 		this.resources = this.resources.filter(isalive)
+		this.eggs = this.eggs.filter(isalive)
+		this.vcorpses = this.vcorpses.filter(isalive)
+		this.ecorpses = this.ecorpses.filter(isalive)
 	},
 
 	addvirus: function (vtype, theta, step) {

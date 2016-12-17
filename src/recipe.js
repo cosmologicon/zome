@@ -176,6 +176,12 @@ const recipes = {
 }
 
 var mechanics = {
+	hatchtime: {
+		X: 8,
+		Y: 12,
+		Z: 20,
+	},
+
 	// ANTIBODY FORMULAS
 
 	// Shoot bullets

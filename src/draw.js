@@ -61,18 +61,20 @@ function drawscene() {
 
 	// state-bound organelles
 	gl.progs.organelle.use()
-	let N = state.organelles.length
+	objs = state.organelles.concat(state.eggs, state.ecorpses)
 	data = []
-	state.organelles.forEach(function (obj) {
-		const [x, y] = obj.drawpos()
-		const [r, g, b] = settings.ocolors[obj.flavor]
+	objs.forEach(function (obj) {
+		const [x, y] = obj.drawpos ? obj.drawpos() : [obj.x, obj.y], R = obj.rcollide
+		const [r, g, b] = (obj instanceof Organelle ? settings.ocolors : settings.ecolors)[obj.flavor]
+		const T = obj.T || 0
+		const alpha = "alpha" in obj ? obj.alpha : 1
 		data.push(
-			-1, -1, x, y, r, g, b,
-			-1, 1, x, y, r, g, b,
-			1, 1, x, y, r, g, b,
-			-1, -1, x, y, r, g, b,
-			1, 1, x, y, r, g, b,
-			1, -1, x, y, r, g, b
+			-1, -1, x, y, R, r, g, b, T, alpha,
+			-1, 1, x, y, R, r, g, b, T, alpha,
+			1, 1, x, y, R, r, g, b, T, alpha,
+			-1, -1, x, y, R, r, g, b, T, alpha,
+			1, 1, x, y, R, r, g, b, T, alpha,
+			1, -1, x, y, R, r, g, b, T, alpha
 		)
 	})
 	if (data.length) {
@@ -85,9 +87,12 @@ function drawscene() {
 		gl.progs.organelle.assignAttribOffsets({
 			pU: 0,
 			centerG: 2,
-			color: 4,
+			GradiusU: 4,
+			color: 5,
+			T: 8,
+			alpha: 9,
 		})
-		gl.drawArrays(gl.TRIANGLES, 0, 6*N)
+		gl.drawArrays(gl.TRIANGLES, 0, 6*objs.length)
 	}
 
 	// Non-boss viruses
