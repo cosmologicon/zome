@@ -14,7 +14,14 @@ function norm (x, y, r) {
 	const f = r / Math.sqrt(d2)
 	return [f * x, y * f]
 }
-window.addEventListener("error", function (error, url, line) {
-	document.body.innerHTML = "<p>Error in: "+url+"<p>line "+line+"<pre>"+error+"</pre>"
-})
+window.onerror = function (message, url, line, col, errorobj) {
+	let stack = errorobj === undefined ? undefined : errorobj.stack
+	document.body.innerHTML = `
+		<p>Error in: ${url}
+		<p>line ${line}
+		<pre>${message}
+		
+${stack}</pre>
+	`
+}
 

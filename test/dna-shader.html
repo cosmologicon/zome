@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<script src="http://ufx.space/UFX.js"></script>
+<canvas id=canvas>
+<script type="x-shader" id=vsource>
+attribute vec2 pU;
+attribute vec2 centerG;
+attribute vec3 color;
+attribute float T;
+
+uniform vec2 scenterG;
+uniform vec2 screensizeV;
+uniform float VscaleG;
+
+varying vec2 fpU1, fpU2;
+varying vec3 fcolor;
+varying float falpha;
+
+const float GradiusU = 4.0;
+const float tau = 6.283185307179586;
+
+void main() {
+	vec2 pG = centerG + GradiusU * pU;
+	vec2 pV = VscaleG * (pG - scenterG);
+	vec2 PscaleV = 2.0 / screensizeV;
+	vec2 pP = PscaleV * pV;
+	gl_Position = vec4(pP, 0.0, 1.0);
+	float gamma = 3.0 * T * tau;
+	float S = sin(gamma), C = cos(gamma);
+	fpU1 = mat2(C, S, -S, C) * pU;
+	gamma = -4.0 * T * tau;
+	S = sin(gamma), C = cos(gamma);
+	fpU2 = mat2(C, S, -S, C) * pU;
+	fcolor = color;
+	falpha = 0.6 + 0.4 * sin(31.0 * T);
+}
+</script>
+<script type="x-shader" id=fsource>
+precision highp float;
+varying vec2 fpU1, fpU2;
+varying vec3 fcolor;
+varying float falpha;
+void main() {
+	vec2 foff1 = abs(fpU1) + 1.0;
+	vec2 foff2 = abs(fpU2) + 1.0;
+	float a1 = 2.0 / (foff1.x * foff1.y) - 1.0;
+	float a2 = 2.0 / (foff2.x * foff2.y) - 1.0;
+	gl_FragColor = vec4(fcolor, clamp((a1 + a2) * falpha, 0.0, 1.0));
+}
+</script>
+<script>
+window.onerror = function (error, url, line) { document.body.innerHTML = "<p>Error in: "+url+"<p>line "+line+"<pre>"+error+"</pre>" }
+var canvas = document.getElementById("canvas")
+canvas.width = 854
+canvas.height = 480
+var gl = UFX.gl(canvas)
+gl.enable(gl.BLEND)
+gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, 0, 1)
+gl.clearColor(0, 0.4, 0.4, 1)
+
+let dna = UFX.random.spread(100, 0.15, 200, 200, -100, -100).map(p => {
+	let [x, y] = p
+	let [r, g, b] = UFX.random.choice([[0.4, 1.0, 0.4], [0.6, 0.6, 1.0]])
+	let T0 = UFX.random()
+	return [x, y, r, g, b, T0]
+})
+
+
+
+
+gl.addProgram("dna", "vsource", "fsource")
+UFX.ticker.init(function () {
+	let data = []
+	dna.forEach(function (a) {
+		let [x, y, r, g, b, T0] = a
+		let T = (Date.now() * 0.001 / 5 + T0) % 1
+		data.push(
+			-1, -1, x, y, r, g, b, T,
+			-1, 1, x, y, r, g, b, T,
+			1, 1, x, y, r, g, b, T,
+			-1, -1, x, y, r, g, b, T,
+			1, 1, x, y, r, g, b, T,
+			1, -1, x, y, r, g, b, T
+		)
+	})
+	let buffer = gl.makeArrayBuffer(data)
+
+
+	gl.clear(gl.COLOR_BUFFER_BIT)
+	gl.progs.dna.use()
+	gl.progs.dna.set({
+		scenterG: [0, 0],
+		screensizeV: [854, 480],
+		VscaleG: 3,
+	})
+	buffer.bind()
+	gl.progs.dna.assignAttribOffsets({
+		pU: 0,
+		centerG: 2,
+		color: 4,
+		T: 7,
+	}, { stride: 8 })
+	gl.drawArrays(gl.TRIANGLES, 0, 600)
+})
+
+
+</script>

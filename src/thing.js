@@ -79,6 +79,7 @@ EggCorpse.prototype = UFX.Thing()
 function RNA(spec) {
 	this.start(spec)
 	this.color = "#AA0000"
+	this.rcolor = [0.4, 0.4, 1.0]
 	this.rcollide = 2
 }
 RNA.prototype = UFX.Thing()
@@ -91,10 +92,12 @@ RNA.prototype = UFX.Thing()
 	.addcomp(CollectsOnHover)
 	.addcomp(DiesOnArrival)
 	.addcomp(ResourcesOnArrival, 1, 0)
+	.addcomp(AnimationTicker, 20)
 
 function DNA(spec) {
 	this.start(spec)
 	this.color = "#FF7700"
+	this.rcolor = [1.0, 0.0, 1.0]
 	this.rcollide = 2
 }
 DNA.prototype = UFX.Thing()
@@ -107,4 +110,5 @@ DNA.prototype = UFX.Thing()
 	.addcomp(CollectsOnHover)
 	.addcomp(DiesOnArrival)
 	.addcomp(ResourcesOnArrival, 0, 1)
+	.addcomp(AnimationTicker, 20)
 

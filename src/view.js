@@ -20,8 +20,16 @@ var view = {
 	// Global setup of the context. To be called at the beginning of the game.
 	init: function () {
 		canvas = document.getElementById("canvas")
-		canvas.width = 854
-		canvas.height = 480
+		// Fullscreen polyfill
+		canvas.requestFullscreen = canvas.requestFullscreen
+			|| canvas.mozRequestFullScreen
+			|| canvas.webkitRequestFullScreen
+		window.addEventListener("mozfullscreenchange", UFX.maximize.onfullscreenchange)
+		window.addEventListener("webkitfullscreenchange", UFX.maximize.onfullscreenchange)
+		UFX.maximize.getfullscreenelement = () => document.fullscreenElement
+			|| document.mozFullscreenElement
+			|| document.webkitFullscreenElement
+		// WebGL context
 		gl = UFX.gl(canvas)
 		UFX.gltext.init(gl)
 		UFX.maximize.onadjust = (canvas, w, h) => {
@@ -30,7 +38,8 @@ var view = {
 			gl.viewport(0, 0, w, h)
 			this.setVscaleG()
 		}
-		UFX.maximize.fill(canvas, "aspect")
+		canvas.style.background = "#222"
+		UFX.maximize(canvas, { aspects: [16/9, 1, 9/16], fillcolor: "#222" })
 		pUbuffer = gl.makeArrayBuffer([-1, -1, 1, -1, 1, 1, -1, 1])
 		for (let name in shaders) {
 			gl.addProgram(name, shaders[name].vert, shaders[name].frag)
@@ -40,6 +49,7 @@ var view = {
 		this.Z = 0
 		this.zoom = 1
 		this.setVscaleG()
+		setTimeout((() => window.scrollTo(0, 1)), 1)
 	},
 
 	clear: function () {
@@ -48,8 +58,8 @@ var view = {
 	},
 
 	setVscaleG: function () {
-		var s = Math.min(this.wV, this.hV)
-		this.VscaleG = this.zoom * s / 200
+		var s = Math.sqrt(this.wV * this.hV)
+		this.VscaleG = this.zoom * s / 250
 	},
 
 	VconvertG: function (pG) {
@@ -90,6 +100,21 @@ var view = {
 		this.xcenterG = posG[0] - (posV[0] - this.wV / 2) / this.VscaleG
 		this.ycenterG = posG[1] + (posV[1] - this.hV / 2) / this.VscaleG
 		this.constrain()
+	},
+
+
+	// The next click or tap will result in fullscreen being requested.
+	readyfullscreen: function () {
+		canvas.addEventListener("mousedown", view.reqfs)
+		canvas.addEventListener("touchstart", view.reqfs)
+	},
+	unreadyfullscreen: function () {
+		canvas.removeEventListener("mousedown", view.reqfs)
+		canvas.removeEventListener("touchstart", view.reqfs)
+	},
+	reqfs: function () {
+		view.unreadyfullscreen()
+		UFX.maximize.setoptions({ fullscreen: true })
 	},
 
 }

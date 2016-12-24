@@ -58,23 +58,25 @@ void applyR(float omega, float toff, inout vec2 pos, inout mat2 J) {
 }
 
 void main() {
-	vec2 pG = centerG + GradiusU * pU;
+	vec2 aU = (0.72 + 0.28 * length(impulse)) * pU;
+
+	vec2 pG = centerG + GradiusU * aU;
 	vec2 pV = VscaleG * (pG - scenterG);
 	vec2 PscaleV = 2.0 / screensizeV;
 	vec2 pP = PscaleV * pV;
 	gl_Position = vec4(pP, 0.0, 1.0);
 
 	// Texture #0 is simply a single peak that never gets skewed or stretched.
-	posH[0] = (pU + 1.0) / 2.0;
+	posH[0] = (aU + 1.0) / 2.0;
 
-	vec2 pos1 = pU;
+	vec2 pos1 = aU;
 	mat2 J1 = mat2(1.0, 0.0, 0.0, 1.0);
 	applyS(7.0, t0 + 0.567, pos1, J1);
 	applyI(0.3 * impulse, pos1, J1);
 	applyR(-3.0, t0, pos1, J1);
 	posH[1] = (pos1 + 1.0) / 2.0;
 
-	vec2 pos2 = pU;
+	vec2 pos2 = aU;
 	mat2 J2 = mat2(1.0, 0.0, 0.0, 1.0);
 	applyS(2.0, t0 + 0.678, pos2, J2);
 	applyI(0.2 * impulse, pos2, J2);
@@ -147,7 +149,7 @@ void main() {
 
 	// Black border effect. The a value is used for subpixel anti-aliasing, like the m value in the
 	// virus fragment shader.
-	vec4 color1 = z > 0.0 ? vec4(lcolor, 1.0) : vec4(bordercolor, 0.0);
+	vec4 color1 = z > 0.0 ? vec4(lcolor, 1.0) : vec4(bordercolor, 0.1);
 	float borderwidthV = VscaleG * borderwidthG;
 	float a = clamp(0.5 * mV - borderwidthV, 0.0, 1.0);  // Not sure why 0.5 here?
 	gl_FragColor = mix(vec4(bordercolor, 1.0), color1, a);

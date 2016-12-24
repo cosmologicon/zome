@@ -7,6 +7,7 @@ const shaders = {
 	virus: {},
 	mote: {},
 	blob: {},
+	dna: {},
 	bullet: {},
 	laser: {},
 }
@@ -548,3 +549,50 @@ void main() {
 }
 `
 
+shaders.dna.vert = `
+attribute vec2 pU;
+attribute vec2 centerG;
+attribute vec3 color;
+attribute float T;
+
+uniform vec2 scenterG;
+uniform vec2 screensizeV;
+uniform float VscaleG;
+
+varying vec2 fpU1, fpU2;
+varying vec3 fcolor;
+varying float falpha;
+
+const float GradiusU = 7.0;
+const float tau = 6.283185307179586;
+
+void main() {
+	vec2 pG = centerG + GradiusU * pU;
+	vec2 pV = VscaleG * (pG - scenterG);
+	vec2 PscaleV = 2.0 / screensizeV;
+	vec2 pP = PscaleV * pV;
+	gl_Position = vec4(pP, 0.0, 1.0);
+	float gamma = 3.0 * T * tau;
+	float S = sin(gamma), C = cos(gamma);
+	fpU1 = mat2(C, S, -S, C) * pU;
+	gamma = -4.0 * T * tau;
+	S = sin(gamma), C = cos(gamma);
+	fpU2 = mat2(C, S, -S, C) * pU;
+	fcolor = color;
+	falpha = 0.6 + 0.4 * sin(17.0 * tau * (T + 0.03 * sin(tau * T)));
+}
+`
+
+shaders.dna.frag = `
+precision highp float;
+varying vec2 fpU1, fpU2;
+varying vec3 fcolor;
+varying float falpha;
+void main() {
+	vec2 foff1 = abs(fpU1) + 1.0;
+	vec2 foff2 = abs(fpU2) + 1.0;
+	float a1 = 2.0 / (foff1.x * foff1.y) - 1.0;
+	float a2 = 2.0 / (foff2.x * foff2.y) - 1.0;
+	gl_FragColor = vec4(fcolor, clamp((a1 + a2) * falpha, 0.0, 1.0));
+}
+`

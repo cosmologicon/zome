@@ -18,19 +18,26 @@ function drawscene() {
 	gl.clearColor(0, 0.4, 0.4, 1)
 	gl.clear(gl.COLOR_BUFFER_BIT)
 
+	// Add the given values to the data array 6x, along with corresponding pU's.
+	function addpU(data, vals) {
+		return data.concat(
+			[-1, -1], vals, [1, -1], vals, [1, 1], vals,
+			[-1, -1], vals, [1, 1], vals, [-1, 1], vals
+		)
+	}
+	function builddata(objs, fvals) {
+		let data = []
+		objs.forEach(obj => data = addpU(data, fvals(obj)))
+		data.nvert = 6 * objs.length
+		return data
+	}
+
+
 	// cell and state-bound antibodies
-	let data = [], objs = state.drawblobs()
-	objs.forEach(function (obj) {
+	let data = builddata(state.drawblobs(), obj => {
 		const x = obj.x, y = obj.y, R = obj.rcollide * 1.8, T = obj.T, t0 = 0.1, ix = 0, iy = 0
 		const [r, g, b] = obj.blobcolor
-		data.push(
-			-1, -1, x, y, R, r, g, b, ix, iy, t0, T,
-			1, -1, x, y, R, r, g, b, ix, iy, t0, T,
-			1, 1, x, y, R, r, g, b, ix, iy, t0, T,
-			-1, -1, x, y, R, r, g, b, ix, iy, t0, T,
-			1, 1, x, y, R, r, g, b, ix, iy, t0, T,
-			-1, 1, x, y, R, r, g, b, ix, iy, t0, T
-		)
+		return [x, y, R, r, g, b, ix, iy, t0, T]
 	})
 	if (data.length) {
 		gl.progs.blob.use()
@@ -56,28 +63,19 @@ function drawscene() {
 			t0: 10,
 			T: 11,
 		})
-		gl.drawArrays(gl.TRIANGLES, 0, 6 * objs.length)
+		gl.drawArrays(gl.TRIANGLES, 0, data.nvert)
 	}
 
 	// state-bound organelles
-	gl.progs.organelle.use()
-	objs = state.organelles.concat(state.eggs, state.ecorpses)
-	data = []
-	objs.forEach(function (obj) {
+	data = builddata(state.organelles.concat(state.eggs, state.ecorpses), obj => {
 		const [x, y] = obj.drawpos ? obj.drawpos() : [obj.x, obj.y], R = obj.rcollide
 		const [r, g, b] = (obj instanceof Organelle ? settings.ocolors : settings.ecolors)[obj.flavor]
 		const T = obj.T || 0
 		const alpha = "alpha" in obj ? obj.alpha : 1
-		data.push(
-			-1, -1, x, y, R, r, g, b, T, alpha,
-			-1, 1, x, y, R, r, g, b, T, alpha,
-			1, 1, x, y, R, r, g, b, T, alpha,
-			-1, -1, x, y, R, r, g, b, T, alpha,
-			1, 1, x, y, R, r, g, b, T, alpha,
-			1, -1, x, y, R, r, g, b, T, alpha
-		)
+		return [x, y, R, r, g, b, T, alpha]
 	})
 	if (data.length) {
+		gl.progs.organelle.use()
 		gl.progs.organelle.set({
 			scenterG: [view.xcenterG, view.ycenterG],
 			screensizeV: [view.wV, view.hV],
@@ -92,23 +90,14 @@ function drawscene() {
 			T: 8,
 			alpha: 9,
 		})
-		gl.drawArrays(gl.TRIANGLES, 0, 6*objs.length)
+		gl.drawArrays(gl.TRIANGLES, 0, data.nvert)
 	}
 
 	// Non-boss viruses
-	data = [], objs = state.viruses
-	objs.forEach(function (obj) {
+	data = builddata(state.viruses, obj => {
 		const x = obj.x, y = obj.y, R = obj.rcollide * 1.25, T = obj.T
 		const [r, g, b] = obj.vcolor0
-		data.push(
-			T, -1, -1, x, y, R, r, g, b,
-			T, -1, 1, x, y, R, r, g, b,
-			T, 1, 1, x, y, R, r, g, b,
-			T, -1, -1, x, y, R, r, g, b,
-			T, 1, 1, x, y, R, r, g, b,
-			T, 1, -1, x, y, R, r, g, b
-		)
-		
+		return [x, y, R, r, g, b, T]
 	})
 	if (data.length) {
 		gl.progs.virus.use()
@@ -125,28 +114,40 @@ function drawscene() {
 		gl.disableVertexAttribArray(gl.progs.virus.attribs.alpha)
 		gl.makeArrayBuffer(data).bind()
 		gl.progs.virus.assignAttribOffsets({
-			T: 0,
-			pU: 1,
-			centerG: 3,
-			RG: 5,
-			vcolor: 6,
+			pU: 0,
+			centerG: 2,
+			RG: 4,
+			vcolor: 5,
+			T: 8,
 		}, {stride: 9})
-		gl.drawArrays(gl.TRIANGLES, 0, 6*objs.length)
+		gl.drawArrays(gl.TRIANGLES, 0, data.nvert)
+	}
+
+	// DNA and RNA
+	data = builddata(state.resources, obj => {
+		const x = obj.x, y = obj.y, T = obj.T
+		const [r, g, b] = obj.rcolor
+		return [x, y, r, g, b, T]
+	})
+	if (data.length) {
+		gl.progs.dna.use()
+		gl.progs.dna.set({
+			scenterG: [view.xcenterG, view.ycenterG],
+			screensizeV: [view.wV, view.hV],
+			VscaleG: view.VscaleG,
+		})
+		gl.makeArrayBuffer(data).bind()
+		gl.progs.dna.assignAttribOffsets({
+			pU: 0,
+			centerG: 2,
+			color: 4,
+			T: 7,
+		}, {stride: 8})
+		gl.drawArrays(gl.TRIANGLES, 0, data.nvert)
 	}
 
 	// Bullets
-	data = [], objs = state.shots
-	objs.forEach(function (obj) {
-		const x = obj.x, y = obj.y, T = obj.T
-		data.push(
-			-1, -1, x, y, T,
-			1, -1, x, y, T,
-			1, 1, x, y, T,
-			-1, -1, x, y, T,
-			1, 1, x, y, T,
-			-1, 1, x, y, T
-		)
-	})
+	data = builddata(state.shots, obj => [obj.x, obj.y, obj.T])
 	if (data.length) {
 		gl.progs.bullet.use()
 		gl.progs.bullet.set({
@@ -160,11 +161,11 @@ function drawscene() {
 			centerG: 2,
 			T: 4,
 		}, {stride: 5})
-		gl.drawArrays(gl.TRIANGLES, 0, 6 * objs.length)
+		gl.drawArrays(gl.TRIANGLES, 0, data.nvert)
 	}
 
 	// lasers
-	data = [], objs = state.lasers
+	data = []
 	function subdivide(x0, y0, x1, y1) {
 		let dx = x1 - x0, dy = y1 - y0, d = Math.sqrt(dx * dx + dy * dy)
 		if (d < 5) {
@@ -177,7 +178,7 @@ function drawscene() {
 		subdivide(x0, y0, x, y)
 		subdivide(x, y, x1, y1)
 	}
-	objs.forEach(function (obj) {
+	state.lasers.forEach(function (obj) {
 		subdivide(obj.x0, obj.y0, obj.x1, obj.y1)
 	})
 	if (data.length) {
@@ -199,19 +200,10 @@ function drawscene() {
 
 
 	// Non-boss virus corpses
-	data = [], objs = state.vcorpses
-	objs.forEach(function (obj) {
+	data = builddata(state.vcorpses, obj => {
 		const x = obj.x, y = obj.y, R = obj.rcollide * 1.25, T = obj.T
 		const [r, g, b] = obj.vcolor0, alpha = obj.alpha
-		data.push(
-			T, -1, -1, x, y, R, r, g, b, alpha,
-			T, -1, 1, x, y, R, r, g, b, alpha,
-			T, 1, 1, x, y, R, r, g, b, alpha,
-			T, -1, -1, x, y, R, r, g, b, alpha,
-			T, 1, 1, x, y, R, r, g, b, alpha,
-			T, 1, -1, x, y, R, r, g, b, alpha
-		)
-		
+		return [x, y, R, r, g, b, T, alpha]
 	})
 	if (data.length) {
 		gl.progs.virus.use()
@@ -226,14 +218,14 @@ function drawscene() {
 		})
 		gl.makeArrayBuffer(data).bind()
 		gl.progs.virus.assignAttribOffsets({
-			T: 0,
-			pU: 1,
-			centerG: 3,
-			RG: 5,
-			vcolor: 6,
+			pU: 0,
+			centerG: 2,
+			RG: 4,
+			vcolor: 5,
+			T: 8,
 			alpha: 9,
 		}, {stride: 10})
-		gl.drawArrays(gl.TRIANGLES, 0, 6*objs.length)
+		gl.drawArrays(gl.TRIANGLES, 0, data.nvert)
 	}
 
 
