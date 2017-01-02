@@ -1,3 +1,7 @@
+// G: game coodinates
+// V: viewport coordinates - [0, 0] in bottom left, [wV, hV] in top right
+// P: pointer coordinates - [0, 0] in *top* left, [wV, hV] in *bottom* right
+
 "use strict"
 
 var canvas = null
@@ -44,12 +48,16 @@ var view = {
 		for (let name in shaders) {
 			gl.addProgram(name, shaders[name].vert, shaders[name].frag)
 		}
+		setTimeout((() => window.scrollTo(0, 1)), 1)
+		this.reset()
+	},
+
+	reset: function () {
 		this.xcenterG = 0
 		this.ycenterG = 0
 		this.Z = 0
 		this.zoom = 1
 		this.setVscaleG()
-		setTimeout((() => window.scrollTo(0, 1)), 1)
 	},
 
 	clear: function () {
@@ -65,15 +73,30 @@ var view = {
 	VconvertG: function (pG) {
 		return [
 			this.wV / 2 + this.VscaleG * (pG[0] - this.xcenterG),
-			this.hV / 2 - this.VscaleG * (pG[1] - this.ycenterG),
+			this.hV / 2 + this.VscaleG * (pG[1] - this.ycenterG),
 		]
 	},
 
 	GconvertV: function (pV) {
 		return [
 			this.xcenterG + (pV[0] - this.wV / 2) / this.VscaleG,
-			this.ycenterG - (pV[1] - this.hV / 2) / this.VscaleG,
+			this.ycenterG + (pV[1] - this.hV / 2) / this.VscaleG,
 		]
+	},
+
+	PconvertG: function (pG) {
+		return [
+			this.wV / 2 + this.VscaleG * (pG[0] - this.xcenterG),
+			this.hV / 2 - this.VscaleG * (pG[1] - this.ycenterG),
+		]
+	},
+
+	// As a special case, maps null to [0, 0]
+	GconvertP: function (pP) {
+		return pP ? [
+			this.xcenterG + (pP[0] - this.wV / 2) / this.VscaleG,
+			this.ycenterG - (pP[1] - this.hV / 2) / this.VscaleG,
+		] : [0, 0]
 	},
 
 	constrain: function () {
@@ -87,18 +110,19 @@ var view = {
 	// Adjust the zoom by an amount dz such that the given game position remains at the same
 	// screen position.
 	zoomat: function (dz, posG) {
-		var posV = posG ? this.VconvertG(posG) : null
+		var posP = posG ? this.PconvertG(posG) : null
 		this.Z = clamp(this.Z + dz, -1.5, 1.5)
 		this.zoom = Math.exp(this.Z)
 		this.setVscaleG()
-		if (posG) this.dragto(posG, posV)
+		if (posG) this.dragto(posG, posP)
 		this.constrain()
 	},
 
-	// Move the camera such that the given game position is at the given screen position.
-	dragto: function (posG, posV) {
-		this.xcenterG = posG[0] - (posV[0] - this.wV / 2) / this.VscaleG
-		this.ycenterG = posG[1] + (posV[1] - this.hV / 2) / this.VscaleG
+	// Move the camera such that the given game position is at the given pointer position.
+	dragto: function (posG, posP) {
+		posP = posP || [0, 0]
+		this.xcenterG = posG[0] - (posP[0] - this.wV / 2) / this.VscaleG
+		this.ycenterG = posG[1] + (posP[1] - this.hV / 2) / this.VscaleG
 		this.constrain()
 	},
 
@@ -111,12 +135,38 @@ var view = {
 	unreadyfullscreen: function () {
 		canvas.removeEventListener("mousedown", view.reqfs)
 		canvas.removeEventListener("touchstart", view.reqfs)
+		if (UFX.scene.top() === UFX.scenes.gofull) UFX.scene.pop()
 	},
 	reqfs: function () {
 		view.unreadyfullscreen()
 		UFX.maximize.setoptions({ fullscreen: true })
 	},
+}
 
+// UFX.scene.push("gofull") will pause and give the player 3 seconds to confirm going fullscreen.
+UFX.scenes.gofull = {
+	start: function () {
+		view.readyfullscreen()
+		this.t = 0
+	},
+	think: function (dt) {
+		this.t += dt
+		if (this.t > 3) view.unreadyfullscreen()
+	},
+	draw: function () {
+		gl.clearColor(0.5, 0, 0.5, 1)
+		gl.clear(gl.COLOR_BUFFER_BIT)
+		gl.progs.text.use()
+		let sx = view.wV, sy = view.hV, s = Math.min(sx, sy)
+		let h = 0.1 * s
+		let text = (UFX.pointer.touch ? "Tap" : "Click") + "\nto enter\nfullscreen\nmode"
+		gl.progs.text.draw(text, {
+			centerx: sx / 2,
+			centery: sy / 2,
+			color: "white",
+			fontsize: h,
+		})
+	},
 }
 
 

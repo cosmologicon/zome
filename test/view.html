@@ -4,6 +4,7 @@
 <script src="../src/util.js"></script>
 <script src="../src/state.js"></script>
 <script src="../src/view.js"></script>
+<script src="../src/shaders.js"></script>
 <canvas id=canvas></canvas>
 <script>
 view.init()
@@ -11,15 +12,9 @@ UFX.key.init()
 UFX.key.remaparrows(true)
 UFX.key.watchlist = "up down left right 1 2".split(" ")
 
-var pUbuffer = gl.makeArrayBuffer([-1, -1, 1, -1, 1, 1, -1, 1])
-
 
 state.Rlevel = 150
 
-UFX.resource.onload = function () {
-	gl.addProgram("petri", UFX.resource.data.petrivert, UFX.resource.data.petrifrag)
-	UFX.ticker.init(think)
-}
 
 var cursorposG = null
 function think(dt) {
@@ -52,10 +47,6 @@ function think(dt) {
 	var text = "pV: " + pos + "\npG: " + posG
 	gl.progs.text.draw(text, { bottomleft: [10, 10] })
 }
-
-UFX.resource.load({
-	petrivert: "../shaders/petri.vert",
-	petrifrag: "../shaders/petri.frag",
-})
+UFX.ticker.init(think)
 
 </script>

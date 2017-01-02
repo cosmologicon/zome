@@ -15,6 +15,7 @@
 <script src="../src/hill.js"></script>
 <script src="../src/shaders.js"></script>
 <script src="../src/draw.js"></script>
+<script src="../src/hud.js"></script>
 <canvas id=canvas></canvas>
 <script>
 view.init()
@@ -47,10 +48,12 @@ for (let i = 0 ; i < 40 ; ++i) {
 
 state.thinkers().forEach(obj => obj.think(0))
 
-UFX.ticker.init(function (dt, j, n) {
-	adjust(state.colliders(), dt)
-	if (j == 0) {
-		dt *= n
+UFX.scenes.play = {
+	think: function (dt, j, n) {
+		adjust(state.colliders(), dt)
+		if (j == 0) this.think0(dt * n)
+	},
+	think0: function (dt) {
 		state.thinkers().forEach(obj => obj.think(dt))
 		state.antibodies.forEach(obj => obj.constraintoworld())
 		if (control.cursor) {
@@ -59,105 +62,16 @@ UFX.ticker.init(function (dt, j, n) {
 			control.cursor.constraintoworld()
 		}
 		state.think(dt)
-	}
-}, function () {
-	drawscene()
-	gl.progs.text.use()
-	gl.progs.text.draw(`canvas: ${view.wV}x${view.hV}`, { left: 10, bottom: 35 })
-	gl.progs.text.draw(UFX.ticker.getrates(), { left: 10, bottom: 10 })
-}, { minups: 200, maxupf: 20, maxfps: 30, })
+	},
+	draw: function () {
+		drawscene()
+		gl.progs.text.use()
+		gl.progs.text.draw(`canvas: ${view.wV}x${view.hV}`, { left: 10, bottom: 35 })
+		gl.progs.text.draw(UFX.ticker.getrates(), { left: 10, bottom: 10 })
+	},
+}
 
-UFX.maximize.onresize = function () {
-	var state = this.state, element = this.element
-	if (!element) return
-	if (state.mustfullscreen && element !== this.getfullscreenelement()) return
-	var wx = window.innerWidth, wy = window.innerHeight
-
-	function gcd(a, b) {
-		return b == 0 ? a : gcd(b, a % b)
-	}
-	function reduced(aspect) {
-		var a = aspect[0], b = aspect[1], g = gcd(a, b)
-		return [a / g, b / g]
-	}
-
-	// Given an aspect ratio, determine the maximum element size that corresponds to it and fits
-	// inside the window. (Returns null if the window is too small and exact is requested.)
-	function getesize(wx, wy, aspect, exact) {
-		var ispair = aspect instanceof Array
-		if (ispair && !exact) {
-			aspect = aspect[0] / aspect[1]
-			ispair = false
-		}
-		if (ispair) {
-			var a = reduced(aspect), x = a[0], y = a[1]
-			var n = Math.floor(Math.min(wx / x, wy / y))
-			return n ? [x * n, y * n] : null
-		} else {
-			if (aspect == -1) return [wx, wy]
-			return wy * aspect > wx
-				? [wx, Math.round(wx / aspect)]
-				: [Math.round(wy * aspect), wy]
-		}
-	}
-	var aspects = state.free ? [-1] : state.aspects
-	if (!aspects.length) throw "No aspect ratio options specified. Must have at least 1."
-	// Choose the aspect ratio that results in the largest element size (in terms of total area)
-	var esize = null  // element logical dimensions, i.e. height/width values
-	var area = 0, aspect = null
-	for (var j = 0 ; j < aspects.length ; ++j) {
-		var trialaspect = aspects[j]
-		if (trialaspect == 0) trialaspect = state.aspect0
-		var trialesize = getesize(wx, wy, trialaspect, state.exact)
-		if (!trialesize) continue
-		var trialarea = trialesize[0] * trialesize[1]
-		if (trialarea > area) {
-			esize = trialesize
-			area = trialarea
-			aspect = trialaspect
-		}
-	}
-	// In the event that no aspect ratio is chosen (because the window was too small for all of
-	// them), fall back to the first apsect ratio in the list, and let it be larger than the window.
-	if (!esize) {
-		apsect = aspects[0]
-		esize = reduced(aspect)
-	}
-
-	var ssize  // stretched size, ie, how big to style the element
-	if (state.resize) {
-		ssize = esize
-	} else if (state.stretch) {
-		ssize = esize
-		esize = state.aspect0
-	} else {
-		ssize = esize = state.aspect0
-	}
-	element.width = esize[0]
-	element.height = esize[1]
-	element.style.width = ssize[0] + "px"
-	element.style.height = ssize[1] + "px"
-
-	if (element === this.getfullscreenelement()) {
-		element.style.top = element.style.bottom = 0
-		element.style.left = element.style.right = 0
-		element.style.margin = "auto"
-		element.style.borderLeft = element.style.borderRight = "none"
-		element.style.borderTop = element.style.borderBottom = "none"
-	} else {
-		element.style.borderLeft = element.style.borderRight = wx > ssize[0]
-			? ((wx - ssize[0]) / 2 + 1) + "px " + state.fillcolor + " solid"
-			: "none"
-		element.style.borderTop = element.style.borderBottom = wy > ssize[1]
-			? ((wy - ssize[1]) / 2 + 1) + "px " + state.fillcolor + " solid"
-			: "none"
-		// TODO: document why this is here
-		setTimeout(function () { window.scrollTo(0, 1) }, 1)
-	}
-	if (this.onadjust) {
-		this.onadjust(element, element.width, element.height, aspect)
-	}
-}.bind(UFX.maximize)
-
+UFX.scene.init({ minups: 200, maxupf: 20, maxfps: 30, })
+UFX.scene.push("play")
 
 </script>

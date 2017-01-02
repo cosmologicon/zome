@@ -37,6 +37,19 @@ const FadesOut = {
 	},
 }
 
+const FadesInAndOut = {
+	init: function (fadetime) {
+		this.fadetime = fadetime || 0.5
+	},
+	start: function () {
+		this.alpha = 0
+	},
+	think: function (dt) {
+		let f = Math.min(this.t, this.lifetime - this.t) / this.fadetime
+		this.alpha = clamp(f, 0, 1)
+	},
+}
+
 const Expands = {
 	init: function (efactor) {
 		this.efactor = efactor
@@ -139,6 +152,30 @@ var Disableable = {
 	},
 	think: function (dt) {
 		this.disabled = Math.max(0, this.disabled - dt)
+	},
+}
+
+const Impulsed = {
+	init: function () {
+		this.idecay = 3
+	},
+	start: function () {
+		this.impulsex = 0
+		this.impulsey = 0
+	},
+	scootch: function (dx, dy) {
+		this.impulsex += 0.05 * dx
+		this.impulsey += 0.05 * dy
+		const d = Math.sqrt(this.impulsex * this.impulsex + this.impulsey * this.impulsey)
+		if (d > 1) {
+			this.impulsex /= d
+			this.impulsey /= d
+		}
+	},
+	think: function (dt) {
+		const f = Math.exp(-this.idecay * dt)
+		this.impulsex *= f
+		this.impulsey *= f
 	},
 }
 

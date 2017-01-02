@@ -10,6 +10,21 @@
 
 "use strict"
 
+// Add the given values to the data array 6x, along with corresponding pU's.
+function addpU(data, vals) {
+	return data.concat(
+		[-1, -1], vals, [1, -1], vals, [1, 1], vals,
+		[-1, -1], vals, [1, 1], vals, [-1, 1], vals
+	)
+}
+function builddata(objs, fvals) {
+	let data = []
+	objs.forEach(obj => data = addpU(data, fvals(obj)))
+	data.nvert = 6 * objs.length
+	return data
+}
+
+
 function drawscene() {
 	gl.disable(gl.DEPTH_TEST)
 	gl.enable(gl.BLEND)
@@ -18,24 +33,12 @@ function drawscene() {
 	gl.clearColor(0, 0.4, 0.4, 1)
 	gl.clear(gl.COLOR_BUFFER_BIT)
 
-	// Add the given values to the data array 6x, along with corresponding pU's.
-	function addpU(data, vals) {
-		return data.concat(
-			[-1, -1], vals, [1, -1], vals, [1, 1], vals,
-			[-1, -1], vals, [1, 1], vals, [-1, 1], vals
-		)
-	}
-	function builddata(objs, fvals) {
-		let data = []
-		objs.forEach(obj => data = addpU(data, fvals(obj)))
-		data.nvert = 6 * objs.length
-		return data
-	}
-
+	hud.drawback()
 
 	// cell and state-bound antibodies
 	let data = builddata(state.drawblobs(), obj => {
-		const x = obj.x, y = obj.y, R = obj.rcollide * 1.8, T = obj.T, t0 = 0.1, ix = 0, iy = 0
+		const x = obj.x, y = obj.y, R = obj.rcollide * 1.8, T = obj.T, t0 = 0.1
+		const ix = obj.impulsex, iy = obj.impulsey
 		const [r, g, b] = obj.blobcolor
 		return [x, y, R, r, g, b, ix, iy, t0, T]
 	})
@@ -262,6 +265,69 @@ function drawscene() {
 	})
 	gl.drawArrays(gl.TRIANGLES, 0, 6 * Nmote)
 
+}
+
+// Draw a single antibody - you know, for cursors.
+function drawantibody(obj) {
+	// TODO: can make some of these constant attributes
+	let data = builddata([obj], obj => {
+		const x = obj.x, y = obj.y, R = obj.rcollide * 1.8, T = obj.T, t0 = 0.1
+		const ix = obj.impulsex, iy = obj.impulsey
+		const [r, g, b] = obj.blobcolor
+		return [x, y, R, r, g, b, ix, iy, t0, T]
+	})
+	gl.progs.blob.use()
+	gl.progs.blob.set({
+		screensizeV: [view.wV, view.hV],
+		scenterG: [view.xcenterG, view.ycenterG],
+		VscaleG: view.VscaleG,
+		hilltextures: [1, 2, 3],
+		A: hill.A,
+		Ad: hill.Ad,
+	})
+	hill.textures.forEach(function (texture, j) {
+		gl.activeTexture(gl.TEXTURE1 + j)
+		gl.bindTexture(gl.TEXTURE_2D, texture)
+	})
+	gl.makeArrayBuffer(data).bind()
+	gl.progs.blob.assignAttribOffsets({
+		pU: 0,
+		centerG: 2,
+		GradiusU: 4,
+		color: 5,
+		impulse: 8,
+		t0: 10,
+		T: 11,
+	})
+	gl.drawArrays(gl.TRIANGLES, 0, data.nvert)
+
+
+	// state-bound organelles
+	data = builddata(obj.slots, obj => {
+		const [x, y] = obj.drawpos ? obj.drawpos() : [obj.x, obj.y], R = obj.rcollide
+		const [r, g, b] = (obj instanceof Organelle ? settings.ocolors : settings.ecolors)[obj.flavor]
+		const T = obj.T || 0
+		const alpha = 1
+		return [x, y, R, r, g, b, T, alpha]
+	})
+	if (data.length) {
+		gl.progs.organelle.use()
+		gl.progs.organelle.set({
+			scenterG: [view.xcenterG, view.ycenterG],
+			screensizeV: [view.wV, view.hV],
+			VscaleG: view.VscaleG,
+		})
+		gl.makeArrayBuffer(data).bind()
+		gl.progs.organelle.assignAttribOffsets({
+			pU: 0,
+			centerG: 2,
+			GradiusU: 4,
+			color: 5,
+			T: 8,
+			alpha: 9,
+		})
+		gl.drawArrays(gl.TRIANGLES, 0, data.nvert)
+	}
 }
 
 const kscopetextures = {}

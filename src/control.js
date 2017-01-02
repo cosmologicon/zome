@@ -10,6 +10,9 @@ var control = {
 		// A draggable object (antibody) that is currently being moved by the player and not part of
 		// the game state.
 		this.cursor = null
+		// While the viewport is being dragged, the game position of the drag point.
+		this.cursorpos = null
+		// Game coordinates of current pointer
 		this.pos = [0, 0]
 	},
 

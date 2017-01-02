@@ -314,7 +314,7 @@ void main() {
 	// Minimum mote radius in pixels
 	float r0V = 0.08 * min(screensizeV.x, screensizeV.y);
 	
-	vec2 Tpos = mod(pos0 + Nmove * T + offsetV * (2.0 * fR), 1.0);
+	vec2 Tpos = mod(pos0 + Nmove * T - offsetV / screensizeV * (2.0 * fR), 1.0);
 	vec2 centerV = Tpos * (4.0 * r0V + screensizeV) - 2.0 * r0V;
 	
 	vec2 pV = centerV + pU * fR * r0V;

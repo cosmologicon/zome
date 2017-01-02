@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+<script src="http://ufx.space/UFX.js"></script>
+<script src="../src/util.js"></script>
+<script src="../src/settings.js"></script>
+<script src="../src/components.js"></script>
+<script src="../src/recipe.js"></script>
+<script src="../src/thing.js"></script>
+<script src="../src/virus.js"></script>
+<script src="../src/weapon.js"></script>
+<script src="../src/state.js"></script>
+<script src="../src/collision.js"></script>
+<script src="../src/control.js"></script>
+<script src="../src/view.js"></script>
+<script src="../src/hud.js"></script>
+<script src="../src/hill.js"></script>
+<script src="../src/shaders.js"></script>
+<script src="../src/draw.js"></script>
+<canvas id=canvas></canvas>
+<script>
+"use strict"
+view.init()
+hill.init()
+
+mechanics.X.RNAprob = 0
+
+
+UFX.scenes.demo = {
+	start: function () {
+		view.reset()
+		hud.reset()
+		state.Rlevel = 100
+		state.cell = new Cell({ x: 0, y: -70 })
+//		hud.addbmessage("Defend the cell!", [0, 30], { rotation: 10, fontsize: 30, lifetime: 10, })
+		this.t = 0
+		this.nexts = {
+			ant: 0,
+		}
+		new Organelle({ x: -20, y: 0, flavor: "X", }).toantibody().drop()
+		new Organelle({ x: 20, y: 0, flavor: "X", }).toantibody().drop()
+	},
+
+	think: function (dt, jframe, nframe) {
+		this.t += dt
+		adjust(state.colliders(), dt)
+		if (jframe == 0) this.think0(dt * nframe)
+	},
+	think0: function (dt) {
+		this.control()
+		this.addwaves()
+		state.thinkers().forEach(obj => obj.think(dt))
+		state.antibodies.forEach(obj => obj.constraintoworld())
+		if (control.cursor) {
+			control.cursor.think(dt)
+			control.cursor.reset()
+			control.cursor.constraintoworld()
+		}
+		state.think(dt)
+		hud.think(dt)
+	},
+	control: function () {
+		var pstate = UFX.pointer(canvas), kstate = UFX.key.state()
+		control.pos = view.GconvertP(pstate.pos)
+		control.pointed = control.getpointed(state.pointables())
+
+		if (pstate.down && control.pointed && !control.cursor) {
+			if (control.pointed.draggable && control.pointed.candrag()) {
+				control.pointed.drag()
+				control.pointed = null
+			}
+		} else if (pstate.down && !UFX.pointer.touch) {
+			control.cursorpos = control.pos
+		}
+
+		if (control.cursor) {
+			if (pstate.isdown) {
+				control.cursor.scootchto(control.pos[0], control.pos[1])
+			} else {
+			//if (pstate.up || pstate.cancel) {
+				var target = control.pointed
+				if (target && target.container) target = target.container
+				control.cursor.drop(target)
+				control.cursor = null
+			}
+		} else if (control.cursorpos) {
+			if (pstate.isdown) {
+				view.dragto(control.cursorpos, pstate.pos)
+			} else {
+				control.cursorpos = null
+			}
+		}
+
+		if (pstate.wheel && pstate.wheel.dy) {
+			view.zoomat(-pstate.wheel.dy / 1024, control.pos)
+		}
+	},
+	addwaves: function () {
+		if (this.t > this.nexts.ant) {
+			this.nexts.ant += 1
+			state.addvirus("ant", UFX.random(-0.2, 0.2))
+		}
+	},
+
+
+	draw: function () {
+		drawscene()
+		if (control.cursor) drawantibody(control.cursor)
+
+
+		gl.progs.text.use()
+		var h = 0.01 * Math.sqrt(view.hV * view.wV)
+		gl.progs.text.draw("Dr. Zome's Laboratory", {
+			fontsize: 5 * h,
+			fontname: "Sansita One",
+			topright: [view.wV - 1 * h, view.hV - 0 * h],
+			ocolor: "black",
+			color: "yellow",
+			owidth: 1,
+		})
+		gl.progs.text.draw("Demo version", {
+			fontsize: 3 * h,
+			fontname: "Sansita One",
+			topright: [view.wV - 1 * h, view.hV - 6 * h],
+			ocolor: "black",
+			color: "yellow",
+			owidth: 1,
+		})
+
+		if (window.location.href.includes("DEBUG")) {
+			var text = [
+				"control.pointed = " + control.pointed,
+				"control.pos = [" + control.pos[0].toFixed(1) + "," + control.pos[1].toFixed(1) + "]",
+				UFX.ticker.getrates(),
+			].join("\n")
+			gl.progs.text.draw(text, {
+				fontsize: 2 * h,
+				bottomleft: [0, 0.5 * h],
+				ocolor: "black",
+				color: "white",
+			})
+		}
+	
+	},
+}
+UFX.scene.init({ minups: 200, maxupf: 20, maxfps: 30, })
+UFX.scene.push("demo")
+UFX.resource.onloading = function (f) {
+	UFX.gltext.CONSTANTS.MEMORY_LIMIT_MB = 0
+	gl.progs.text.clean()
+	UFX.gltext.CONSTANTS.MEMORY_LIMIT_MB = 64
+}
+UFX.resource.loadwebfonts("Sansita One", "Stint Ultra Condensed")
+</script>

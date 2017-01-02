@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<!-- Splash screen used as the landing page at drzome.com/ while under development -->
+<title>Dr. Zome's Laboratory - coming soon</title>
+<script src="http://ufx.space/UFX.js"></script>
+<canvas id=canvas></canvas>
+<script>
+"use strict"
+var canvas = document.getElementById("canvas")
+var context = canvas.getContext("2d")
+UFX.draw.setcontext(context)
+UFX.maximize(canvas, { aspects: [16/9, 1, 9/16] })
+UFX.ticker.init(function (dt) {
+	var z = Math.sqrt(canvas.width * canvas.height) / 300
+	UFX.draw("fs #077 f0")
+	UFX.draw(
+		"[ t", canvas.width / 2, canvas.height / 2, "z", z, z,
+		"fs yellow ss black lw 1.5 tab center middle",
+		"font 20px~'Sansita~One' sft Dr.~Zome's 0 -36",
+		"font 34px~'Sansita~One' sft Laboratory 0 -10",
+		"font 16px~'Sansita~One' sft coming~soon 0 50",
+		"] [ t", canvas.width, canvas.height, "z", z, z,
+		"fs orange ss black lw 1.5 tab right bottom",
+//		"font 16px~'Squada~One' sft Play~the~demo~at -4 -18",
+//		"font 16px~'Squada~One' sft drzome.com/demo -4 -2",
+	"]")
+})
+UFX.resource.loadwebfonts("Sansita One", "Squada One")
+</script>
+
