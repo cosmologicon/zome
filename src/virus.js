@@ -16,8 +16,12 @@ var Shootable = {
 			if (DNAprob && UFX.random.flip(DNAprob)) {
 				state.addobj(new DNA({ x: this.x, y: this.y }))
 			}
-			state.addobj(new VirusCorpse(this))
+			this.killed()
 		}
+	},
+	// Called when object is removed by virtue of being shot to death.
+	killed: function () {
+		state.addobj(new VirusCorpse(this))
 	},
 }
 
@@ -67,6 +71,26 @@ var TargetsAntibodies = {
 	},
 }
 
+const CarriesViruses = {
+	init: function (carrytype, ncarry) {
+		this.carrytype = carrytype
+		this.ncarry = ncarry || 3
+	},
+	killed: function () {
+		let theta = UFX.random.angle(), dtheta = tau / this.ncarry
+		let ctype = VirusTypes[this.carrytype]
+		for (let j = 0 ; j < this.ncarry ; ++j, theta += dtheta) {
+			let dx = Math.sin(theta), dy = Math.cos(theta)
+			let virus = new ctype({
+				x: this.x + 2 * dx,
+				y: this.y + 2 * dy,
+			})
+			virus.kick(50 * dx, 50 * dy)
+			state.addobj(virus)
+		}
+	},
+}
+
 const EntersTarget = {
 	start: function () {
 		this.x0 = this.x
@@ -96,6 +120,23 @@ Ant.prototype = UFX.Thing()
 	.addcomp(TargetsThing, mechanics.ant.speed, 0.3)
 	.addcomp(AnimationTicker, 100)
 
+function Tick(spec) {
+	this.start(spec)
+	this.color = "lightblue"
+	this.vcolor0 = [0.1, 0.6, 1.0]
+}
+Tick.prototype = UFX.Thing()
+	.addcomp(Lives)
+	.addcomp(WorldBound)
+	.addcomp(Collideable, mechanics.tick.size, mechanics.tick.mass)
+	.addcomp(Kickable)
+	.addcomp(Shootable, mechanics.tick.hp)
+	.addcomp(HarmsOnArrival, mechanics.tick.strength)
+	.addcomp(InjectsOnArrival)
+	.addcomp(DiesOnArrival)
+	.addcomp(TargetsThing, mechanics.tick.speed, 0.3)
+	.addcomp(AnimationTicker, 100)
+
 function Bee(spec) {
 	this.start(spec)
 	this.color = "#AAAA44"
@@ -114,6 +155,26 @@ Bee.prototype = UFX.Thing()
 	.addcomp(TargetsThing, mechanics.bee.speed, 0.3)
 	.addcomp(TargetsAntibodies, mechanics.bee.tretarget, mechanics.bee.targetrange)
 	.addcomp(AnimationTicker, 100)
+
+
+function MegaAnt(spec) {
+	this.start(spec)
+	this.color = "#999999"
+	this.vcolor0 = [0.8, 0.8, 0.8]
+}
+MegaAnt.prototype = UFX.Thing()
+	.addcomp(Lives)
+	.addcomp(WorldBound)
+	.addcomp(Collideable, mechanics.megaant.size, mechanics.megaant.mass)
+	.addcomp(Kickable)
+	.addcomp(Shootable, mechanics.megaant.hp)
+	.addcomp(HarmsOnArrival, mechanics.megaant.strength)
+	.addcomp(InjectsOnArrival)
+	.addcomp(CarriesViruses, "ant", mechanics.megaant.ncarry)
+	.addcomp(DiesOnArrival)
+	.addcomp(TargetsThing, mechanics.megaant.speed, 0.3)
+	.addcomp(AnimationTicker, 100)
+
 
 function VirusCorpse(obj) {
 	this.rcollide0 = obj.rcollide
@@ -146,3 +207,9 @@ Injection.prototype = UFX.Thing()
 	.addcomp(EntersTarget)
 
 
+const VirusTypes = {
+	ant: Ant,
+	tick: Tick,
+	bee: Bee,
+	megaant: MegaAnt,
+}

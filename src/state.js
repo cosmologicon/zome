@@ -91,8 +91,6 @@ var state = {
 	gettype: function (obj) {
 		if (obj instanceof Organelle) return "organelles"
 		if (obj instanceof Antibody) return "antibodies"
-		if (obj instanceof Ant) return "viruses"
-		if (obj instanceof Bee) return "viruses"
 		if (obj instanceof Bullet) return "shots"
 		if (obj instanceof Explosion) return "shots"
 		if (obj instanceof HealRay) return "shots"
@@ -103,6 +101,9 @@ var state = {
 		if (obj instanceof Injection) return "vcorpses"
 		if (obj instanceof Egg) return "eggs"
 		if (obj instanceof EggCorpse) return "ecorpses"
+		for (let s in VirusTypes) {
+			if (obj instanceof VirusTypes[s]) return "viruses"
+		}
 	},
 	addobj: function (obj) {
 		var type = this.gettype(obj)
@@ -138,10 +139,7 @@ var state = {
 			x += dx
 			y += dy
 		}
-		vtype = {
-			ant: Ant,
-			bee: Bee,
-		}[vtype]
+		vtype = VirusTypes[vtype]
 		var obj = new vtype({ x: x, y: y })
 		obj.target = this.cell
 		this.addobj(obj)

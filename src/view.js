@@ -17,6 +17,8 @@ var view = {
 	// Canvas size
 	wV: 854,
 	hV: 480,
+	// (Approximate) geometric mean of wV and hV
+	sV: 640,
 
 	// pixels per game unit.
 	VscaleG: 480 / 200,
@@ -28,17 +30,23 @@ var view = {
 		canvas.requestFullscreen = canvas.requestFullscreen
 			|| canvas.mozRequestFullScreen
 			|| canvas.webkitRequestFullScreen
+		document.exitFullscreen = document.exitFullscreen
+			|| document.webkitExitFullscreen
+			|| document.mozCancelFullScreen
+			|| document.msExitFullscreen
 		window.addEventListener("mozfullscreenchange", UFX.maximize.onfullscreenchange)
 		window.addEventListener("webkitfullscreenchange", UFX.maximize.onfullscreenchange)
-		UFX.maximize.getfullscreenelement = () => document.fullscreenElement
-			|| document.mozFullscreenElement
+		UFX.maximize.getfullscreenelement = (() => document.fullscreenElement
+			|| document.mozFullScreenElement
 			|| document.webkitFullscreenElement
+			|| document.msFullscreenElement)
 		// WebGL context
 		gl = UFX.gl(canvas)
 		UFX.gltext.init(gl)
 		UFX.maximize.onadjust = (canvas, w, h) => {
 			this.wV = w
 			this.hV = h
+			this.sV = Math.sqrt(w * h)
 			gl.viewport(0, 0, w, h)
 			this.setVscaleG()
 		}
@@ -146,6 +154,12 @@ var view = {
 // UFX.scene.push("gofull") will pause and give the player 3 seconds to confirm going fullscreen.
 UFX.scenes.gofull = {
 	start: function () {
+		if (UFX.maximize.getfullscreenelement() === canvas) {
+			UFX.maximize.setoptions({ fullscreen: false })
+			document.exitFullscreen()
+			UFX.scene.pop()
+			return
+		}
 		view.readyfullscreen()
 		this.t = 0
 	},
@@ -157,14 +171,14 @@ UFX.scenes.gofull = {
 		gl.clearColor(0.5, 0, 0.5, 1)
 		gl.clear(gl.COLOR_BUFFER_BIT)
 		gl.progs.text.use()
-		let sx = view.wV, sy = view.hV, s = Math.min(sx, sy)
-		let h = 0.1 * s
 		let text = (UFX.pointer.touch ? "Tap" : "Click") + "\nto enter\nfullscreen\nmode"
 		gl.progs.text.draw(text, {
-			centerx: sx / 2,
-			centery: sy / 2,
+			centerx: view.wV / 2,
+			centery: view.hV / 2,
 			color: "white",
-			fontsize: h,
+			ocolor: "black",
+			fontname: "Sansita One",
+			fontsize: 0.1 * view.sV,
 		})
 	},
 }

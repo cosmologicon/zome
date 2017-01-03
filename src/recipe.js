@@ -332,6 +332,13 @@ var mechanics = {
 		size: 6,
 		mass: 10,
 	},
+	tick: {
+		hp: 3,
+		speed: 20,
+		strength: 1,
+		size: 4,
+		mass: 10,
+	},
 	bee: {
 		hp: 2,
 		speed: 10,
@@ -341,6 +348,14 @@ var mechanics = {
 		tdisable: 20,
 		tretarget: 1,
 		targetrange: 50,
+	},
+	megaant: {
+		hp: 20,
+		speed: 5,
+		size: 12,
+		mass: 10,
+		strength: 10,
+		ncarry: 5,
 	},
 }
 

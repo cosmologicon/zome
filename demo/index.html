@@ -28,16 +28,26 @@ mechanics.X.RNAprob = 0
 UFX.scenes.demo = {
 	start: function () {
 		view.reset()
+		control.reset()
 		hud.reset()
+		state.reset()
+
 		state.Rlevel = 100
 		state.cell = new Cell({ x: 0, y: -70 })
-//		hud.addbmessage("Defend the cell!", [0, 30], { rotation: 10, fontsize: 30, lifetime: 10, })
 		this.t = 0
-		this.nexts = {
-			ant: 0,
-		}
+		this.nexts = [
+			["ant", 0, 1],
+			["tick", 0, 1],
+		]
 		new Organelle({ x: -20, y: 0, flavor: "X", }).toantibody().drop()
 		new Organelle({ x: 20, y: 0, flavor: "X", }).toantibody().drop()
+
+//		hud.addbmessage("Defend the cell!", [0, 30], { rotation: 10, fontsize: 30, lifetime: 10, })
+		hud.buttons.push(
+			new Button("Full\nscreen", [0.4, 0.4, 0.4], (() => UFX.scene.push("gofull")), "topleft", [0, 0]),
+			new Button("Reset\ndemo", [0.4, 0.4, 0.4], (() => UFX.scene.swap("demo")), "topleft", [0, 1])
+		)
+		this.think(0, 0, 1)
 	},
 
 	think: function (dt, jframe, nframe) {
@@ -62,18 +72,34 @@ UFX.scenes.demo = {
 		var pstate = UFX.pointer(canvas), kstate = UFX.key.state()
 		control.pos = view.GconvertP(pstate.pos)
 		control.pointed = control.getpointed(state.pointables())
+		if (pstate.pos) {
+			hud.pointed = hud.getpointed([pstate.pos[0], view.hV - pstate.pos[1]])
+		}
 
-		if (pstate.down && control.pointed && !control.cursor) {
+		if (pstate.down && hud.pointed) {
+			hud.pointed.onclick()
+		} else if (pstate.rdown && control.pointed && !control.cursor) {
+			control.pointed.onrdown()
+		} else if (pstate.click && UFX.pointer.touch && !control.pointed && control.cursor) {
+			let obj = control.cursor
+			obj.drop()
+			obj.onrdown()
+			control.cursor = null
+		} else if (pstate.down && control.pointed && !control.cursor) {
 			if (control.pointed.draggable && control.pointed.candrag()) {
 				control.pointed.drag()
 				control.pointed = null
 			}
 		} else if (pstate.down && !UFX.pointer.touch) {
 			control.cursorpos = control.pos
+		} else if (pstate.ddown) {
+			control.cursorpos = control.pos
 		}
 
 		if (control.cursor) {
-			if (pstate.isdown) {
+			if (pstate.hold) {
+				console.log("hold")
+			} else if (pstate.isdown) {
 				control.cursor.scootchto(control.pos[0], control.pos[1])
 			} else {
 			//if (pstate.up || pstate.cancel) {
@@ -83,9 +109,11 @@ UFX.scenes.demo = {
 				control.cursor = null
 			}
 		} else if (control.cursorpos) {
-			if (pstate.isdown) {
+			if (pstate.move && !UFX.pointer.touch) {
 				view.dragto(control.cursorpos, pstate.pos)
-			} else {
+			} else if (pstate.dmove) {
+				view.dragto(control.cursorpos, pstate.pos)
+			} else if (!pstate.isdown && !pstate.disdown) {
 				control.cursorpos = null
 			}
 		}
@@ -93,12 +121,17 @@ UFX.scenes.demo = {
 		if (pstate.wheel && pstate.wheel.dy) {
 			view.zoomat(-pstate.wheel.dy / 1024, control.pos)
 		}
+		if (pstate.pinch) {
+			view.zoomat(pstate.pinch.dlogsep, control.pos)
+		}
 	},
 	addwaves: function () {
-		if (this.t > this.nexts.ant) {
-			this.nexts.ant += 1
-			state.addvirus("ant", UFX.random(-0.2, 0.2))
-		}
+		this.nexts.forEach(nspec => {
+			if (this.t > nspec[1]) {
+				nspec[1] += nspec[2]
+				state.addvirus(nspec[0], UFX.random(-0.2, 0.2))
+			}
+		})
 	},
 
 
@@ -106,7 +139,7 @@ UFX.scenes.demo = {
 		drawscene()
 		if (control.cursor) drawantibody(control.cursor)
 
-
+		hud.draw()
 		gl.progs.text.use()
 		var h = 0.01 * Math.sqrt(view.hV * view.wV)
 		gl.progs.text.draw("Dr. Zome's Laboratory", {
@@ -128,8 +161,10 @@ UFX.scenes.demo = {
 
 		if (window.location.href.includes("DEBUG")) {
 			var text = [
+				"touch: " + UFX.pointer.touch,
 				"control.pointed = " + control.pointed,
 				"control.pos = [" + control.pos[0].toFixed(1) + "," + control.pos[1].toFixed(1) + "]",
+				"canvas size = " + view.wV + "x" + view.hV,
 				UFX.ticker.getrates(),
 			].join("\n")
 			gl.progs.text.draw(text, {
