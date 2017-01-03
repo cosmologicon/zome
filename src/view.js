@@ -73,6 +73,15 @@ var view = {
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 	},
 
+	// RGBA color
+	fill: function (color) {
+		gl.progs.fill.use()
+		gl.progs.fill.set.color(color)
+		pUbuffer.bind()
+		gl.progs.fill.assignAttribOffsets({ pU: 0 })
+		gl.drawArrays(gl.TRIANGLE_FAN, 0, 4)
+	},
+
 	setVscaleG: function () {
 		var s = Math.sqrt(this.wV * this.hV)
 		this.VscaleG = this.zoom * s / 250

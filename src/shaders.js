@@ -1,6 +1,7 @@
 "use strict"
 
 const shaders = {
+	fill: {},
 	circle: {},
 	organelle: {},
 	petri: {},
@@ -11,6 +12,22 @@ const shaders = {
 	bullet: {},
 	laser: {},
 }
+
+
+// Fill the entire viewport with a single color with alpha (useful for transparent layers)
+shaders.fill.vert = `
+attribute vec2 pU;
+void main() {
+	gl_Position = vec4(pU, 0.0, 1.0);
+}
+`
+shaders.fill.frag = `
+precision highp float;
+uniform vec4 color;
+void main() {
+	gl_FragColor = color;
+}
+`
 
 shaders.circle.vert = `
 // Simple circle-drawing shader for debugging
