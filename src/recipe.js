@@ -25,12 +25,18 @@ const FollowsRecipe = {
 		if (this.disabled) {
 			this.disabled = Math.max(this.disabled - dt, 0)
 		} else {
-			recipes[this.flavors].call(this, dt)
+			let mech = mechanics[this.flavors]
+			if (mech.gun) recipes.trytoshoot.call(this, mech.gun)
+			if (mech.laser) recipes.trytolaser.call(this, mech.laser)
+			if (mech.heal) recipes.trytoheal.call(this, mech.heal)
+			if (mech.spawn) recipes.spawnresource.call(this, mech.spawn)
+			if (mech.collect) recipes.collect.call(this, mech.collect)
 		}
 	},
 	onclick: function () {
-		if (this.flavors == "XYZ" && progress.learned.XYZ) recipes.explode.call(this, mechanics.XYZ)
-		if (this.flavors == "ZZZ" && progress.learned.ZZZ) recipes.explode.call(this, mechanics.ZZZ)
+		if (!progress.learned[this.flavors]) return
+		let mech = mechanics[this.flavors]
+		if (mech.bomb) recipes.explode.call(this, mech.bomb)
 	},
 	getcolor: function () {
 		if (this.disabled) return [0.4 + 0.3 * Math.sin(6 * this.disabled), 0, 0]
@@ -55,62 +61,6 @@ const FollowsRecipe = {
 }
 
 const recipes = {
-	X: function (dt) {
-		recipes.trytoshoot.call(this, mechanics.X)
-	},
-	XX: function (dt) {
-		recipes.trytoshoot.call(this, mechanics.XX)
-	},
-	XY: function (dt) {
-		recipes.trytoshoot.call(this, mechanics.XY)
-		recipes.spawnresource.call(this, mechanics.XY)
-	},
-	XXX: function (dt) {
-		recipes.trytoshoot.call(this, mechanics.XXX)
-	},
-	XXY: function (dt) {
-		recipes.trytoshoot.call(this, mechanics.XXY)
-	},
-	XYY: function (dt) {
-		recipes.trytoshoot.call(this, mechanics.XYY)
-	},
-	ZZ: function (dt) {
-		recipes.trytoshoot.call(this, mechanics.ZZ)
-	},
-	XZZ: function (dt) {
-		recipes.trytoshoot.call(this, mechanics.XZZ)
-	},
-	Y: function (dt) {
-		recipes.spawnresource.call(this, mechanics.Y)
-	},
-	YYY: function (dt) {
-		recipes.spawnresource.call(this, mechanics.YYY)
-	},
-	YZ: function (dt) {
-		recipes.spawnresource.call(this, mechanics.YZ)
-	},
-	YY: function (dt) {
-		recipes.collect.call(this, mechanics.YY)
-	},
-	YYZ: function (dt) {
-		recipes.collect.call(this, mechanics.YYZ)
-	},
-	XZ: function (dt) {
-		recipes.trytoshoot.call(this, mechanics.XZ)
-	},
-	XXZ: function (dt) {
-		recipes.trytoshoot.call(this, mechanics.XXZ)
-	},
-	Z: function (dt) {
-		recipes.trytoheal.call(this, mechanics.Z)
-	},
-	YZZ: function (dt) {
-		recipes.trytoheal.call(this, mechanics.YZZ)
-	},
-	// Bombs don't do anything on their own.
-	XYZ: function (dt) { },
-	ZZZ: function (dt) { },
-
 	targeting: {
 		frontmost: obj => -state.cell.distancetoobj(obj),
 		strongest: obj => (state.bosses.includes(obj) ? 10000 : 0) + obj.hp,
@@ -129,23 +79,26 @@ const recipes = {
 		})
 		return target
 	},
-	trytoshoot: function (mechanic) {
+	trytoshoot: function (mechanic, laser) {
 		if (this.lastshot + mechanic.recharge > this.t) return
 		var targeting = recipes.targeting[mechanic.targeting]
 		var target = recipes.gettarget.call(this, state.shootables(), mechanic.range, targeting)
 		if (!target) return
-		var type = mechanic.laser ? Laser : Bullet
+		var type = laser ? Laser : Bullet
 		state.addobj(new type(this, target, mechanic))
 		this.lastshot = this.t + UFX.random(-0.2, 0.2)
 	},
+	trytolaser: function (mechanic) {
+		recipes.trytoshoot.call(this, mechanic, true)
+	},
 	spawnresource: function (mechanic) {
-		if (this.lastshot + mechanic.spawnrecharge > this.t) return
+		if (this.lastshot + mechanic.recharge > this.t) return
 		this.lastangle += tau / phi
 		this.lastshot = this.t
 		var dx = Math.sin(this.lastangle), dy = Math.cos(this.lastangle)
-		var rtype = mechanic.spawnsDNA ? DNA : RNA
+		var rtype = mechanic.DNA ? DNA : RNA
 		var resource = new rtype({x: this.x + 6 * dx, y: this.y + 6 * dy})
-		var r = UFX.random(1, 2) * mechanic.spawnkick
+		var r = UFX.random(1, 2) * mechanic.kick
 		resource.kick(r * dx, r * dy)
 		state.addobj(resource)
 	},
@@ -157,9 +110,9 @@ const recipes = {
 		})
 	},
 	trytoheal: function (mechanic) {
-		if (this.lastshot + mechanic.healrecharge > this.t) return
+		if (this.lastshot + mechanic.recharge > this.t) return
 		var objs = state.antibodies.filter(obj => obj.disabled)
-		var target = recipes.gettarget.call(this, objs, mechanic.healrange)
+		var target = recipes.gettarget.call(this, objs, mechanic.range)
 		if (!target) return
 		state.addobj(new HealRay(this, target, mechanic))
 		this.lastshot = this.t + UFX.random(-0.2, 0.2)
@@ -168,210 +121,11 @@ const recipes = {
 		if (this.lastclick !== null && this.t - this.lastclick < mechanics.tdoubleclick) {
 			this.die()
 			var obj = new Explosion({ x: this.x, y: this.y,
-				strength: mechanic.AOEstrength, size: mechanic.AOEsize, kick: mechanic.AOEkick })
+				strength: mechanic.strength, size: mechanic.size, kick: mechanic.kick })
 			state.addobj(obj)
 		} else {
 			this.lastclick = this.t
 		}
 	},
-}
-
-var mechanics = {
-	hatchtime: {
-		X: 8,
-		Y: 12,
-		Z: 20,
-	},
-
-	// ANTIBODY FORMULAS
-
-	// Shoot bullets
-	X: {
-		recharge: 2,
-		range: 40,
-		strength: 1,
-		RNAprob: 0.2,
-		DNAprob: 0,
-		kick: 0,
-		targeting: "frontmost",
-	},
-	XX: {
-		recharge: 4,
-		range: 50,
-		strength: 10,
-		RNAprob: 0.2,
-		DNAprob: 0,
-		kick: 20,
-		targeting: "strongest",
-	},
-	XXX: {
-		recharge: 0.35,
-		range: 40,
-		strength: 1,
-		RNAprob: 0.2,
-		DNAprob: 0,
-		kick: 0,
-		targeting: "weakest",
-	},
-	XXY: {
-		recharge: 5,
-		range: 200,
-		strength: 10,
-		RNAprob: 0.2,
-		DNAprob: 0,
-		kick: 20,
-		targeting: "frontmost",
-	},
-	XYY: {
-		recharge: 2,
-		range: 40,
-		strength: 1,
-		RNAprob: 0.1,
-		DNAprob: 0,
-		kick: 100,
-		targeting: "strongest",
-	},
-	// Shoot bullets with area of effect (AOE)
-	XZ: {
-		recharge: 1,
-		range: 60,
-		strength: 10,
-		kick: 0,
-		AOEstrength: 3,
-		AOEsize: 20,
-		AOEkick: 40,
-		RNAprob: 0.1,
-		DNAprob: 0,
-	},
-	XXZ: {
-		recharge: 3,
-		range: 60,
-		strength: 20,
-		kick: 0,
-		AOEstrength: 6,
-		AOEsize: 25,
-		AOEkick: 40,
-		RNAprob: 0,
-		DNAprob: 0,
-	},
-	// Shoot lasers
-	ZZ: {
-		laser: true,
-		recharge: 1,
-		range: 50,
-		strength: 5,
-		RNAprob: 0,
-		DNAprob: 0,
-		kick: 0,
-		targeting: "strongest",
-	},
-	XZZ: {
-		laser: true,
-		recharge: 3,
-		range: 70,
-		strength: 25,
-		RNAprob: 0,
-		DNAprob: 0,
-		kick: 0,
-		targeting: "strongest",
-	},
-	// Spawn resources
-	Y: {
-		spawnrecharge: 6,
-		spawnkick: 40,
-	},
-	YYY: {
-		spawnsDNA: true,
-		spawnrecharge: 15,
-		spawnkick: 40,
-	},
-	YZ: {
-		spawnsDNA: true,
-		spawnrecharge: 5,
-		spawnkick: 40,
-	},
-	// Shoot bullets + spawn resources
-	XY: {
-		recharge: 1.5,
-		range: 40,
-		strength: 1,
-		RNAprob: 1,
-		DNAprob: 0,
-		kick: 20,
-		targeting: "frontmost",
-		spawnrecharge: 12,
-		spawnkick: 40,
-	},
-	// Resource collection
-	YY: {
-		range: 80,
-	},
-	YYZ: {
-		range: 240,
-	},
-	// Shoot heal rays at disabled antibodies
-	Z: {
-		healrecharge: 0.3,
-		healrange: 30,
-		healstrength: 2,
-	},
-	YZZ: {
-		healrecharge: 0.1,
-		healrange: 30,
-		healstrength: 99999,
-	},
-	// Bomba
-	XYZ: {
-		AOEstrength: 100,
-		AOEsize: 50,
-		AOEkick: 0,
-	},
-	ZZZ: {
-		AOEstrength: 200,
-		AOEsize: 80,
-		AOEkick: 0,
-	},
-
-	tdoubleclick: 0.6,
-
-	ant: {
-		hp: 1,
-		speed: 10,
-		strength: 1,
-		size: 6,
-		mass: 10,
-	},
-	tick: {
-		hp: 3,
-		speed: 20,
-		strength: 1,
-		size: 4,
-		mass: 10,
-	},
-	bee: {
-		hp: 2,
-		speed: 10,
-		strength: 2,
-		size: 6,
-		mass: 10,
-		tdisable: 20,
-		tretarget: 1,
-		targetrange: 50,
-	},
-	megaant: {
-		hp: 20,
-		speed: 5,
-		size: 12,
-		mass: 10,
-		strength: 10,
-		ncarry: 5,
-	},
-}
-
-
-let comboinfo = {
-	X: "Short-range, weak, rapid fire",
-	XX: "Medium-range, medium strength",
-	XY: "Long-range with kickback",
 }
 

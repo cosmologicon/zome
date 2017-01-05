@@ -455,7 +455,7 @@ var ResourcesOnArrival = {
 
 var HealsOnArrival = {
 	start: function (spec) {
-		this.strength = spec.healstrength
+		this.strength = spec.strength
 	},
 	arrive: function () {
 		this.target.disabled = Math.max(0, this.target.disabled - this.strength)

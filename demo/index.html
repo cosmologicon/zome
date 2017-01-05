@@ -3,6 +3,7 @@
 <script src="http://ufx.space/UFX.js"></script>
 <script src="../src/util.js"></script>
 <script src="../src/settings.js"></script>
+<script src="demo-mechanics.js"></script>
 <script src="../src/components.js"></script>
 <script src="../src/recipe.js"></script>
 <script src="../src/thing.js"></script>
@@ -22,31 +23,6 @@
 view.init()
 hill.init()
 
-mechanics.X = {
-	recharge: 0.5,
-	range: 20,
-	strength: 1,
-	RNAprob: 0,
-	DNAprob: 0,
-	kick: 10,
-	targeting: "frontmost",
-}
-
-mechanics.X.RNAprob = 0
-
-comboinfo = {
-	X: "Weak short-range",
-	Y: "Medium range/strength",
-	XX: "Strong short-range",
-	XY: "Long-range with kickback",
-	YY: "Weak laser",
-	XXX: "Powerful long-range",
-	XXY: "Medium range, strong",
-	XYY: "Strong kickback",
-	YYY: "Strong laser",
-}
-
-
 UFX.scenes.demo = {
 	start: function () {
 		view.reset()
@@ -63,6 +39,15 @@ UFX.scenes.demo = {
 		]
 		new Organelle({ x: -20, y: 0, flavor: "X", }).toantibody().drop()
 		new Organelle({ x: 20, y: 0, flavor: "X", }).toantibody().drop()
+		;"XXXYYYY".split("").forEach(flavor => {
+			let obj = new Organelle({
+				x: state.cell.x + UFX.random(-1, 1),
+				y: state.cell.y + UFX.random(-1, 1),
+				flavor: flavor,
+			})
+			state.addobj(obj)
+			state.cell.addobj(obj)
+		})
 
 //		hud.addbmessage("Defend the cell!", [0, 30], { rotation: 10, fontsize: 30, lifetime: 10, })
 		hud.buttons.push(
