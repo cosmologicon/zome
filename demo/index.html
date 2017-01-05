@@ -22,7 +22,29 @@
 view.init()
 hill.init()
 
+mechanics.X = {
+	recharge: 0.5,
+	range: 20,
+	strength: 1,
+	RNAprob: 0,
+	DNAprob: 0,
+	kick: 10,
+	targeting: "frontmost",
+}
+
 mechanics.X.RNAprob = 0
+
+comboinfo = {
+	X: "Weak short-range",
+	Y: "Medium range/strength",
+	XX: "Strong short-range",
+	XY: "Long-range with kickback",
+	YY: "Weak laser",
+	XXX: "Powerful long-range",
+	XXY: "Medium range, strong",
+	XYY: "Strong kickback",
+	YYY: "Strong laser",
+}
 
 
 UFX.scenes.demo = {
@@ -140,7 +162,8 @@ UFX.scenes.demo = {
 		drawscene()
 		if (control.cursor) drawantibody(control.cursor)
 
-		hud.draw()
+		hud.drawbuttons()
+		hud.drawcombos()
 		gl.progs.text.use()
 		var h = 0.01 * Math.sqrt(view.hV * view.wV)
 		gl.progs.text.draw("Dr. Zome's Laboratory", {
@@ -213,5 +236,6 @@ UFX.resource.onloading = function (f) {
 	gl.progs.text.clean()
 	UFX.gltext.CONSTANTS.MEMORY_LIMIT_MB = 64
 }
-UFX.resource.loadwebfonts("Sansita One", "Stint Ultra Condensed")
+UFX.resource.loadwebfonts("Sansita One", "Stint Ultra Condensed", "Architects Daughter")
+UFX.gltext.fontmargins["Architects Daughter"] = 0.5
 </script>

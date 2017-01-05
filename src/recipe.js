@@ -56,29 +56,29 @@ const FollowsRecipe = {
 
 const recipes = {
 	X: function (dt) {
-		recipes.trytoshoot.call(this, mechanics.X, recipes.targeting.frontmost)
+		recipes.trytoshoot.call(this, mechanics.X)
 	},
 	XX: function (dt) {
-		recipes.trytoshoot.call(this, mechanics.XX, recipes.targeting.strongest)
+		recipes.trytoshoot.call(this, mechanics.XX)
 	},
 	XY: function (dt) {
-		recipes.trytoshoot.call(this, mechanics.XY, recipes.targeting.frontmost)
+		recipes.trytoshoot.call(this, mechanics.XY)
 		recipes.spawnresource.call(this, mechanics.XY)
 	},
 	XXX: function (dt) {
-		recipes.trytoshoot.call(this, mechanics.XXX, recipes.targeting.weakest)
+		recipes.trytoshoot.call(this, mechanics.XXX)
 	},
 	XXY: function (dt) {
-		recipes.trytoshoot.call(this, mechanics.XXY, recipes.targeting.frontmost)
+		recipes.trytoshoot.call(this, mechanics.XXY)
 	},
 	XYY: function (dt) {
-		recipes.trytoshoot.call(this, mechanics.XYY, recipes.targeting.strongest)
+		recipes.trytoshoot.call(this, mechanics.XYY)
 	},
 	ZZ: function (dt) {
-		recipes.trytoshoot.call(this, mechanics.ZZ, recipes.targeting.strongest)
+		recipes.trytoshoot.call(this, mechanics.ZZ)
 	},
 	XZZ: function (dt) {
-		recipes.trytoshoot.call(this, mechanics.XZZ, recipes.targeting.strongest)
+		recipes.trytoshoot.call(this, mechanics.XZZ)
 	},
 	Y: function (dt) {
 		recipes.spawnresource.call(this, mechanics.Y)
@@ -96,10 +96,10 @@ const recipes = {
 		recipes.collect.call(this, mechanics.YYZ)
 	},
 	XZ: function (dt) {
-		recipes.trytoshoot.call(this, mechanics.XZ, recipes.targeting.strongest)
+		recipes.trytoshoot.call(this, mechanics.XZ)
 	},
 	XXZ: function (dt) {
-		recipes.trytoshoot.call(this, mechanics.XXZ, recipes.targeting.strongest)
+		recipes.trytoshoot.call(this, mechanics.XXZ)
 	},
 	Z: function (dt) {
 		recipes.trytoheal.call(this, mechanics.Z)
@@ -129,8 +129,9 @@ const recipes = {
 		})
 		return target
 	},
-	trytoshoot: function (mechanic, targeting) {
+	trytoshoot: function (mechanic) {
 		if (this.lastshot + mechanic.recharge > this.t) return
+		var targeting = recipes.targeting[mechanic.targeting]
 		var target = recipes.gettarget.call(this, state.shootables(), mechanic.range, targeting)
 		if (!target) return
 		var type = mechanic.laser ? Laser : Bullet
@@ -192,6 +193,7 @@ var mechanics = {
 		RNAprob: 0.2,
 		DNAprob: 0,
 		kick: 0,
+		targeting: "frontmost",
 	},
 	XX: {
 		recharge: 4,
@@ -200,6 +202,7 @@ var mechanics = {
 		RNAprob: 0.2,
 		DNAprob: 0,
 		kick: 20,
+		targeting: "strongest",
 	},
 	XXX: {
 		recharge: 0.35,
@@ -208,6 +211,7 @@ var mechanics = {
 		RNAprob: 0.2,
 		DNAprob: 0,
 		kick: 0,
+		targeting: "weakest",
 	},
 	XXY: {
 		recharge: 5,
@@ -216,6 +220,7 @@ var mechanics = {
 		RNAprob: 0.2,
 		DNAprob: 0,
 		kick: 20,
+		targeting: "frontmost",
 	},
 	XYY: {
 		recharge: 2,
@@ -224,6 +229,7 @@ var mechanics = {
 		RNAprob: 0.1,
 		DNAprob: 0,
 		kick: 100,
+		targeting: "strongest",
 	},
 	// Shoot bullets with area of effect (AOE)
 	XZ: {
@@ -257,6 +263,7 @@ var mechanics = {
 		RNAprob: 0,
 		DNAprob: 0,
 		kick: 0,
+		targeting: "strongest",
 	},
 	XZZ: {
 		laser: true,
@@ -266,6 +273,7 @@ var mechanics = {
 		RNAprob: 0,
 		DNAprob: 0,
 		kick: 0,
+		targeting: "strongest",
 	},
 	// Spawn resources
 	Y: {
@@ -290,6 +298,7 @@ var mechanics = {
 		RNAprob: 1,
 		DNAprob: 0,
 		kick: 20,
+		targeting: "frontmost",
 		spawnrecharge: 12,
 		spawnkick: 40,
 	},
@@ -357,5 +366,12 @@ var mechanics = {
 		strength: 10,
 		ncarry: 5,
 	},
+}
+
+
+let comboinfo = {
+	X: "Short-range, weak, rapid fire",
+	XX: "Medium-range, medium strength",
+	XY: "Long-range with kickback",
 }
 

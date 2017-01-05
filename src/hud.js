@@ -119,7 +119,7 @@ const hud = {
 		gl.progs.text.use()
 		this.bmessages.forEach(b => b.draw())
 	},
-	draw: function () {
+	drawbuttons: function () {
 		let data = builddata(this.buttons, button => {
 			const [r, g, b] = button.color
 			return [button.pV[0], button.pV[1], button.rV, r, g, b, 0, 1]
@@ -142,10 +142,56 @@ const hud = {
 			})
 			gl.drawArrays(gl.TRIANGLES, 0, data.nvert)
 		}
-
-
 		gl.progs.text.use()
 		this.buttons.forEach(button => button.drawtext())
+
+	},
+	drawcombos: function () {
+		let combos = Object.keys(comboinfo), h = 0.02 * view.sV
+		combos.sort((a, b) => a.length - b.length || a.localeCompare(b))
+		gl.progs.text.use()
+		combos.forEach((combo, j) => gl.progs.text.draw(comboinfo[combo], {
+			fontname: "Architects Daughter",
+			fontsize: h,
+			width: 8 * h,
+			left: view.wV - 8 * h,
+			centery: ((combos.length - j) * 2.5 + 0.5) * h,
+			color: "white",
+			ocolor: "black",
+			owidth: 6,
+		}))
+		let data = [], nvert = 0
+		combos.forEach((combo, jcombo) => {
+			let y = ((combos.length - jcombo) * 2.5 + 0.5) * h
+			combo.split("").forEach((flavor, jflavor) => {
+				let x = view.wV - (8.4 + 0.7 * (combo.length - jflavor)) * h
+				let R = 0.6 * h
+				let [r, g, b] = settings.ocolors[flavor]
+				data = addpU(data, [x, y, 1.1 * R, 0, 0, 0, 0, 1])
+				data = addpU(data, [x, y, R, r, g, b, 0, 1])
+				nvert += 12
+			})
+		})
+		if (data.length) {
+			gl.progs.organelle.use()
+			gl.progs.organelle.set({
+				scenterG: [view.wV / 2, view.hV / 2],
+				screensizeV: [view.wV, view.hV],
+				VscaleG: 1,
+			})
+			gl.makeArrayBuffer(data).bind()
+			gl.progs.organelle.assignAttribOffsets({
+				pU: 0,
+				centerG: 2,
+				GradiusU: 4,
+				color: 5,
+				T: 8,
+				alpha: 9,
+			})
+			gl.drawArrays(gl.TRIANGLES, 0, nvert)
+		}
+
+
 	},
 }
 
