@@ -1,4 +1,7 @@
 let settings = {
+	ups: 120,
+	maxupf: 20,
+
 	// Organelle colors
 	ocolors: {
 		X: [1.0, 0.3, 0.1],
@@ -20,3 +23,5 @@ let settings = {
 		laser:     [0.8, 0.5, 0.0],
 	},
 }
+settings.DEBUG = window.location.href.includes("DEBUG")
+

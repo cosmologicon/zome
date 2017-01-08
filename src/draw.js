@@ -26,6 +26,7 @@ function builddata(objs, fvals) {
 
 
 function drawscene() {
+	profiler.start("drawscene")
 	gl.disable(gl.DEPTH_TEST)
 	gl.enable(gl.BLEND)
 	gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, 0, 1)
@@ -264,7 +265,7 @@ function drawscene() {
 		Nmove: 5,
 	})
 	gl.drawArrays(gl.TRIANGLES, 0, 6 * Nmote)
-
+	profiler.stop("drawscene")
 }
 
 // Draw a single antibody - you know, for cursors.

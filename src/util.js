@@ -28,4 +28,31 @@ window.onerror = function (message, url, line, col, errorobj) {
 ${stack}</pre>
 	`
 }
-
+let profiler = {
+	t0s: {},
+	records: {},
+	start: function (tname) {
+		if (!settings.DEBUG) return
+		this.t0s[tname] = Date.now()
+	},
+	stop: function (tname) {
+		if (!settings.DEBUG) return
+		let dt = Date.now() - this.t0s[tname]
+		if (!this.records[tname]) this.records[tname] = []
+		this.records[tname].push(dt)
+		while (this.records[tname].length > 20) this.records[tname].shift()
+	},
+	get: function (tname) {
+		let record = this.records[tname]
+		if (!record || !record.length) return null
+		return record.reduce((a, b) => a + b) / record.length
+	},
+	report: function () {
+		let tnames = Object.keys(this.records)
+		tnames.sort()
+		return tnames.map(tname => {
+			let value = this.get(tname)
+			return `${tname}: ${value ? value.toFixed(1) : value}`
+		})
+	},
+}

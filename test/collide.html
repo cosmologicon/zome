@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <script src="http://ufx.space/UFX.js"></script>
 <script src="../src/util.js"></script>
+<script src="../src/settings.js"></script>
 <script src="../src/components.js"></script>
 <script src="../src/collision.js"></script>
 <canvas id=canvas></canvas>
@@ -9,6 +10,7 @@ var context = canvas.getContext("2d")
 canvas.width = 600
 canvas.height = 600
 UFX.draw.setcontext(context)
+settings.DEBUG = true
 
 function Ball(x, y) {
 	this.start({x: x, y: y})
@@ -26,16 +28,20 @@ LargeBall.prototype = UFX.Thing()
 
 
 var objs = []
-for (var i = 0 ; i < 100 ; ++i) objs.push(new Ball(UFX.random(-100, 100), UFX.random(-100, 100)))
-for (var i = 0 ; i < 10 ; ++i) objs.push(new LargeBall(UFX.random(-100, 100), UFX.random(-100, 100)))
+for (var i = 0 ; i < 200 ; ++i) objs.push(new Ball(UFX.random(-100, 100), UFX.random(-100, 100)))
+for (var i = 0 ; i < 20 ; ++i) objs.push(new LargeBall(UFX.random(-100, 100), UFX.random(-100, 100)))
 
 UFX.ticker.init(function (dt) {
 	adjust(objs, dt)
+},
+function () {
 	UFX.draw("fs black f0 [ t 300 300 z 3 3 ss orange lw 0.5")
 	objs.forEach(function (obj) {
 		UFX.draw("b o", obj.x, obj.y, obj.rcollide, "s")
 	})
 	UFX.draw("]")
-}, null, { ups: 60 })
+	UFX.draw("fs white font 30px~'sans-serif' tab left top")
+	context.fillText(UFX.ticker.getrates(), 10, 10)
+}, { maxupf: 5, ups: 200 })
 
 </script>

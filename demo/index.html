@@ -61,7 +61,7 @@ cd /var/drzome/demo
 view.init()
 if (gl) {
 	hill.init()
-	UFX.scene.init({ ups: 200, maxupf: 20, })
+	UFX.scene.init({ ups: settings.ups, maxupf: settings.maxupf, })
 	UFX.scene.push("demo")
 	UFX.resource.onloading = function (f) {
 		UFX.gltext.CONSTANTS.MEMORY_LIMIT_MB = 0

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+<link href="https://fonts.googleapis.com/css?family=Sansita+One" rel="stylesheet">
+<script src="http://ufx.space/UFX.js"></script>
+<script src="../src/util.js"></script>
+<script src="../src/settings.js"></script>
+<script src="../demo/demo-mechanics.js"></script>
+<script src="../src/components.js"></script>
+<script src="../src/recipe.js"></script>
+<script src="../src/thing.js"></script>
+<script src="../src/virus.js"></script>
+<script src="../src/weapon.js"></script>
+<script src="../src/state.js"></script>
+<script src="../src/collision.js"></script>
+<script src="../src/control.js"></script>
+<script src="../src/view.js"></script>
+<script src="../src/hud.js"></script>
+<script src="../src/hill.js"></script>
+<script src="../src/shaders.js"></script>
+<script src="../src/draw.js"></script>
+<script src="../demo/demoscene.js"></script>
+<title>Demo stress test</title>
+<canvas id=canvas></canvas>
+<script>
+"use strict"
+settings.DEBUG = true
+view.init()
+hill.init()
+UFX.scene.init({ ups: 200, maxupf: 20, })
+UFX.scene.ipush("demo")
+for (let a = 0 ; a < 450 ; a += 5) {
+	state.cell.ejectall()
+	state.antibodies.forEach(obj => {
+		obj.x = state.cell.x + UFX.random(-30, 30)
+		obj.y = state.cell.y + UFX.random(-30, 30)
+	})
+	for (let j = 0 ; j < 5 ; j += 0.1) UFX.scenes.demo.think(0.1, 0, 1)
+}
+UFX.resource.onloading = function (f) {
+	UFX.gltext.CONSTANTS.MEMORY_LIMIT_MB = 0
+	gl.progs.text.clean()
+	UFX.gltext.CONSTANTS.MEMORY_LIMIT_MB = 64
+}
+UFX.gltext.fontmargins["Architects Daughter"] = 0.5
+UFX.gltext.fontmargins["Stint Ultra Condensed"] = 0.3
+UFX.resource.loadwebfonts("Sansita One", "Stint Ultra Condensed", "Architects Daughter")
+</script>

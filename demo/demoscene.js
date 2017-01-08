@@ -1,5 +1,9 @@
 UFX.scenes.demo = {
 	start: function () {
+		if (settings.DEBUG) {
+			UFX.key.init()
+			UFX.key.watchlist = "F1 F2 F3 F4 F5 F6 F7 F8 F9 F10".split(" ")
+		}
 		view.reset()
 		control.reset()
 		hud.reset()
@@ -89,6 +93,7 @@ UFX.scenes.demo = {
 		hud.think(dt)
 	},
 	control: function () {
+		if (settings.DEBUG) this.debugcontrol()
 		var pstate = UFX.pointer(canvas), kstate = UFX.key.state()
 		control.pos = view.GconvertP(pstate.pos)
 		control.pointed = control.getpointed(state.pointables())
@@ -146,6 +151,16 @@ UFX.scenes.demo = {
 			view.zoomat(pstate.pinch.dlogsep, control.pos)
 		}
 	},
+	debugcontrol: function () {
+		let kstate = UFX.key.state()
+		if (kstate.down.F1) {
+			state.antibodies.forEach(obj => {
+				obj.x = state.cell.x + UFX.random(-30, 30)
+				obj.y = state.cell.y + UFX.random(-30, 30)
+			})
+			for (let j = 0 ; j < 50 ; j += 0.1) this.think(0.1, 0, 1)
+		}
+	},
 	addwaves: function () {
 		this.nexts.forEach(nspec => {
 			if (this.t > nspec[1]) {
@@ -199,6 +214,7 @@ UFX.scenes.demo = {
 		drawscene()
 		if (control.cursor) drawantibody(control.cursor)
 
+		profiler.start("drawhud")
 		hud.drawbuttons()
 		hud.drawcombos()
 		gl.progs.text.use()
@@ -227,9 +243,11 @@ UFX.scenes.demo = {
 			color: "#AA8800",
 			owidth: 1,
 		})
+		profiler.stop("drawhud")
 
+		profiler.start("drawinfo")
 		let text = []
-		if (window.location.href.includes("DEBUG")) {
+		if (settings.DEBUG && false) {
 			let m = Math.floor(this.t / 60), s = this.t % 60
 			let demotime = m + "m" + ("0000" + s.toFixed(1)).slice(-4) + "s"
 			text = text.concat([
@@ -267,6 +285,7 @@ UFX.scenes.demo = {
 			owidth: 3,
 			color: "white",
 		})
+		profiler.stop("drawinfo")
 	
 	},
 }
