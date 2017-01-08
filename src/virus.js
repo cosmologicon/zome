@@ -79,10 +79,11 @@ const CarriesViruses = {
 		this.ncarry = ncarry || 3
 	},
 	killed: function () {
-		let theta = UFX.random.angle(), dtheta = tau / this.ncarry
+		let theta = UFX.random.angle()
 		let ctype = VirusTypes[this.carrytype]
-		for (let j = 0 ; j < this.ncarry ; ++j, theta += dtheta) {
-			let dx = Math.sin(theta), dy = Math.cos(theta)
+		for (let j = 0 ; j < this.ncarry ; ++j, theta += tau / phi) {
+			let f = Math.sqrt((j + 1) / this.ncarry)
+			let dx = Math.sin(theta) * f, dy = Math.cos(theta) * f
 			let virus = new ctype({
 				x: this.x + 2 * dx,
 				y: this.y + 2 * dy,

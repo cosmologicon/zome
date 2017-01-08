@@ -18,6 +18,7 @@ UFX.scenes.demo = {
 			["katydid", 90, 15],
 			["tick", 110, 1],
 			["megaant", 110, 30],
+
 			["wavetick", 210, 20],
 			["wavetick", 200, 20],
 			["waveant", 190, 20],
@@ -25,15 +26,25 @@ UFX.scenes.demo = {
 
 			["katydid", 240, 15],
 			["megaant", 240, 30],
-			["wavetick", 350, 30],
-			["wavetick", 340, 30],
-			["waveant", 320, 10],
-			["wavekatydid", 300, 6],
-			["wavemegaant", 300, 6],
 
-			["katydid", 350, 15],
-			["megaant", 350, 15],
-			["megatick", 330, 15],
+			["wavetick", 350, 20],
+			["wavetick", 340, 20],
+			["waveant", 320, 20],
+			["wavekatydid", 300, 4],
+			["wavemegaant", 300, 4],
+
+			["katydid", 360, 25],
+			["megaant", 350, 25],
+			["megatick", 330, 25],
+
+			["wavetick", 450, 30],
+			["wavetick", 440, 30],
+			["waveant", 430, 20],
+			["wavemegaant", 420, 6],
+			["wavemegatick", 410, 6],
+			["wavekatydid", 400, 6],
+
+			["final", 460]
 		]
 		;"XX".split("").forEach(flavor => {
 			let obj = new Organelle({
@@ -48,6 +59,8 @@ UFX.scenes.demo = {
 		this.jegg = 2
 		this.bmessage0 = hud.addbmessage("Drag organelles\nfrom the cell", [0, 0],
 			{ rotation: 10, fontsize: 20, lifetime: 7, })
+		this.bmessage1 = null
+		this.bmessagefinal = null
 		hud.buttons.push(
 			new Button("Pause", [0.4, 0.4, 0.4], (() => UFX.scene.push("pause")), "topleft", [0, 0]),
 			new Button("Full\nscreen", [0.4, 0.4, 0.4], (() => UFX.scene.push("gofull")), "topleft", [0, 1]),
@@ -136,6 +149,11 @@ UFX.scenes.demo = {
 	addwaves: function () {
 		this.nexts.forEach(nspec => {
 			if (this.t > nspec[1]) {
+				if (nspec[0] == "final") {
+					this.nexts = []
+					this.nextegg = 10000000
+					return
+				}
 				let type, n
 				if (nspec[0].startsWith("wave")) {
 					type = nspec[0].substr(4)
@@ -162,8 +180,17 @@ UFX.scenes.demo = {
 				})
 				state.addobj(obj)
 				state.cell.addobj(obj)
-				this.nextegg = this.t + 10 + 0.5 * this.jegg
+				this.nextegg = this.t + 13
 			}
+		}
+		if (!this.bmessage1 && state.organelles.length > 5) {
+			this.bmessage1 = hud.addbmessage("Combine organelles\nto form antibodies", [0, 20],
+				{ rotation: 10, fontsize: 20, lifetime: 7, })
+		}
+		if (state.antibodies.some(a => a.flavors.length > 1)) this.bmessage1 = true
+		if (!this.bmessagefinal && !this.nexts.length && state.viruses.length < 10) {
+			this.bmessagefinal = hud.addbmessage("Thank you\nfor playing!", [0, 40],
+				{ rotation: 0, fontsize: 35, lifetime: 10000000, })
 		}
 	},
 
