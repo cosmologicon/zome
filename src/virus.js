@@ -3,6 +3,8 @@
 var Shootable = {
 	init: function (hp0) {
 		this.hp0 = hp0 || 1
+	},
+	start: function () {
 		this.hp = this.hp0
 	},
 	shoot: function (strength, RNAprob, DNAprob) {
@@ -86,6 +88,7 @@ const CarriesViruses = {
 				y: this.y + 2 * dy,
 			})
 			virus.kick(50 * dx, 50 * dy)
+			virus.target = state.cell
 			state.addobj(virus)
 		}
 	},
@@ -118,6 +121,23 @@ Ant.prototype = UFX.Thing()
 	.addcomp(InjectsOnArrival)
 	.addcomp(DiesOnArrival)
 	.addcomp(TargetsThing, mechanics.ant.speed, 0.3)
+	.addcomp(AnimationTicker, 100)
+
+function Katydid(spec) {
+	this.start(spec)
+	this.color = "lightgreen"
+	this.vcolor0 = [0.3, 0.8, 0.3]
+}
+Katydid.prototype = UFX.Thing()
+	.addcomp(Lives)
+	.addcomp(WorldBound)
+	.addcomp(Collideable, mechanics.katydid.size, mechanics.katydid.mass)
+	.addcomp(Kickable)
+	.addcomp(Shootable, mechanics.katydid.hp)
+	.addcomp(HarmsOnArrival, mechanics.katydid.strength)
+	.addcomp(InjectsOnArrival)
+	.addcomp(DiesOnArrival)
+	.addcomp(TargetsThing, mechanics.katydid.speed, 0.3)
 	.addcomp(AnimationTicker, 100)
 
 function Tick(spec) {
@@ -175,6 +195,24 @@ MegaAnt.prototype = UFX.Thing()
 	.addcomp(TargetsThing, mechanics.megaant.speed, 0.3)
 	.addcomp(AnimationTicker, 100)
 
+function MegaTick(spec) {
+	this.start(spec)
+	this.color = "lightblue"
+	this.vcolor0 = [0.1, 0.6, 1.0]
+}
+MegaTick.prototype = UFX.Thing()
+	.addcomp(Lives)
+	.addcomp(WorldBound)
+	.addcomp(Collideable, mechanics.megatick.size, mechanics.megatick.mass)
+	.addcomp(Kickable)
+	.addcomp(Shootable, mechanics.megatick.hp)
+	.addcomp(HarmsOnArrival, mechanics.megatick.strength)
+	.addcomp(InjectsOnArrival)
+	.addcomp(CarriesViruses, "tick", mechanics.megatick.ncarry)
+	.addcomp(DiesOnArrival)
+	.addcomp(TargetsThing, mechanics.megatick.speed, 0.3)
+	.addcomp(AnimationTicker, 100)
+
 
 function VirusCorpse(obj) {
 	this.rcollide0 = obj.rcollide
@@ -209,7 +247,9 @@ Injection.prototype = UFX.Thing()
 
 const VirusTypes = {
 	ant: Ant,
+	katydid: Katydid,
 	tick: Tick,
 	bee: Bee,
 	megaant: MegaAnt,
+	megatick: MegaTick,
 }

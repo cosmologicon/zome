@@ -8,6 +8,7 @@ var mechanics = {
 
 	// Weak short-range
 	X: {
+		color: "shortgun",
 		gun: {
 			recharge: 0.5,
 			range: 20,
@@ -20,6 +21,7 @@ var mechanics = {
 	},
 	// Medium range/strength
 	Y: {
+		color: "mediumgun",
 		gun: {
 			recharge: 2,
 			range: 40,
@@ -32,8 +34,9 @@ var mechanics = {
 	},
 	// Strong short-range
 	XX: {
+		color: "shortgun",
 		gun: {
-			recharge: 4,
+			recharge: 2,
 			range: 20,
 			strength: 30,
 			RNAprob: 0,
@@ -44,6 +47,7 @@ var mechanics = {
 	},
 	// Long-range with kickback
 	XY: {
+		color: "longgun",
 		gun: {
 			recharge: 2,
 			range: 100,
@@ -56,6 +60,7 @@ var mechanics = {
 	},
 	// Weak laser
 	YY: {
+		color: "laser",
 		laser: {
 			recharge: 0.3,
 			range: 40,
@@ -68,6 +73,7 @@ var mechanics = {
 	},
 	// Powerful long-range
 	XXX: {
+		color: "longgun",
 		gun: {
 			recharge: 10,
 			range: 100,
@@ -80,6 +86,7 @@ var mechanics = {
 	},
 	// Medium-range, strong
 	XXY: {
+		color: "mediumgun",
 		gun: {
 			recharge: 6,
 			range: 40,
@@ -92,10 +99,11 @@ var mechanics = {
 	},
 	// Strong kickback
 	XYY: {
+		color: "longgun",
 		gun: {
 			recharge: 1,
 			range: 80,
-			strength: 5,
+			strength: 10,
 			RNAprob: 0,
 			DNAprob: 0,
 			kick: 90,
@@ -104,10 +112,11 @@ var mechanics = {
 	},
 	// Strong laser
 	YYY: {
+		color: "laser",
 		laser: {
-			recharge: 0.3,
+			recharge: 0.6,
 			range: 60,
-			strength: 4,
+			strength: 10,
 			RNAprob: 0,
 			DNAprob: 0,
 			kick: 0,
@@ -120,35 +129,50 @@ var mechanics = {
 
 	ant: {
 		hp: 5,
-		speed: 10,
-		strength: 1,
+		speed: 6,
+		strength: 2,
 		size: 6,
 		mass: 10,
 	},
+	katydid: {
+		hp: 80,
+		speed: 3,
+		strength: 10,
+		size: 9,
+		mass: 30,
+	},
 	tick: {
-		hp: 20,
+		hp: 1,
 		speed: 20,
 		strength: 1,
-		size: 4,
-		mass: 10,
+		size: 3,
+		mass: 20,
 	},
 	megaant: {
-		hp: 20,
+		hp: 40,
 		speed: 5,
 		size: 12,
-		mass: 10,
-		strength: 10,
+		mass: 20,
+		strength: 20,
 		ncarry: 5,
+	},
+	megatick: {
+		hp: 80,
+		speed: 10,
+		size: 12,
+		mass: 40,
+		strength: 25,
+		ncarry: 20,
 	},
 }
 
 
 let comboinfo = {
-	X: "Weak short-range",
+	X: "Weak rapid short-range",
 	Y: "Medium range/strength",
 	XX: "Strong short-range",
 	XY: "Long-range with kickback",
-	YY: "Weak laser",
+	YY: "Rapid laser",
 	XXX: "Powerful long-range",
 	XXY: "Medium range, strong",
 	XYY: "Strong kickback",

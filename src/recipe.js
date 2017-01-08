@@ -41,6 +41,8 @@ const FollowsRecipe = {
 	getcolor: function () {
 		if (this.disabled) return [0.4 + 0.3 * Math.sin(6 * this.disabled), 0, 0]
 		if (!progress.learned[this.flavors]) return [30, 30, 30]
+		let colorname = mechanics[this.flavors].color
+		if (settings.rcolors[colorname]) return settings.rcolors[colorname]
 		switch (this.flavors) {
 			case "X": case "XX": case "XY": case "XXX": case "XXY": case "XYY":
 				return [0.6, 0.0, 0.8]

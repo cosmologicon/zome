@@ -17,204 +17,28 @@
 <script src="../src/hill.js"></script>
 <script src="../src/shaders.js"></script>
 <script src="../src/draw.js"></script>
+<script src="demoscene.js"></script>
+<title>Dr. Zome's Laboratory: demo version</title>
 <canvas id=canvas></canvas>
 <script>
+/*
+To make:
+
+cd demo
+cat index.html | grep script | grep src | grep -v ufx | sed 's|.*src=.||;s|.><.*||' | xargs cat > /tmp/demo.js
+scp index.html /tmp/demo.js "night@night.xen.prgmr.com:/var/drzome/demo"
+
+Remote:
+
+cd /var/drzome/demo
+
+
+*/
+
 "use strict"
 view.init()
 hill.init()
-
-UFX.scenes.demo = {
-	start: function () {
-		view.reset()
-		control.reset()
-		hud.reset()
-		state.reset()
-
-		state.Rlevel = 100
-		state.cell = new Cell({ x: 0, y: -70 })
-		this.t = 0
-		this.nexts = [
-			["ant", 0, 1],
-			["tick", 0, 1],
-		]
-		new Organelle({ x: -20, y: 0, flavor: "X", }).toantibody().drop()
-		new Organelle({ x: 20, y: 0, flavor: "X", }).toantibody().drop()
-		;"XXXYYYY".split("").forEach(flavor => {
-			let obj = new Organelle({
-				x: state.cell.x + UFX.random(-1, 1),
-				y: state.cell.y + UFX.random(-1, 1),
-				flavor: flavor,
-			})
-			state.addobj(obj)
-			state.cell.addobj(obj)
-		})
-
-//		hud.addbmessage("Defend the cell!", [0, 30], { rotation: 10, fontsize: 30, lifetime: 10, })
-		hud.buttons.push(
-			new Button("Pause", [0.4, 0.4, 0.4], (() => UFX.scene.push("pause")), "topleft", [0, 0]),
-			new Button("Full\nscreen", [0.4, 0.4, 0.4], (() => UFX.scene.push("gofull")), "topleft", [0, 1]),
-			new Button("Reset\ndemo", [0.4, 0.4, 0.4], (() => UFX.scene.swap("demo")), "topleft", [0, 2])
-		)
-		this.think(0, 0, 1)
-	},
-
-	think: function (dt, jframe, nframe) {
-		this.t += dt
-		adjust(state.colliders(), dt)
-		if (jframe == 0) this.think0(dt * nframe)
-	},
-	think0: function (dt) {
-		this.control()
-		this.addwaves()
-		state.thinkers().forEach(obj => obj.think(dt))
-		state.antibodies.forEach(obj => obj.constraintoworld())
-		if (control.cursor) {
-			control.cursor.think(dt)
-			control.cursor.reset()
-			control.cursor.constraintoworld()
-		}
-		state.think(dt)
-		hud.think(dt)
-	},
-	control: function () {
-		var pstate = UFX.pointer(canvas), kstate = UFX.key.state()
-		control.pos = view.GconvertP(pstate.pos)
-		control.pointed = control.getpointed(state.pointables())
-		if (pstate.pos) {
-			hud.pointed = hud.getpointed([pstate.pos[0], view.hV - pstate.pos[1]])
-		}
-
-		if (pstate.down && hud.pointed) {
-			hud.pointed.onclick()
-		} else if (pstate.rdown && control.pointed && !control.cursor) {
-			control.pointed.onrdown()
-		} else if (pstate.click && UFX.pointer.touch && !control.pointed && control.cursor) {
-			let obj = control.cursor
-			obj.drop()
-			obj.onrdown()
-			control.cursor = null
-		} else if (pstate.down && control.pointed && !control.cursor) {
-			if (control.pointed.draggable && control.pointed.candrag()) {
-				control.pointed.drag()
-				control.pointed = null
-			}
-		} else if (pstate.down && !UFX.pointer.touch) {
-			control.cursorpos = control.pos
-		} else if (pstate.ddown) {
-			control.cursorpos = control.pos
-		}
-
-		if (control.cursor) {
-			if (pstate.hold) {
-				console.log("hold")
-			} else if (pstate.isdown) {
-				control.cursor.scootchto(control.pos[0], control.pos[1])
-			} else {
-			//if (pstate.up || pstate.cancel) {
-				var target = control.pointed
-				if (target && target.container) target = target.container
-				control.cursor.drop(target)
-				control.cursor = null
-			}
-		} else if (control.cursorpos) {
-			if (pstate.move && !UFX.pointer.touch) {
-				view.dragto(control.cursorpos, pstate.pos)
-			} else if (pstate.dmove) {
-				view.dragto(control.cursorpos, pstate.pos)
-			} else if (!pstate.isdown && !pstate.disdown) {
-				control.cursorpos = null
-			}
-		}
-
-		if (pstate.wheel && pstate.wheel.dy) {
-			view.zoomat(-pstate.wheel.dy / 1024, control.pos)
-		}
-		if (pstate.pinch) {
-			view.zoomat(pstate.pinch.dlogsep, control.pos)
-		}
-	},
-	addwaves: function () {
-		this.nexts.forEach(nspec => {
-			if (this.t > nspec[1]) {
-				nspec[1] += nspec[2]
-				state.addvirus(nspec[0], UFX.random(-0.2, 0.2))
-			}
-		})
-	},
-
-
-	draw: function () {
-		drawscene()
-		if (control.cursor) drawantibody(control.cursor)
-
-		hud.drawbuttons()
-		hud.drawcombos()
-		gl.progs.text.use()
-		var h = 0.01 * Math.sqrt(view.hV * view.wV)
-		gl.progs.text.draw("Dr. Zome's Laboratory", {
-			fontsize: 5 * h,
-			fontname: "Sansita One",
-			topright: [view.wV - 1 * h, view.hV - 0 * h],
-			ocolor: "black",
-			color: "yellow",
-			owidth: 1,
-		})
-		gl.progs.text.draw("Demo version", {
-			fontsize: 3 * h,
-			fontname: "Sansita One",
-			topright: [view.wV - 1 * h, view.hV - 6 * h],
-			ocolor: "black",
-			color: "yellow",
-			owidth: 1,
-		})
-
-		if (window.location.href.includes("DEBUG")) {
-			var text = [
-				"touch: " + UFX.pointer.touch,
-				"control.pointed = " + control.pointed,
-				"control.pos = [" + control.pos[0].toFixed(1) + "," + control.pos[1].toFixed(1) + "]",
-				"canvas size = " + view.wV + "x" + view.hV,
-				UFX.ticker.getrates(),
-			].join("\n")
-			gl.progs.text.draw(text, {
-				fontsize: 2 * h,
-				bottomleft: [0, 0.5 * h],
-				ocolor: "black",
-				color: "white",
-			})
-		}
-	
-	},
-}
-UFX.scenes.pause = {
-	start: function () {
-		this.t = 0
-	},
-	think: function (dt) {
-		hud.think(0)
-		var pstate = UFX.pointer(canvas)
-		this.t += dt
-		if (this.t > 0.5 && pstate.up) UFX.scene.pop()
-	},
-	draw: function () {
-		UFX.scenes.demo.draw()
-		view.fill([0.2, 0.2, 0.2, 0.85])
-		gl.progs.text.use()
-		gl.progs.text.draw("Paused", {
-			centerx: view.wV / 2,
-			centery: view.hV * 0.6,
-			color: "yellow",
-			gcolor: "orange",
-			ocolor: "black",
-			owidth: 3,
-			fontname: "Sansita One",
-			fontsize: 0.16 * view.sV,
-			alpha: clamp(3 * this.t, 0, 1),
-		})
-	},
-}
-
-UFX.scene.init({ minups: 200, maxupf: 20, maxfps: 30, })
+UFX.scene.init({ ups: 200, maxupf: 20, })
 UFX.scene.push("demo")
 UFX.resource.onloading = function (f) {
 	UFX.gltext.CONSTANTS.MEMORY_LIMIT_MB = 0

@@ -101,7 +101,9 @@ const hud = {
 	},
 
 	addbmessage: function (text, pos, options) {
-		this.bmessages.push(new Bmessage(text, pos, options))
+		let bmessage = new Bmessage(text, pos, options)
+		this.bmessages.push(bmessage)
+		return bmessage
 	},
 	think: function (dt) {
 		this.bmessages.forEach(obj => obj.think(dt))
@@ -155,14 +157,14 @@ const hud = {
 			fontsize: h,
 			width: 8 * h,
 			left: view.wV - 8 * h,
-			centery: ((combos.length - j) * 2.5 + 0.5) * h,
+			centery: ((combos.length - j) * 2.5 - 0.5) * h,
 			color: "white",
 			ocolor: "black",
 			owidth: 6,
 		}))
 		let data = [], nvert = 0
 		combos.forEach((combo, jcombo) => {
-			let y = ((combos.length - jcombo) * 2.5 + 0.5) * h
+			let y = ((combos.length - jcombo) * 2.5 - 0.7) * h
 			combo.split("").forEach((flavor, jflavor) => {
 				let x = view.wV - (8.4 + 0.7 * (combo.length - jflavor)) * h
 				let R = 0.6 * h

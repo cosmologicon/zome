@@ -5,7 +5,6 @@ var mechanics = {
 		Y: 12,
 		Z: 20,
 	},
-
 	// ANTIBODY FORMULAS
 
 	// Shoot bullets
