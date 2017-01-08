@@ -15,7 +15,11 @@ function norm (x, y, r) {
 	return [f * x, y * f]
 }
 window.onerror = function (message, url, line, col, errorobj) {
-	let stack = errorobj === undefined ? undefined : errorobj.stack
+	let stack =
+		errorobj === undefined ? undefined :
+		errorobj === null ? null :
+		"stack" in errorobj ? errorobj.stack :
+		errorobj
 	document.body.innerHTML = `
 		<p>Error in: ${url}
 		<p>line ${line}

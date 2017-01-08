@@ -41,7 +41,16 @@ var view = {
 			|| document.webkitFullscreenElement
 			|| document.msFullscreenElement)
 		// WebGL context
-		gl = UFX.gl(canvas)
+		try {
+			gl = UFX.gl(canvas)
+			if (!gl) {
+				this.failgl()
+				return
+			}
+		} catch (error) {
+			this.failgl()
+			return
+		}
 		UFX.gltext.init(gl)
 		UFX.maximize.onadjust = (canvas, w, h) => {
 			this.wV = w
@@ -58,6 +67,14 @@ var view = {
 		}
 		setTimeout((() => window.scrollTo(0, 1)), 1)
 		this.reset()
+	},
+	
+	failgl: function () {
+		document.body.innerHTML = `
+			<h1>WebGL error</h1>
+			<p>WebGL is required to run this game.
+			See <a href="https://get.webgl.org/">get.webgl.org</a> for more information.
+		`
 	},
 
 	reset: function () {
