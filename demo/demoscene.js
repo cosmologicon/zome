@@ -94,11 +94,12 @@ UFX.scenes.demo = {
 	},
 	control: function () {
 		if (settings.DEBUG) this.debugcontrol()
-		var pstate = UFX.pointer(canvas), kstate = UFX.key.state()
-		control.pos = view.GconvertP(pstate.pos)
+		var pstate = UFX.pointer(canvas)
+		let ppos = pstate.pos && [pstate.pos[0] * view.pixelratio, pstate.pos[1] * view.pixelratio]
+		control.pos = view.GconvertP(ppos)
 		control.pointed = control.getpointed(state.pointables())
-		if (pstate.pos) {
-			hud.pointed = hud.getpointed([pstate.pos[0], view.hV - pstate.pos[1]])
+		if (ppos) {
+			hud.pointed = hud.getpointed([ppos[0], view.hV - ppos[1]])
 		}
 
 		if (pstate.down && hud.pointed) {
@@ -136,9 +137,9 @@ UFX.scenes.demo = {
 			}
 		} else if (control.cursorpos) {
 			if (pstate.move && !UFX.pointer.touch) {
-				view.dragto(control.cursorpos, pstate.pos)
+				view.dragto(control.cursorpos, ppos)
 			} else if (pstate.dmove) {
-				view.dragto(control.cursorpos, pstate.pos)
+				view.dragto(control.cursorpos, ppos)
 			} else if (!pstate.isdown && !pstate.disdown) {
 				control.cursorpos = null
 			}
@@ -159,6 +160,10 @@ UFX.scenes.demo = {
 				obj.y = state.cell.y + UFX.random(-30, 30)
 			})
 			for (let j = 0 ; j < 50 ; j += 0.1) this.think(0.1, 0, 1)
+		}
+		if (kstate.down.F2) {
+			view.pixelratio /= Math.sqrt(2)
+			if (view.pixelratio < 1/4) view.pixelratio = 1
 		}
 	},
 	addwaves: function () {
@@ -247,18 +252,28 @@ UFX.scenes.demo = {
 
 		profiler.start("drawinfo")
 		let text = []
-		if (settings.DEBUG && false) {
+		if (settings.DEBUG) {
 			let m = Math.floor(this.t / 60), s = this.t % 60
 			let demotime = m + "m" + ("0000" + s.toFixed(1)).slice(-4) + "s"
 			text = text.concat([
 				"control.pointed = " + control.pointed,
 				"control.pos = [" + control.pos[0].toFixed(1) + "," + control.pos[1].toFixed(1) + "]",
-				"canvas size = " + view.wV + "x" + view.hV,
+				"canvas size = " + view.wV.toFixed(1) + "x" + view.hV.toFixed(1) +
+					" (ratio = " + view.pixelratio.toPrecision(3) + ")",
 				UFX.ticker.getrates(),
 				"demo time: " + demotime,
-				"",
 			])
+			gl.progs.text.draw(text.join("\n"), {
+				fontname: "sans-serif",
+				fontsize: 3 * h,
+				lineheight: 1.2,
+				bottomleft: [1 * h, 22 * h],
+				ocolor: "black",
+				owidth: 3,
+				color: "#AAF",
+			})
 		}
+		text = []
 		text = text.concat([
 			"total damage taken: " + (this.hp0 - state.hp),
 			"",

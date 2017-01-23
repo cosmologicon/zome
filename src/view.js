@@ -25,6 +25,7 @@ var view = {
 
 	// Global setup of the context. To be called at the beginning of the game.
 	init: function () {
+		this.pixelratio = window.devicePixelRatio || 1
 		canvas = document.getElementById("canvas")
 		// Fullscreen polyfill
 		canvas.requestFullscreen = canvas.requestFullscreen
@@ -53,10 +54,12 @@ var view = {
 		}
 		UFX.gltext.init(gl)
 		UFX.maximize.onadjust = (canvas, w, h) => {
-			this.wV = w
-			this.hV = h
-			this.sV = Math.sqrt(w * h)
-			gl.viewport(0, 0, w, h)
+			this.wV = canvas.width = w * this.pixelratio
+			this.hV = canvas.height = h * this.pixelratio
+			canvas.style.width = w + "px"
+			canvas.style.height = h + "px"
+			this.sV = Math.sqrt(this.wV * this.hV)
+			gl.viewport(0, 0, this.wV, this.hV)
 			this.setVscaleG()
 		}
 		canvas.style.background = "#222"

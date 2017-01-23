@@ -1,24 +1,6 @@
 <!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
 <link href="https://fonts.googleapis.com/css?family=Sansita+One" rel="stylesheet">
-<script src="http://ufx.space/UFX.js"></script>
-<script src="../src/util.js"></script>
-<script src="../src/settings.js"></script>
-<script src="demo-mechanics.js"></script>
-<script src="../src/components.js"></script>
-<script src="../src/recipe.js"></script>
-<script src="../src/thing.js"></script>
-<script src="../src/virus.js"></script>
-<script src="../src/weapon.js"></script>
-<script src="../src/state.js"></script>
-<script src="../src/collision.js"></script>
-<script src="../src/control.js"></script>
-<script src="../src/view.js"></script>
-<script src="../src/hud.js"></script>
-<script src="../src/hill.js"></script>
-<script src="../src/shaders.js"></script>
-<script src="../src/draw.js"></script>
-<script src="demoscene.js"></script>
 <style type="text/css">
 body {
 	background: #222;
@@ -43,17 +25,39 @@ a:link, a:visited {
 See <a href="http://enable-javascript.com/">enable-javascript.com</a> for more information.
 </noscript>
 <canvas id=canvas></canvas>
+<script src="../src/setup.js"></script>
+<script src="http://ufx.space/UFX.js" crossorigin=anonymous></script>
+<script src="../src/util.js"></script>
+<script src="../src/settings.js"></script>
+<script src="demo-mechanics.js"></script>
+<script src="../src/components.js"></script>
+<script src="../src/recipe.js"></script>
+<script src="../src/thing.js"></script>
+<script src="../src/virus.js"></script>
+<script src="../src/weapon.js"></script>
+<script src="../src/state.js"></script>
+<script src="../src/collision.js"></script>
+<script src="../src/control.js"></script>
+<script src="../src/view.js"></script>
+<script src="../src/hud.js"></script>
+<script src="../src/hill.js"></script>
+<script src="../src/shaders.js"></script>
+<script src="../src/draw.js"></script>
+<script src="demoscene.js"></script>
 <script>
 /*
 To make:
 
 cd demo
-cat index.html | grep script | grep src | grep -v ufx | sed 's|.*src=.||;s|.><.*||' | xargs cat > /tmp/demo.js
-scp index.html /tmp/demo.js "night@night.xen.prgmr.com:/var/drzome/demo"
+cat index.html | grep script | grep src | grep -v ufx | grep -v setup.js | sed 's|.*src=.||;s|.><.*||' | xargs cat > /tmp/demo.js
+open /tmp/demo.js and paste it into https://babeljs.io/repl/ then replace
+scp index.html ../src/setup.js /tmp/demo.js "night@night.xen.prgmr.com:/var/drzome/demo"
 
 Remote:
 
 cd /var/drzome/demo
+nano index.html
+Remove the script tags (other than UFX and setup) and replace them with a single script tag pointing to demo.js.
 
 */
 
@@ -63,7 +67,7 @@ if (gl) {
 	hill.init()
 	UFX.scene.init({ ups: settings.ups, maxupf: settings.maxupf, })
 	UFX.scene.push("demo")
-	UFX.resource.onloading = function (f) {
+	UFX.resource.onload = UFX.resource.onloading = function (f) {
 		UFX.gltext.CONSTANTS.MEMORY_LIMIT_MB = 0
 		gl.progs.text.clean()
 		UFX.gltext.CONSTANTS.MEMORY_LIMIT_MB = 64
