@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<script src="http://ufx.space/UFX.js"></script>
+<script type="x-shader" id=vsplash>
+// Splash transition shader
+
+// T = 0 : 0% of screen filled
+// T = 1: 100% of screen filled
+
+uniform float aspect;
+uniform float T;
+uniform float ngrid;
+uniform float omega;
+uniform float kappa;
+uniform float eta;
+attribute vec2 pU;
+
+mat2 R(float a) {
+	return mat2(cos(a), -sin(a), sin(a), cos(a));
+}
+
+varying float fT;
+varying vec2 pK;
+// Noise grid position
+varying vec3 pN;
+void main() {
+	gl_Position = vec4(pU, 0.0, 1.0);
+	vec2 p0 = pU * vec2(sqrt(aspect), 1.0 / sqrt(aspect));
+	pN = vec3(R(omega * T) * (ngrid * p0), 6.0 * T);
+	pN.xy *= exp(eta * (T - 0.5));
+	fT = T * (3.2 + 1.6 * kappa * kappa) - 1.6;
+	pK = p0 * kappa;
+}
+</script>
+<script type="x-shader" id=fsplash>
+precision highp float;
+
+uniform vec3 color;
+uniform float kappa;
+varying vec3 pN;
+varying vec2 pK;
+varying float fT;
+
+// http://stackoverflow.com/questions/4200224/random-noise-functions-for-glsl
+vec3 randgrad(vec3 a) {
+	float d = sin(dot(a, vec3(12.9898, 78.233, 49.717)));
+	return vec3(
+		fract(d * 258.5453) * 2.0 - 1.0,
+		fract(d * 248.5453) * 2.0 - 1.0,
+		fract(d * 238.5453) * 2.0 - 1.0
+	);
+}
+
+float noise(vec3 p) {
+	// integer and fractional part of position
+	vec3 i = floor(p), f = p - i;
+
+	float r = 0.0;
+	for (int dx = 0; dx < 2; ++dx) {
+		for (int dy = 0; dy < 2; ++dy) {
+			for (int dz = 0; dz < 2; ++dz) {
+				vec3 L = vec3(float(dx), float(dy), float(dz));
+				vec3 grad = randgrad(i + L);
+				vec3 D = f - L;
+				vec3 S = 1.0 - smoothstep(0.0, 1.0, abs(D));
+				r += S.x * S.y * S.z * dot(grad, D);
+			}
+		}
+	}
+	return r;
+}
+
+void main() {
+	float a = noise(pN) + dot(pK, pK);
+	float alpha = clamp(0.5 + 0.5 * (a + fT), 0.0, 1.0);
+	gl_FragColor = vec4(color, alpha);
+}
+</script>
+<canvas id=canvas>
+<script>
+window.onerror = function (error, url, line) { document.body.innerHTML = "<p>Error in: "+url+"<p>line "+line+"<pre>"+error+"</pre>" }
+let gl = UFX.gl(canvas)
+gl.enable(gl.BLEND)
+gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, 0, 1)
+UFX.maximize.onadjust = (canvas, x, y) => {
+	gl.viewport(0, 0, x, y)
+}
+UFX.maximize(canvas)
+let pUbuffer = gl.makeArrayBuffer([-1, -1, 1, -1, 1, 1, -1, 1])
+gl.addProgram("splash", "vsplash", "fsplash")
+gl.clearColor(0, 0, 1, 1)
+
+UFX.key.init()
+UFX.key.watchlist = ["space"]
+let T = 0, aT = 0
+UFX.ticker.init(function (dt) {
+	let kstate = UFX.key.state()
+	if (kstate.down.space) aT = 1 - aT
+	if (aT > T) T = Math.min(T + .5 * dt, aT)
+	if (aT < T) T = Math.max(T - .5 * dt, aT)
+	gl.clear(gl.COLOR_BUFFER_BIT)
+	gl.progs.splash.use()
+	gl.progs.splash.set({
+		aspect: canvas.width / canvas.height,
+		T: T,
+		ngrid: 8,
+		color: [1, 0, 0],
+		omega: 0.5,
+		kappa: 0.5,
+		eta: 1,
+	})
+	pUbuffer.bind()
+	gl.progs.splash.assignAttribOffsets({ pU: 0 })
+	gl.drawArrays(gl.TRIANGLE_FAN, 0, 4)
+}, null, { ups: 30 })
+</script>
