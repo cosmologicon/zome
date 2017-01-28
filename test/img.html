@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<title>Img</title>
+<script src="http://ufx.space/UFX.js"></script>
+<script type="x-shader" id=vimg>
+uniform vec2 sizeV;  // viewport size in pixels.
+uniform vec2 centerV;
+uniform float VradiusU;
+uniform float theta;
+attribute vec2 pU;
+varying vec2 tpos;
+
+mat2 R(float a) {
+	return mat2(cos(a), -sin(a), sin(a), cos(a));
+}
+void main() {
+	vec2 pV = centerV + VradiusU * R(theta) * pU;
+	gl_Position = vec4((pV / sizeV) * 2.0 - 1.0, 0.0, 1.0);
+	tpos = (pU + 1.0) / 2.0;
+}
+</script>
+<script type="x-shader" id=fimg>
+precision highp float;
+uniform float alpha;
+uniform sampler2D img;
+varying vec2 tpos;
+
+void main() {
+	gl_FragColor = texture2D(img, tpos);
+	gl_FragColor.a *= alpha;
+}
+</script>
+<canvas id=canvas>
+<script>
+window.onerror = function (error, url, line) { document.body.innerHTML = "<p>Error in: "+url+"<p>line "+line+"<pre>"+error+"</pre>" }
+var clamp = (x, a, b) => x < a ? a : x > b ? b : x
+function ease(f) {
+	f = clamp(f, 0, 1)
+	return f * f * (3 - 2 * f)
+}
+
+var canvas = document.getElementById("canvas")
+var gl = UFX.gl(canvas)
+gl.addProgram("img", "vimg", "fimg")
+gl.enable(gl.BLEND)
+let pUbuffer = gl.makeArrayBuffer([-1, -1, 1, -1, 1, 1, -1, 1])
+
+gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, 0, 1)
+gl.clearColor(0, 0.4, 0.4, 1)
+UFX.maximize.onadjust = (canvas, x, y) => {
+	gl.viewport(0, 0, x, y)
+}
+UFX.maximize(canvas, { aspects: [16/9] })
+
+let texture = null
+function think(dt) {
+	gl.clear(gl.COLOR_BUFFER_BIT)
+	gl.progs.img.use()
+	gl.progs.img.set({
+		sizeV: [canvas.width, canvas.height],
+		centerV: [400, 400],
+		VradiusU: 400,
+		theta: 0.2 * Math.sin(Date.now() * 0.001 * 10),
+		alpha: 1,
+		img: 0,
+	})
+	gl.activeTexture(gl.TEXTURE0)
+	gl.bindTexture(gl.TEXTURE_2D, texture)
+	pUbuffer.bind()
+	gl.progs.img.assignAttribOffsets({ pU: 0 })
+	gl.drawArrays(gl.TRIANGLE_FAN, 0, 4)
+}
+UFX.resource.onload = () => {
+	let img = UFX.resource.images.zome
+	let img0 = document.createElement("canvas")
+	img0.width = img0.height = 1024
+	UFX.draw(img0.getContext("2d"),
+		"fs rgba(255,255,255,0) f0",
+		"t 512 512",
+		"drawimage", img, -img.width / 2, -img.height / 2
+	)
+	texture = gl.buildTexture({
+		source: img0,
+		flip: true,
+		wrap: gl.CLAMP_TO_EDGE,
+		min_filter: gl.LINEAR_MIPMAP_NEAREST,
+		mipmap: true,
+	})
+	UFX.ticker.init(think)
+}
+UFX.resource.load({
+	zome: "data/zome.png",
+})
+</script>
