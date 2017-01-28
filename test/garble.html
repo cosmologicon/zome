@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<title>Garble audio test</title>
+<script src="http://ufx.space/UFX.js"></script>
+<script src="../../UFX/src/resource.js"></script>
+<script>
+let acontext = new AudioContext()
+
+UFX.resource.onload = () => {
+	let dt = 0.1
+	let tmax = UFX.resource.data.a1.duration - dt
+	for (let t = 0 ; t < 4 ; t += dt) {
+		let source = acontext.createBufferSource()
+		source.buffer = UFX.resource.data.a1
+		source.connect(acontext.destination)
+		source.start(acontext.currentTime + t, UFX.random(tmax), dt)
+	}
+}
+UFX.resource.loadaudiobuffer(acontext, {
+	a1: "data/C0102.ogg",
+})
+
+</script>
