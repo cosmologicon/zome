@@ -40,6 +40,7 @@ See <a href="http://enable-javascript.com/">enable-javascript.com</a> for more i
 <script src="../src/control.js"></script>
 <script src="../src/view.js"></script>
 <script src="../src/hud.js"></script>
+<script src="../src/dialog.js"></script>
 <script src="../src/hill.js"></script>
 <script src="../src/shaders.js"></script>
 <script src="../src/draw.js"></script>
@@ -62,18 +63,24 @@ Remove the script tags (other than UFX and setup) and replace them with a single
 */
 
 "use strict"
-view.init()
-if (gl) {
-	hill.init()
-	UFX.scene.init({ ups: settings.ups, maxupf: settings.maxupf, })
-	UFX.scene.push("demo")
-	UFX.resource.onload = UFX.resource.onloading = function (f) {
-		UFX.gltext.CONSTANTS.MEMORY_LIMIT_MB = 0
-		gl.progs.text.clean()
-		UFX.gltext.CONSTANTS.MEMORY_LIMIT_MB = 64
+UFX.resource.onload = () => {
+	view.init()
+	if (gl) {
+		hill.init()
+		UFX.scene.init({ ups: settings.ups, maxupf: settings.maxupf, })
+		UFX.scene.push("demo")
+		UFX.resource.onload = UFX.resource.onloading = function (f) {
+			UFX.gltext.CONSTANTS.MEMORY_LIMIT_MB = 0
+			gl.progs.text.clean()
+			UFX.gltext.CONSTANTS.MEMORY_LIMIT_MB = 64
+		}
+		UFX.gltext.fontmargins["Architects Daughter"] = 0.5
+		UFX.gltext.fontmargins["Stint Ultra Condensed"] = 0.3
+		UFX.gltext.fontmargins["Sansita One"] = 0.3
 	}
-	UFX.gltext.fontmargins["Architects Daughter"] = 0.5
-	UFX.gltext.fontmargins["Stint Ultra Condensed"] = 0.3
 }
 UFX.resource.loadwebfonts("Sansita One", "Stint Ultra Condensed", "Architects Daughter")
+UFX.resource.load({
+	zome: "data/zome.png",
+})
 </script>

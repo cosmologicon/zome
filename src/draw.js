@@ -6,6 +6,7 @@
 // TEXTURE1-3: blob hill texture
 // TEXTURE4: virus kscope texture
 // TEXTURE5: mote texture
+// TEXTURE6: img shader texture
 
 
 "use strict"
@@ -400,7 +401,42 @@ function getmotebuffer(n) {
 	return buffer
 }
 
-
-
-
+const imgtextures = {}
+function drawimg(imgname, centerV, radiusV, theta, alpha) {
+	if (!imgtextures[imgname]) {
+		let img = UFX.resource.images[imgname]
+		let img0 = document.createElement("canvas")
+		let s = 2
+		while (s < img.width || s < img.height) s <<= 1
+		img0.width = img0.height = s
+		UFX.draw(img0.getContext("2d"),
+			"fs rgba(255,255,255,0) f0",
+			"t", s / 2, s / 2,
+			"drawimage", img, -img.width / 2, -img.height / 2
+		)
+		imgtextures[imgname] = gl.buildTexture({
+			source: img0,
+			flip: true,
+			wrap: gl.CLAMP_TO_EDGE,
+			min_filter: gl.LINEAR_MIPMAP_NEAREST,
+			mipmap: true,
+		})
+		imgtextures[imgname].ifrac = [img.width / img0.width, img.height / img0.height]
+	}
+	gl.progs.img.use()
+	gl.progs.img.set({
+		screensizeV: [view.wV, view.hV],
+		centerV: centerV,
+		VradiusU: radiusV,
+		theta: theta || 0,
+		alpha: alpha === undefined ? 1 : alpha,
+		img: 6,
+		ifrac: imgtextures[imgname].ifrac,
+	})
+	gl.activeTexture(gl.TEXTURE6)
+	gl.bindTexture(gl.TEXTURE_2D, imgtextures[imgname])
+	pUbuffer.bind()
+	gl.progs.img.assignAttribOffsets({ pU: 0 })
+	gl.drawArrays(gl.TRIANGLE_FAN, 0, 4)
+}
 

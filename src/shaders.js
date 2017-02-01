@@ -11,6 +11,7 @@ const shaders = {
 	dna: {},
 	bullet: {},
 	laser: {},
+	img: {},
 }
 
 
@@ -613,3 +614,35 @@ void main() {
 	gl_FragColor = vec4(fcolor, clamp((a1 + a2) * falpha, 0.0, 1.0));
 }
 `
+
+shaders.img.vert = `
+uniform vec2 screensizeV;
+uniform vec2 centerV;
+uniform float VradiusU;
+uniform float theta;
+uniform vec2 ifrac;
+attribute vec2 pU;
+varying vec2 tpos;
+
+mat2 R(float a) {
+	return mat2(cos(a), -sin(a), sin(a), cos(a));
+}
+void main() {
+	vec2 pV = centerV + VradiusU * R(theta) * (ifrac * pU);
+	gl_Position = vec4((pV / screensizeV) * 2.0 - 1.0, 0.0, 1.0);
+	tpos = (ifrac * pU + 1.0) / 2.0;
+}
+`
+
+shaders.img.frag = `
+precision highp float;
+uniform float alpha;
+uniform sampler2D img;
+varying vec2 tpos;
+
+void main() {
+	gl_FragColor = texture2D(img, tpos);
+	gl_FragColor.a *= alpha;
+}
+`
+

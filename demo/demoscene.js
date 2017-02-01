@@ -7,6 +7,7 @@ UFX.scenes.demo = {
 		view.reset()
 		control.reset()
 		hud.reset()
+		dialog.reset()
 		state.reset()
 
 		state.Rlevel = 100
@@ -61,16 +62,24 @@ UFX.scenes.demo = {
 		})
 		this.nextegg = 10
 		this.jegg = 2
-		this.bmessage0 = hud.addbmessage("Drag organelles\nfrom the cell", [0, 0],
-			{ rotation: 10, fontsize: 20, lifetime: 7, })
-		this.bmessage1 = null
-		this.bmessagefinal = null
 		hud.buttons.push(
 			new Button("Pause", [0.4, 0.4, 0.4], (() => UFX.scene.push("pause")), "topleft", [0, 0]),
 			new Button("Full\nscreen", [0.4, 0.4, 0.4], (() => UFX.scene.push("gofull")), "topleft", [0, 1]),
 			new Button("Reset\ndemo", [0.4, 0.4, 0.4], (() => UFX.scene.swap("demo")), "topleft", [0, 2])
 		)
+		this.tlines = [
+			[0, "Have you got what it takes to join my lab?"],
+			[0, "Drag organelles to defend the cell from viruses!"],
+			[70, "Big wave incoming! Don't let them slip through the cracks!"],
+			[95, "Stronger viruses incoming! Combine organelles to make a strong antibody."],
+			[150, "Large viruses carry smaller viruses. Don't let them get too close!"],
+			[230, "A few kickback antibodies behind the cell make a good last line of defense."],
+			[300, "The full game has 19 antibody types, 9 stages, boss battles, economy, and endless mode!"],
+			[360, "Completely free and open source with no ads or transactions, for mobile or desktop."],
+			[480, "Not bad! Thanks for playing and I'll see you in the lab!"],
+		]
 		this.think(0, 0, 1)
+
 	},
 
 
@@ -82,6 +91,7 @@ UFX.scenes.demo = {
 	think0: function (dt) {
 		this.control()
 		this.addwaves()
+		this.adddialog()
 		state.thinkers().forEach(obj => obj.think(dt))
 		state.antibodies.forEach(obj => obj.constraintoworld())
 		if (control.cursor) {
@@ -91,6 +101,7 @@ UFX.scenes.demo = {
 		}
 		state.think(dt)
 		hud.think(dt)
+		dialog.think(dt)
 	},
 	control: function () {
 		if (settings.DEBUG) this.debugcontrol()
@@ -203,14 +214,11 @@ UFX.scenes.demo = {
 				this.nextegg = this.t + 13
 			}
 		}
-		if (!this.bmessage1 && state.organelles.length > 5) {
-			this.bmessage1 = hud.addbmessage("Combine organelles\nto form antibodies", [0, 20],
-				{ rotation: 10, fontsize: 20, lifetime: 7, })
-		}
-		if (state.antibodies.some(a => a.flavors.length > 1)) this.bmessage1 = true
-		if (!this.bmessagefinal && !this.nexts.length && state.viruses.length < 10) {
-			this.bmessagefinal = hud.addbmessage("Thank you\nfor playing!", [0, 40],
-				{ rotation: 0, fontsize: 35, lifetime: 10000000, })
+	},
+	adddialog: function () {
+		while (this.tlines.length && this.tlines[0][0] < this.t) {
+			let line = this.tlines.shift()[1]
+			dialog.queue.push(new TimedLine("zome", line))
 		}
 	},
 
@@ -301,6 +309,10 @@ UFX.scenes.demo = {
 			color: "white",
 		})
 		profiler.stop("drawinfo")
+
+		profiler.start("drawdialog")
+		dialog.draw()
+		profiler.stop("drawdialog")
 	
 	},
 }
