@@ -26,10 +26,12 @@ See <a href="http://enable-javascript.com/">enable-javascript.com</a> for more i
 </noscript>
 <canvas id=canvas></canvas>
 <script src="../src/setup.js"></script>
+<script src="http://ufx.space/support/support.js"></script>
 <script src="http://ufx.space/UFX.js" crossorigin=anonymous></script>
 <script src="../src/util.js"></script>
 <script src="../src/settings.js"></script>
 <script src="demo-mechanics.js"></script>
+<script src="snapshot.js"></script>
 <script src="../src/components.js"></script>
 <script src="../src/recipe.js"></script>
 <script src="../src/thing.js"></script>
@@ -52,7 +54,7 @@ To make:
 cd demo
 cat index.html | grep script | grep src | grep -v ufx | grep -v setup.js | sed 's|.*src=.||;s|.><.*||' | xargs cat > /tmp/demo.js
 open /tmp/demo.js and paste it into https://babeljs.io/repl/ then replace
-scp index.html ../src/setup.js /tmp/demo.js "night@night.xen.prgmr.com:/var/drzome/demo"
+scp -r index.html ../src/setup.js /tmp/demo.js data/ "night@night.xen.prgmr.com:/var/drzome/demo"
 
 Remote:
 

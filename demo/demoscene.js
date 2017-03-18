@@ -4,6 +4,7 @@ UFX.scenes.demo = {
 			UFX.key.init()
 			UFX.key.watchlist = "F1 F2 F3 F4 F5 F6 F7 F8 F9 F10".split(" ")
 		}
+		snapshot.init()
 		view.reset()
 		control.reset()
 		hud.reset()
@@ -102,6 +103,7 @@ UFX.scenes.demo = {
 		state.think(dt)
 		hud.think(dt)
 		dialog.think(dt)
+		snapshot.think(dt)
 	},
 	control: function () {
 		if (settings.DEBUG) this.debugcontrol()
