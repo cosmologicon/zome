@@ -212,4 +212,3 @@ UFX.scenes.gofull = {
 	},
 }
 
-

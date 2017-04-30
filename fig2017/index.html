@@ -65,7 +65,7 @@ Remove the script tags (other than UFX and setup) and replace them with a single
 */
 
 "use strict"
-UFX.resource.onload = () => {
+UFX.resource.onload = function () {
 	view.init()
 	if (gl) {
 		hill.init()

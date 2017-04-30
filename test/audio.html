@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<script src="http://ufx.space/UFX.js"></script>
+<script src="../src/audio.js"></script>
+<p><button type=button onclick="audio.playsfx('blobup1')">Play blobup</button>
+<p><button type=button onclick="audio.playsfx('blobdown1')">Play blobdown</button>
+<p><button type=button onclick="audio.playmusic('A')">Play music A</button>
+<script>
+window.onerror = function (error, url, line) { document.body.innerHTML = "<p>Error in: "+url+"<p>line "+line+"<pre>"+error+"</pre>" }
+audio.sfxfiles = ["blobup1", "blobdown1"]
+audio.init()
+
+</script>

@@ -64,9 +64,9 @@ UFX.scenes.demo = {
 		this.nextegg = 10
 		this.jegg = 2
 		hud.buttons.push(
-			new Button("Pause", [0.4, 0.4, 0.4], (() => UFX.scene.push("pause")), "topleft", [0, 0]),
-			new Button("Full\nscreen", [0.4, 0.4, 0.4], (() => UFX.scene.push("gofull")), "topleft", [0, 1]),
-			new Button("Reset\ndemo", [0.4, 0.4, 0.4], (() => UFX.scene.swap("demo")), "topleft", [0, 2])
+			new Button("Pause", (() => UFX.scene.push("pause")), "topleft", [0, 0]),
+			new Button("Full\nscreen", (() => UFX.scene.push("gofull")), "topleft", [0, 1]),
+			new Button("Reset\ndemo", (() => UFX.scene.swap("demo")), "topleft", [0, 2])
 		)
 		this.tlines = [
 			[0, "Have you got what it takes to join my lab?"],
@@ -124,12 +124,14 @@ UFX.scenes.demo = {
 		} else if (pstate.click && UFX.pointer.touch && !control.pointed && control.cursor) {
 			let obj = control.cursor
 			obj.drop()
+			audio.playsfx("blobdown1")
 			obj.onrdown()
 			control.cursor = null
 		} else if (pstate.down && control.pointed && !control.cursor) {
 			if (control.pointed.draggable && control.pointed.candrag()) {
 				control.pointed.drag()
 				control.pointed = null
+				if (control.cursor) audio.playsfx("blobup1")
 			}
 		} else if (pstate.down && !UFX.pointer.touch) {
 			control.cursorpos = control.pos
@@ -145,6 +147,7 @@ UFX.scenes.demo = {
 			//if (pstate.up || pstate.cancel) {
 				var target = control.pointed
 				if (target && target.container) target = target.container
+				audio.playsfx("blobdown1")
 				control.cursor.drop(target)
 				control.cursor = null
 			}

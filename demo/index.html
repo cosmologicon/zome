@@ -43,6 +43,7 @@ See <a href="http://enable-javascript.com/">enable-javascript.com</a> for more i
 <script src="../src/view.js"></script>
 <script src="../src/hud.js"></script>
 <script src="../src/dialog.js"></script>
+<script src="../src/audio.js"></script>
 <script src="../src/hill.js"></script>
 <script src="../src/shaders.js"></script>
 <script src="../src/draw.js"></script>
@@ -61,15 +62,20 @@ Remote:
 cd /var/drzome/demo
 nano index.html
 Remove the script tags (other than UFX and setup) and replace them with a single script tag pointing to demo.js.
+Rename ../src/setup.js to setup.js.
 
 */
 
 "use strict"
-UFX.resource.onload = () => {
-	view.init()
+
+UFX.scene.init({ ups: settings.ups, maxupf: settings.maxupf, })
+view.init()
+audio.sfxfiles = ["blobup1", "blobdown1"]
+audio.init()
+
+UFX.resource.onload = function () {
 	if (gl) {
 		hill.init()
-		UFX.scene.init({ ups: settings.ups, maxupf: settings.maxupf, })
 		UFX.scene.push("demo")
 		UFX.resource.onload = UFX.resource.onloading = function (f) {
 			UFX.gltext.CONSTANTS.MEMORY_LIMIT_MB = 0

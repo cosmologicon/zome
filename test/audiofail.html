@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<script src="http://ufx.space/UFX.js"></script>
+<script src="../src/audio.js"></script>
+<script src="../src/components.js"></script>
+<script src="../src/draw.js"></script>
+<script src="../src/hud.js"></script>
+<script src="../src/view.js"></script>
+<script src="../src/shaders.js"></script>
+<canvas id="canvas"></canvas>
+<script>
+window.onerror = function (error, url, line) { document.body.innerHTML = "<p>Error in: "+url+"<p>line "+line+"<pre>"+error+"</pre>" }
+UFX.resource.loadwebfonts("Sansita One", "Stint Ultra Condensed")
+UFX.scene.init()
+view.init()
+delete window.AudioContext
+delete window.webkitAudioContext
+audio.init()
+
+</script>

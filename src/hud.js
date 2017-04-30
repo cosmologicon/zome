@@ -54,11 +54,13 @@ Bmessage.prototype = UFX.Thing()
 	.addcomp(WorldBoundText)
 	
 
-function Button(text, color, onclick, corner, offset) {
+function Button(text, onclick, corner, offset, opts) {
+	opts = opts || {}
 	this.text = text
-	this.color = color
+	this.color = opts.color || [0.4, 0.4, 0.4]
 	this.onclick = onclick
-	this.fontsize = 5
+	this.fontscale = opts.fontscale || 0.5
+	this.fontsize = 10
 	this.rV = 10
 	this.pV = [0, 0]
 	this.corner = corner
@@ -67,13 +69,17 @@ function Button(text, color, onclick, corner, offset) {
 Button.prototype = {
 	setsize: function (bsize) {
 		this.rV = bsize
-		this.fontsize = 0.5 * bsize
-		if (this.corner == "topleft") {
-			this.pV = [
-				(1.1 + 2.1 * this.offset[0]) * bsize,
-				view.hV - (1.1 + 2.1 * this.offset[1]) * bsize,
-			]
-		}
+		this.fontsize = this.fontscale * bsize
+		let [x0, y0] = {
+			topleft: [0, 1],
+			bottom: [0.5, 0],
+		}[this.corner]
+		let [dx0, dx] = { 0: [1, 1], 0.5: [0, 1], 1: [-1, -1] }[x0]
+		let [dy0, dy] = { 0: [1, 1], 0.5: [0, 1], 1: [-1, -1] }[y0]
+		this.pV = [
+			x0 * view.wV + (dx0 * 1.1 + dx * 2.1 * this.offset[0]) * bsize,
+			y0 * view.hV + (dy0 * 1.1 + dy * 2.1 * this.offset[1]) * bsize,
+		]
 	},
 	within: function (pV) {
 		var dx = pV[0] - this.pV[0], dy = pV[1] - this.pV[1]
@@ -121,8 +127,9 @@ const hud = {
 		gl.progs.text.use()
 		this.bmessages.forEach(b => b.draw())
 	},
-	drawbuttons: function () {
-		let data = builddata(this.buttons, button => {
+	drawbuttons: function (buttons) {
+		buttons = buttons || this.buttons
+		let data = builddata(buttons, button => {
 			const [r, g, b] = button.color
 			return [button.pV[0], button.pV[1], button.rV, r, g, b, 0, 1]
 		})
@@ -145,8 +152,7 @@ const hud = {
 			gl.drawArrays(gl.TRIANGLES, 0, data.nvert)
 		}
 		gl.progs.text.use()
-		this.buttons.forEach(button => button.drawtext())
-
+		buttons.forEach(button => button.drawtext())
 	},
 	drawcombos: function () {
 		let combos = Object.keys(comboinfo), h = 0.02 * view.sV
