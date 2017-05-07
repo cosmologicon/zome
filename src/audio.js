@@ -2,6 +2,25 @@
 
 let audio = {
 	sfxfiles: [""],
+	musictracks: [""],
+	defaultfade: 0.5,
+	// The actual files corresponding to a given music track
+	mlist: {
+		X: ["levelX-A", "levelX-B"],
+		Y: ["levelY"],
+		boss: ["boss-A", "boss-B"],
+		menu: ["menu"],
+		win: ["win"],
+		lose: ["lose"],
+	},
+	mloops: {
+		X: true,
+		Y: true,
+		boss: true,
+		menu: true,
+		win: false,
+		lose: false,
+	},
 	// Should be called after view.init.
 	init: function () {
 		if (window.AudioContext) {
@@ -12,23 +31,42 @@ let audio = {
 			this.fail()
 			return
 		}
+
+		// Set by user settings.
 		this.mastergain = this.context.createGain()
 		this.sfxgain = this.context.createGain()
 		this.musicgain = this.context.createGain()
 		this.dialoggain = this.context.createGain()
+		// Used to soften music and sound effects while dialog is playing.
+		this.soundgain = this.context.createGain()
+
 		this.mastergain.connect(this.context.destination)
-		this.sfxgain.connect(this.mastergain)
-		this.musicgain.connect(this.mastergain)
 		this.dialoggain.connect(this.mastergain)
+		this.soundgain.connect(this.mastergain)
+		this.sfxgain.connect(this.soundgain)
+		this.musicgain.connect(this.soundgain)
 
 		let sounds = {}
 		this.sfxfiles.forEach(sfile => { sounds["abuffer" + sfile] = "data/sfx/" + sfile + ".ogg" })
+		this.musictracks.forEach(sfile => this.mlist[sfile].forEach(
+			mfile => { sounds["mbuffer" + mfile] = "data/music/" + mfile + ".ogg" }))
 		UFX.resource.loadaudiobuffer(this.context, sounds)
+		
+		this.musicnode = null
 	},
 	fail: function () {
 		this.context = null
 		UFX.scene.push("noaudio")
 	},
+	fullpause: function () {
+		if (!this.context) return
+		this.context.suspend()
+	},
+	fullresume: function () {
+		if (!this.context) return
+		this.context.resume()
+	},
+
 	playsfx: function (sname) {
 		if (!this.context) return
 		if (!UFX.resource.data["abuffer" + sname]) {
@@ -39,6 +77,47 @@ let audio = {
 		source.buffer = UFX.resource.data["abuffer" + sname]
 		source.connect(this.sfxgain)
 		source.start(0)
+	},
+	playmusic: function (mname, dt) {
+		if (!this.context) return
+		if (this.musicnode) {
+			if (dt === undefined) dt = this.defaultfade
+			this.fadeoutmusic(dt)
+		} else {
+			dt = 0
+		}
+		let node = this.musicnode = this.context.createGain()
+		this.musicnode.connect(this.musicgain)
+		let files = this.mlist[mname]
+		if (files.length == 1) {
+			let source = this.context.createBufferSource()
+			source.buffer = UFX.resource.data["mbuffer" + files[0]]
+			source.loop = this.mloops[mname]
+			source.connect(node)
+			source.start(this.context.currentTime + dt)
+		} else if (files.length == 2) {
+			let source0 = this.context.createBufferSource()
+			source0.buffer = UFX.resource.data["mbuffer" + files[0]]
+			source0.connect(node)
+			source0.start(this.context.currentTime + dt)
+			let source1 = this.context.createBufferSource()
+			source1.buffer = UFX.resource.data["mbuffer" + files[1]]
+			source1.loop = this.mloops[mname]
+			source1.connect(node)
+			source1.start(this.context.currentTime + dt + source0.buffer.duration)
+		}
+	},
+	stopmusic: function () {
+		this.fadeoutmusic(0)
+	},
+	fadeoutmusic: function (dt) {
+		if (dt === undefined) dt = this.defaultfade
+		if (this.musicnode) {
+			this.musicnode.gain.linearRampToValueAtTime(0, this.context.currentTime + dt)
+			let node = this.musicnode
+			setTimeout(node.disconnect.bind(node), 1000 * (dt + 1))
+			this.musicnode = null
+		}
 	},
 }
 

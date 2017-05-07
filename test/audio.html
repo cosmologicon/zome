@@ -3,10 +3,15 @@
 <script src="../src/audio.js"></script>
 <p><button type=button onclick="audio.playsfx('blobup1')">Play blobup</button>
 <p><button type=button onclick="audio.playsfx('blobdown1')">Play blobdown</button>
-<p><button type=button onclick="audio.playmusic('A')">Play music A</button>
+<p><button type=button onclick="audio.playmusic('X')">Play music X</button>
+<p><button type=button onclick="audio.playmusic('Y')">Play music Y</button>
+<p><button type=button onclick="audio.playmusic('win')">Play music win</button>
+<p><button type=button onclick="audio.fadeoutmusic()">Fade out music</button>
+<p><button type=button onclick="audio.stopmusic()">Stop music</button>
 <script>
 window.onerror = function (error, url, line) { document.body.innerHTML = "<p>Error in: "+url+"<p>line "+line+"<pre>"+error+"</pre>" }
 audio.sfxfiles = ["blobup1", "blobdown1"]
+audio.musictracks = ["X", "Y", "win"]
 audio.init()
 
 </script>
