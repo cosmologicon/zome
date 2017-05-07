@@ -11,6 +11,8 @@ UFX.scenes.demo = {
 		dialog.reset()
 		state.reset()
 		audio.playmusic("X")
+		audio.loaddialog("C01")
+		dialog.play("C01")
 
 		state.Rlevel = 100
 		state.hp = this.hp0 = 10000000
@@ -69,17 +71,6 @@ UFX.scenes.demo = {
 			new Button("Full\nscreen", (() => UFX.scene.push("gofull")), "topleft", [0, 1]),
 			new Button("Reset\ndemo", (() => UFX.scene.swap("demo")), "topleft", [0, 2])
 		)
-		this.tlines = [
-			[0, "Have you got what it takes to join my lab?"],
-			[0, "Drag organelles to defend the cell from viruses!"],
-			[70, "Big wave incoming! Don't let them slip through the cracks!"],
-			[95, "Stronger viruses incoming! Combine organelles to make a strong antibody."],
-			[150, "Large viruses carry smaller viruses. Don't let them get too close!"],
-			[230, "A few kickback antibodies behind the cell make a good last line of defense."],
-			[300, "The full game has 19 antibody types, 9 stages, boss battles, economy, and endless mode!"],
-			[360, "Completely free and open source with no ads or transactions, for mobile or desktop."],
-			[480, "Not bad! Thanks for playing and I'll see you in the lab!"],
-		]
 		this.think(0, 0, 1)
 
 	},
@@ -93,7 +84,6 @@ UFX.scenes.demo = {
 	think0: function (dt) {
 		this.control()
 		this.addwaves()
-		this.adddialog()
 		state.thinkers().forEach(obj => obj.think(dt))
 		state.antibodies.forEach(obj => obj.constraintoworld())
 		if (control.cursor) {
@@ -221,13 +211,6 @@ UFX.scenes.demo = {
 			}
 		}
 	},
-	adddialog: function () {
-		while (this.tlines.length && this.tlines[0][0] < this.t) {
-			let line = this.tlines.shift()[1]
-			dialog.queue.push(new TimedLine("zome", line))
-		}
-	},
-
 
 	draw: function () {
 		drawscene()

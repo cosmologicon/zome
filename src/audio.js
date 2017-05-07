@@ -52,7 +52,23 @@ let audio = {
 			mfile => { sounds["mbuffer" + mfile] = "data/music/" + mfile + ".ogg" }))
 		UFX.resource.loadaudiobuffer(this.context, sounds)
 		
+		// Currently playing music track and dialog line
 		this.musicnode = null
+		this.dialognode = null
+	},
+	loadeddialog: {},
+	loaddialog: function (dname) {
+		let sounds = {}
+		UFX.resource.data.transcript[dname].forEach((dinfo) => {
+			let filename = dinfo.filename
+			if (this.loadeddialog[filename]) return
+			this.loadeddialog[filename] = true
+			sounds["dbuffer" + filename] = "data/dialog/" + filename + ".ogg"
+		})
+		UFX.resource.loadaudiobuffer(this.context, sounds)
+	},
+	dialogready: function (dname) {
+		return !!UFX.resource.data["dbuffer" + dname]
 	},
 	fail: function () {
 		this.context = null
@@ -118,6 +134,31 @@ let audio = {
 			setTimeout(node.disconnect.bind(node), 1000 * (dt + 1))
 			this.musicnode = null
 		}
+	},
+	playdialog: function (fname) {
+		if (!this.context) return
+		if (this.isplayingdialog()) this.stopdialog()
+		let node = this.dialognode = this.context.createGain()
+		this.dialognode.connect(this.dialoggain)
+		let source = this.context.createBufferSource()
+		source.buffer = UFX.resource.data["dbuffer" + fname]
+		source.connect(node)
+		source.start(this.context.currentTime)
+		source.addEventListener("ended", () => {
+			if (node === this.dialognode) this.stopdialog()
+		})
+		this.soundgain.gain.cancelScheduledValues(0)
+		this.soundgain.gain.linearRampToValueAtTime(0.4, this.context.currentTime + this.defaultfade)
+	},
+	stopdialog: function () {
+		if (!this.dialognode) return
+		this.dialognode.disconnect()
+		this.dialognode = null
+		this.soundgain.gain.cancelScheduledValues(0)
+		this.soundgain.gain.linearRampToValueAtTime(1, this.context.currentTime + this.defaultfade)
+	},
+	isplayingdialog: function () {
+		return this.dialognode !== null
 	},
 }
 
