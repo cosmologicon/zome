@@ -166,15 +166,15 @@ var view = {
 
 	// The next click or tap will result in fullscreen being requested.
 	readyfullscreen: function () {
-		canvas.addEventListener("mousedown", view.reqfs)
-		canvas.addEventListener("touchstart", view.reqfs)
+		canvas.addEventListener("mouseup", view.reqfs, { passive: false })
+		canvas.addEventListener("touchend", view.reqfs, { passive: false })
 	},
 	unreadyfullscreen: function () {
-		canvas.removeEventListener("mousedown", view.reqfs)
-		canvas.removeEventListener("touchstart", view.reqfs)
+		canvas.removeEventListener("mouseup", view.reqfs)
+		canvas.removeEventListener("touchend", view.reqfs)
 		if (UFX.scene.top() === UFX.scenes.gofull) UFX.scene.pop()
 	},
-	reqfs: function () {
+	reqfs: function (event) {
 		view.unreadyfullscreen()
 		UFX.maximize.setoptions({ fullscreen: true })
 	},
@@ -191,12 +191,21 @@ UFX.scenes.gofull = {
 		}
 		view.readyfullscreen()
 		this.t = 0
+		this.paused = false
+	},
+	stop: function () {
+		audio.fullresume()
 	},
 	think: function (dt) {
 		this.t += dt
+		if (!this.paused && this.t > 0.4) {
+			this.paused = true
+			audio.fullpause()
+		}
 		if (this.t > 3) view.unreadyfullscreen()
 	},
 	draw: function () {
+		if (!this.paused) return
 		gl.clearColor(0.5, 0, 0.5, 1)
 		gl.clear(gl.COLOR_BUFFER_BIT)
 		gl.progs.text.use()
