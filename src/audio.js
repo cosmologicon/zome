@@ -23,6 +23,10 @@ let audio = {
 	},
 	// Should be called after view.init.
 	init: function () {
+		if (!settings.AUDIO) {
+			this.disable()
+			return
+		}
 		if (window.AudioContext) {
 			this.context = new AudioContext()
 		} else if (window.webkitAudioContext) {
@@ -56,8 +60,17 @@ let audio = {
 		this.musicnode = null
 		this.dialognode = null
 	},
+	// Permanently disable the audio. Cannot be undone without reloading the page.
+	disable: function () {
+		settings.AUDIO = false
+		if (this.context) {
+			this.context.close()
+		}
+		this.context = null
+	},
 	loadeddialog: {},
 	loaddialog: function (dname) {
+		if (!settings.AUDIO) return
 		let sounds = {}
 		UFX.resource.data.transcript[dname].forEach((dinfo) => {
 			let filename = dinfo.filename
@@ -68,10 +81,10 @@ let audio = {
 		UFX.resource.loadaudiobuffer(this.context, sounds)
 	},
 	dialogready: function (dname) {
-		return !!UFX.resource.data["dbuffer" + dname]
+		return !settings.AUDIO || UFX.resource.data["dbuffer" + dname]
 	},
 	fail: function () {
-		this.context = null
+		this.disable()
 		UFX.scene.push("noaudio")
 	},
 	fullpause: function () {
@@ -127,6 +140,7 @@ let audio = {
 		this.fadeoutmusic(0)
 	},
 	fadeoutmusic: function (dt) {
+		if (!this.context) return
 		if (dt === undefined) dt = this.defaultfade
 		if (this.musicnode) {
 			this.musicnode.gain.linearRampToValueAtTime(0, this.context.currentTime + dt)

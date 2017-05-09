@@ -22,6 +22,13 @@ let settings = {
 		longgun:   [0.7, 0.5, 0.9],
 		laser:     [0.8, 0.5, 0.0],
 	},
+
+	// Disabling audio is a one-time thing. This prevents the sound files from even being
+	// downloaded, so it can't be re-enabled.
+	// Will also be set to true by audio.init() if web audio context is not available.
+	AUDIO: !window.location.href.includes("NOAUDIO"),
+
+	DEBUG: window.location.href.includes("DEBUG"),
 }
-settings.DEBUG = window.location.href.includes("DEBUG")
+
 
