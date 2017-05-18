@@ -54,6 +54,7 @@ let audio = {
 		this.sfxfiles.forEach(sfile => { sounds["abuffer" + sfile] = "data/sfx/" + sfile + ".ogg" })
 		this.musictracks.forEach(sfile => this.mlist[sfile].forEach(
 			mfile => { sounds["mbuffer" + mfile] = "data/music/" + mfile + ".ogg" }))
+		UFX.resource.onaudiobuffererror = () => { this.fail() }
 		UFX.resource.loadaudiobuffer(this.context, sounds)
 		
 		// Currently playing music track and dialog line
@@ -204,7 +205,7 @@ UFX.scenes.noaudio = {
 		gl.clearColor(0.5, 0, 0.5, 1)
 		gl.clear(gl.COLOR_BUFFER_BIT)
 		gl.progs.text.use()
-		let text = "It looks like your web browser does not support HTML5 audio. To play with sound, please try a different browser."
+		let text = "We were unable to enable HTML5 audio on your web browser. To play with sound, please try a different browser."
 		gl.progs.text.draw(text, {
 			centerx: view.wV / 2,
 			centery: view.hV / 2 + 0.2 * view.sV,

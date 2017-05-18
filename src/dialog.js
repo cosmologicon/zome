@@ -63,6 +63,8 @@ function DialogLine(lspec) {
 	this.t = 0
 	this.alive = true
 	this.played = false
+	// Only used is audio is disabled.
+	this.lifetime = 0.5 + 0.08 * this.text.length
 }
 DialogLine.prototype = {
 	think: function (dt) {
@@ -71,7 +73,11 @@ DialogLine.prototype = {
 			audio.playdialog(this.audiofile)
 		}
 		this.t += dt
-		if (this.played && !audio.isplayingdialog()) this.alive = false
+		if (this.played && this.complete()) this.alive = false
+	},
+	complete: function () {
+		if (audio.context) return !audio.isplayingdialog()
+		return this.t >= this.lifetime
 	},
 	draw: function () {
 		if (!this.played) return
