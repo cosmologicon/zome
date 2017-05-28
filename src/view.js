@@ -93,13 +93,18 @@ var view = {
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 	},
 
-	// RGBA color
+	// RGBA color or RGB color
 	fill: function (color) {
-		gl.progs.fill.use()
-		gl.progs.fill.set.color(color)
-		pUbuffer.bind()
-		gl.progs.fill.assignAttribOffsets({ pU: 0 })
-		gl.drawArrays(gl.TRIANGLE_FAN, 0, 4)
+		if (color.length == 3 || color[3] == 1) {
+			gl.clearColor(color[0], color[1], color[2], 1)
+			gl.clear(gl.COLOR_BUFFER_BIT)
+		} else {
+			gl.progs.fill.use()
+			gl.progs.fill.set.color(color)
+			pUbuffer.bind()
+			gl.progs.fill.assignAttribOffsets({ pU: 0 })
+			gl.drawArrays(gl.TRIANGLE_FAN, 0, 4)
+		}
 	},
 
 	setVscaleG: function () {

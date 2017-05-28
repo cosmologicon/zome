@@ -23,6 +23,7 @@ let audio = {
 	},
 	// Should be called after view.init.
 	init: function () {
+		this.noticeshown = false
 		if (!settings.AUDIO) {
 			this.disable()
 			return
@@ -86,7 +87,10 @@ let audio = {
 	},
 	fail: function () {
 		this.disable()
-		UFX.scene.push("noaudio")
+		if (!this.noticeshown) {
+			UFX.scene.push("noaudio")
+			this.noticeshown = true
+		}
 	},
 	fullpause: function () {
 		if (!this.context) return

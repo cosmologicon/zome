@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<script src="http://ufx.space/UFX.js"></script>
+<script src="../src/util.js"></script>
+<script src="../src/settings.js"></script>
+<script src="../src/view.js"></script>
+<script src="../src/hill.js"></script>
+<script src="../src/draw.js"></script>
+<script src="../src/shaders.js"></script>
+<script src="../src/state.js"></script>
+<script src="../src/audio.js"></script>
+<script src="../src/credits.js"></script>
+<script src="../src/levelselect.js"></script>
+<canvas id=canvas>
+<script>
+UFX.scene.init()
+view.init()
+hill.init()
+audio.musictracks = ["menu"]
+audio.sfxfiles = []
+audio.init()
+UFX.resource.onload = () => {
+	UFX.scene.push("levelselect")
+}
+UFX.resource.loadwebfonts("Sansita One")
+UFX.resource.load({
+	zome: "data/zome.png",
+	simon: "data/simon.png",
+})
+</script>

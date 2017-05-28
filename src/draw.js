@@ -332,6 +332,42 @@ function drawantibody(obj) {
 	}
 }
 
+// Draw blobs for the menu select screen.
+// Blobspecs should have attributes: pos, R, color, t0
+function drawselectblobs(blobspecs) {
+	let data = builddata(blobspecs, obj => {
+		const [x, y] = obj.pos, R = obj.R, t0 = obj.t0
+		const [r, g, b] = obj.color
+		return [x, y, R, r, g, b, t0]
+	})
+	gl.progs.blob.use()
+	gl.progs.blob.set({
+		screensizeV: [view.wV, view.hV],
+		scenterG: [0, 0],
+		VscaleG: 1,
+		hilltextures: [1, 2, 3],
+		impulse: [0, 0],
+		A: hill.A,
+		Ad: hill.Ad,
+		T: Date.now() / 50000 % 1,
+	})
+	// TODO: remove unnecessary bindings like this one.
+	hill.textures.forEach(function (texture, j) {
+		gl.activeTexture(gl.TEXTURE1 + j)
+		gl.bindTexture(gl.TEXTURE_2D, texture)
+	})
+	gl.makeArrayBuffer(data).bind()
+	gl.progs.blob.assignAttribOffsets({
+		pU: 0,
+		centerG: 2,
+		GradiusU: 4,
+		color: 5,
+		t0: 8,
+	})
+	gl.drawArrays(gl.TRIANGLES, 0, data.nvert)
+}
+
+
 const kscopetextures = {}
 function getkscopetexture(s) {
 	if (kscopetextures[s]) return kscopetextures[s]
