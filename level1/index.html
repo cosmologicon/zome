@@ -47,6 +47,9 @@ See <a href="http://enable-javascript.com/">enable-javascript.com</a> for more i
 <script src="../src/hill.js"></script>
 <script src="../src/shaders.js"></script>
 <script src="../src/draw.js"></script>
+<script src="../src/pause.js"></script>
+<script src="../src/levelselect.js"></script>
+<script src="../src/credits.js"></script>
 <script src="demoscene.js"></script>
 <script>
 /*
@@ -123,10 +126,6 @@ UFX.scenes.load = {
 UFX.scene.push("load")
 UFX.resource.onloading = function (f) {
 	UFX.scenes.load.f = f
-	if (!gl) return
-	UFX.gltext.CONSTANTS.MEMORY_LIMIT_MB = 0
-	gl.progs.text.clean()
-	UFX.gltext.CONSTANTS.MEMORY_LIMIT_MB = 64
 }
 UFX.resource.onload = function () {
 	UFX.scenes.load.done = true
@@ -134,7 +133,11 @@ UFX.resource.onload = function () {
 	UFX.resource.onload = UFX.resource.onloading = function (f) {
 	}
 }
-UFX.resource.loadwebfonts("Sansita One", "Patrick Hand", "Stint Ultra Condensed", "Architects Daughter")
+UFX.resource.loadwebfonts("Sansita One", "Patrick Hand", "Stint Ultra Condensed", "Architects Daughter", {
+	onload: function () {
+		if (gl) gl.progs.text.clear()
+	},
+})
 UFX.gltext.fontmargins["Architects Daughter"] = 0.5
 UFX.gltext.fontmargins["Stint Ultra Condensed"] = 0.3
 UFX.gltext.fontmargins["Sansita One"] = 0.3

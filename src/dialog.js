@@ -85,7 +85,7 @@ DialogLine.prototype = {
 		if (view.wV > 1.1 * view.hV) {  // 16:9
 			x0 = 24
 			y0 = 13
-			r = 20
+			r = 16
 			tx = 40
 			ty = 5
 			w = 50
@@ -93,7 +93,7 @@ DialogLine.prototype = {
 		} else if (view.wV > 0.9 * view.hV) {  // 1:1
 			x0 = 18
 			y0 = 16
-			r = 24
+			r = 19
 			tx = 36
 			ty = 5
 			w = 60
@@ -101,7 +101,7 @@ DialogLine.prototype = {
 		} else {  // 9:16
 			x0 = 16
 			y0 = 16
-			r = 24
+			r = 19
 			tx = 32
 			ty = 5
 			w = 64

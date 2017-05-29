@@ -1,8 +1,8 @@
 "use strict"
 
 let audio = {
-	sfxfiles: [""],
-	musictracks: [""],
+	sfxfiles: [],
+	musictracks: [],
 	defaultfade: 0.5,
 	// The actual files corresponding to a given music track
 	mlist: {
