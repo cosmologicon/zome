@@ -1,11 +1,31 @@
+// Manage the Web audio context.
+// To permanetly disable audio, call audio.disable(), or set settings.AUDIO to false before calling
+// audio.init. This cannot be undone without reloading the page.
+
+// audio.context is the context object itself. It will be null if audio is disabled (or undefined if
+// audio.init has not yet been called).
+
+// Music and sound effects are loaded with audio.init. For performance, no dialog is loaded by
+// default. Use audio.loaddialog as necessary.
+
 "use strict"
 
 let audio = {
+	// Set audio.sfxfiles to the names of the sfx files you want to load, before calling audio.init.
+	// e.g. audio.sfxfiles = ["blobup1", "blobdown1"].
+	// Names should appear in the data/sfx subdirectory with .ogg extensions.
 	sfxfiles: [],
+	// Set audio.musictracks to the names of the music tracks you want to load, before calling
+	// audio.init. e.g. audio.musictracks = ["X", "boss"].
+	// Names should appear in audio._mlist and audio._mloops below.
 	musictracks: [],
+	// Time to fade music in/out unless otherwise specified, in seconds.
 	defaultfade: 0.5,
-	// The actual files corresponding to a given music track
-	mlist: {
+	// The actual list of filenames corresponding to a given music track. These should appear in the
+	// data/music subdirectory with .ogg extensions.
+	// For two-element values, the first one is the intro clip that plays once, and the second is
+	// the main track loop that repeats.
+	_mlist: {
 		X: ["levelX-A", "levelX-B"],
 		Y: ["levelY"],
 		boss: ["boss-A", "boss-B"],
@@ -13,7 +33,8 @@ let audio = {
 		win: ["win"],
 		lose: ["lose"],
 	},
-	mloops: {
+	// Whether the corresponding music track loops.
+	_mloops: {
 		X: true,
 		Y: true,
 		boss: true,
@@ -21,6 +42,10 @@ let audio = {
 		win: false,
 		lose: false,
 	},
+	// Create the web audio context.
+	// Set up the volume control gains.
+	// Add the necessary resources to UFX.resaurce.
+	// Push the noaudio scene on failure.
 	// Should be called after view.init.
 	init: function () {
 		this.noticeshown = false
@@ -37,7 +62,7 @@ let audio = {
 			return
 		}
 
-		// Set by user settings.
+		// Volume levels set by user settings.
 		this.mastergain = this.context.createGain()
 		this.sfxgain = this.context.createGain()
 		this.musicgain = this.context.createGain()
@@ -53,7 +78,7 @@ let audio = {
 
 		let sounds = {}
 		this.sfxfiles.forEach(sfile => { sounds["abuffer" + sfile] = "data/sfx/" + sfile + ".ogg" })
-		this.musictracks.forEach(sfile => this.mlist[sfile].forEach(
+		this.musictracks.forEach(sfile => this._mlist[sfile].forEach(
 			mfile => { sounds["mbuffer" + mfile] = "data/music/" + mfile + ".ogg" }))
 		UFX.resource.onaudiobuffererror = () => { this.fail() }
 		UFX.resource.loadaudiobuffer(this.context, sounds)
@@ -62,7 +87,8 @@ let audio = {
 		this.musicnode = null
 		this.dialognode = null
 	},
-	// Permanently disable the audio. Cannot be undone without reloading the page.
+	// Permanently disable the audio. Cannot be undone without reloading the page. Safe to call
+	// multiple times.
 	disable: function () {
 		settings.AUDIO = false
 		if (this.context) {
@@ -70,7 +96,8 @@ let audio = {
 		}
 		this.context = null
 	},
-	loadeddialog: {},
+	// Call with the name of a dialog sequence, e.g. "C01". All of the correspoinding tracks will be
+	// loaded.
 	loaddialog: function (dname) {
 		if (!settings.AUDIO) return
 		let sounds = {}
@@ -82,9 +109,13 @@ let audio = {
 		})
 		UFX.resource.loadaudiobuffer(this.context, sounds)
 	},
+	_loadeddialog: {},
+	// Whether the given dialog track (e.g. "C0101") is loaded and ready to play. Also returns true
+	// if audio is disabled.
 	dialogready: function (dname) {
 		return !settings.AUDIO || UFX.resource.data["dbuffer" + dname]
 	},
+	// Permanetly disable audio and push the noaudio scene.
 	fail: function () {
 		this.disable()
 		if (!this.noticeshown) {
@@ -92,15 +123,20 @@ let audio = {
 			this.noticeshown = true
 		}
 	},
+	// Pause all audio tracks (e.g. for the pause screen).
 	fullpause: function () {
 		if (!this.context) return
 		this.context.suspend()
 	},
+	// Resume all audio tracks.
 	fullresume: function () {
 		if (!this.context) return
 		this.context.resume()
 	},
 
+	// Immediately play the given sound effect name, e.g. "blobup1". Sends a warning to the console
+	// if the track is not ready.
+	// A no-op if audio is disabled.
 	playsfx: function (sname) {
 		if (!this.context) return
 		if (!UFX.resource.data["abuffer" + sname]) {
@@ -112,6 +148,10 @@ let audio = {
 		source.connect(this.sfxgain)
 		source.start(0)
 	},
+	// Play the given music track name, e.g. "X", from the beginning, stopping the current music
+	// track as necessary. You can also set a crossfade time (dt) in seconds, which defaults to
+	// audio.defaultfade.
+	// A no-op if audio is disabled.
 	playmusic: function (mname, dt) {
 		if (!this.context) return
 		if (this.musicnode) {
@@ -122,11 +162,11 @@ let audio = {
 		}
 		let node = this.musicnode = this.context.createGain()
 		this.musicnode.connect(this.musicgain)
-		let files = this.mlist[mname]
+		let files = this._mlist[mname]
 		if (files.length == 1) {
 			let source = this.context.createBufferSource()
 			source.buffer = UFX.resource.data["mbuffer" + files[0]]
-			source.loop = this.mloops[mname]
+			source.loop = this._mloops[mname]
 			source.connect(node)
 			source.start(this.context.currentTime + dt)
 		} else if (files.length == 2) {
@@ -136,14 +176,19 @@ let audio = {
 			source0.start(this.context.currentTime + dt)
 			let source1 = this.context.createBufferSource()
 			source1.buffer = UFX.resource.data["mbuffer" + files[1]]
-			source1.loop = this.mloops[mname]
+			source1.loop = this._mloops[mname]
 			source1.connect(node)
 			source1.start(this.context.currentTime + dt + source0.buffer.duration)
 		}
 	},
+	// Immediately stop the current music track.
+	// A no-op if audio is disabled.
 	stopmusic: function () {
 		this.fadeoutmusic(0)
 	},
+	// Fade the current music track out, and don't replace it with anything. You can specify a
+	// fadeout time (dt) in seconds, which defaults to audio.defaultfade.
+	// A no-op if audio is disabled.
 	fadeoutmusic: function (dt) {
 		if (!this.context) return
 		if (dt === undefined) dt = this.defaultfade
@@ -154,6 +199,11 @@ let audio = {
 			this.musicnode = null
 		}
 	},
+	// Play the given dialog track name, e.g. "C0101". Lowers the volume for music and sound effects
+	// to its 
+	// Stops the currently playing dialog track, if
+	// any. Should not be called until audio.dialogready for the same track name returns true.
+	// A no-op if audio is disabled.
 	playdialog: function (fname) {
 		if (!this.context) return
 		if (this.isplayingdialog()) this.stopdialog()
@@ -169,6 +219,8 @@ let audio = {
 		this.soundgain.gain.cancelScheduledValues(0)
 		this.soundgain.gain.linearRampToValueAtTime(0.4, this.context.currentTime + this.defaultfade)
 	},
+	// Immediately stop the currently-playing dialog track, if any.
+	// A no-op if audio is disabled.
 	stopdialog: function () {
 		if (!this.dialognode) return
 		this.dialognode.disconnect()
@@ -176,11 +228,17 @@ let audio = {
 		this.soundgain.gain.cancelScheduledValues(0)
 		this.soundgain.gain.linearRampToValueAtTime(1, this.context.currentTime + this.defaultfade)
 	},
+	// Returns whether there is currently a dialog track playing.
 	isplayingdialog: function () {
 		return this.dialognode !== null
 	},
 }
 
+// The noaudio scene.
+// A simple screen that informs the user that audio is unavailable, recommends using a different
+// browser, and gives two options: a link to read more about web audio, and the option to play
+// without sound.
+// Pushing this scene does not disable the audio. That should be done separately at the same time.
 UFX.scenes.noaudio = {
 	start: function () {
 		this.t = 0
