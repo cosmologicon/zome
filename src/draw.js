@@ -357,6 +357,7 @@ function drawselectblobs(blobspecs) {
 		gl.bindTexture(gl.TEXTURE_2D, texture)
 	})
 	gl.makeArrayBuffer(data).bind()
+	// TODO: I may need to re-enable one or more vertex arrays here.
 	gl.progs.blob.assignAttribOffsets({
 		pU: 0,
 		centerG: 2,

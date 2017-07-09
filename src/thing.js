@@ -4,13 +4,14 @@ function Cell(spec) {
 	this.start(spec)
 	this.color = "#006666"
 	this.blobcolor = [0.0, 0.4, 0.4]
+	this.nslots = progress.nslots
 }
 Cell.prototype = UFX.Thing()
 	.addcomp(Lives)
 	.addcomp(WorldBound)
 	.addcomp(Collideable, 20, 100000000)
 	.addcomp(Impulsed)
-	.addcomp(HasSlots, 7)
+	.addcomp(HasSlots, 3)
 	.addcomp(Mouseable, 20)
 	.addcomp(EjectsOnRightClick)
 	.addcomp(AnimationTicker, 50)

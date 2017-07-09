@@ -1,5 +1,10 @@
 
 var mechanics = {
+	cost: {
+		X: [5, 0],
+		Y: [5, 0],
+		Z: [10, 3],
+	},
 	hatchtime: {
 		X: 8,
 		Y: 12,
@@ -201,13 +206,6 @@ var mechanics = {
 		size: 6,
 		mass: 10,
 	},
-	tick: {
-		hp: 3,
-		speed: 20,
-		strength: 1,
-		size: 4,
-		mass: 10,
-	},
 	bee: {
 		hp: 2,
 		speed: 10,
@@ -225,6 +223,30 @@ var mechanics = {
 		mass: 10,
 		strength: 10,
 		ncarry: 5,
+	},
+
+	// New enemies in JS version.
+	tick: {
+		hp: 3,
+		speed: 20,
+		strength: 1,
+		size: 4,
+		mass: 10,
+	},
+	katydid: {
+		hp: 80,
+		speed: 3,
+		strength: 10,
+		size: 9,
+		mass: 25,
+	},
+	megatick: {
+		hp: 80,
+		speed: 5,
+		size: 9,
+		mass: 30,
+		strength: 20,
+		ncarry: 16,
 	},
 }
 

@@ -162,6 +162,9 @@ let dialog = {
 		if (!this.queue.length) return
 		this.queue[0].draw()
 	},
+	quiet: function () {
+		return !this.queue.length
+	},
 }
 
 dialog.reset()

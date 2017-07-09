@@ -41,8 +41,11 @@ UFX.scenes.levelselect = {
 		}
 		canvas.style.cursor = this.pointed ? "pointer" : "default"
 		if (this.pointed && pstate.click) {
+			progress.selected = this.pointed
 			if (this.pointed == "credits") {
 				UFX.scene.push("credits")
+			} else {
+				UFX.scene.swap("play")
 			}
 		}
 	},

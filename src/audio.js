@@ -103,8 +103,8 @@ let audio = {
 		let sounds = {}
 		UFX.resource.data.transcript[dname].forEach((dinfo) => {
 			let filename = dinfo.filename
-			if (this.loadeddialog[filename]) return
-			this.loadeddialog[filename] = true
+			if (this._loadeddialog[filename]) return
+			this._loadeddialog[filename] = true
 			sounds["dbuffer" + filename] = "data/dialog/" + filename + ".ogg"
 		})
 		UFX.resource.loadaudiobuffer(this.context, sounds)
@@ -160,9 +160,13 @@ let audio = {
 		} else {
 			dt = 0
 		}
+		let files = this._mlist[mname]
+		if (!files || !UFX.resource.data["mbuffer" + files[0]]) {
+			console.warn("Missing music track: " + mname)
+			return
+		}
 		let node = this.musicnode = this.context.createGain()
 		this.musicnode.connect(this.musicgain)
-		let files = this._mlist[mname]
 		if (files.length == 1) {
 			let source = this.context.createBufferSource()
 			source.buffer = UFX.resource.data["mbuffer" + files[0]]

@@ -72,6 +72,7 @@ Button.prototype = {
 		this.fontsize = this.fontscale * bsize
 		let [x0, y0] = {
 			topleft: [0, 1],
+			topright: [1, 1],
 			bottom: [0.5, 0],
 		}[this.corner]
 		let [dx0, dx] = { 0: [1, 1], 0.5: [0, 1], 1: [-1, -1] }[x0]
@@ -93,6 +94,14 @@ Button.prototype = {
 			ocolor: "black",
 		})
 	},
+}
+function GrowButton(flavor, corner, offset, opts) {
+	let [RNA, DNA] = mechanics.cost[flavor]
+	let text = "Grow\n" + (DNA && RNA ? RNA + " RNA + " + DNA + " DNA" : DNA ? DNA + " DNA" : RNA + " RNA")
+	let onclick = state.grow.bind(state, flavor)
+	opts = Object.create(opts || {})
+	opts.color = settings.ocolors[flavor]
+	return new Button(text, onclick, corner, offset, opts)
 }
 
 const hud = {
