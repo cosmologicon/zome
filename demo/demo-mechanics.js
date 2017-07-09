@@ -1,5 +1,5 @@
 
-var mechanics = {
+let mechanics = {
 	hatchtime: {
 		X: 8,
 		Y: 12,

@@ -28,6 +28,12 @@ function resetprogress() {
 }
 resetprogress()
 
+function unlockallcombos() {
+	;"X Y Z XX XY XZ YY YZ ZZ XXX XXY XXZ XYY XYZ XZZ YYY YYZ YZZ ZZZ".split(" ").forEach(flavors => {
+		progress.learned[flavors] = true
+	})
+}
+
 // The state object controls the frame-by-frame positions of characters and stuff. Does not get
 // saved in a full save, only in a quicksave.
 let state = {
