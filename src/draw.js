@@ -36,6 +36,8 @@ function drawscene() {
 	gl.clear(gl.COLOR_BUFFER_BIT)
 
 	hud.drawback()
+	
+	state.drawwaves()
 
 	// cell and state-bound antibodies
 	let data = builddata(state.drawblobs(), obj => {
@@ -356,8 +358,9 @@ function drawselectblobs(blobspecs) {
 		gl.activeTexture(gl.TEXTURE1 + j)
 		gl.bindTexture(gl.TEXTURE_2D, texture)
 	})
+	gl.disableVertexAttribArray(gl.progs.blob.attribs.impulse)
+	gl.disableVertexAttribArray(gl.progs.blob.attribs.T)
 	gl.makeArrayBuffer(data).bind()
-	// TODO: I may need to re-enable one or more vertex arrays here.
 	gl.progs.blob.assignAttribOffsets({
 		pU: 0,
 		centerG: 2,

@@ -185,8 +185,8 @@ UFX.scenes.play = {
 		}
 		text = []
 		text = text.concat([
-			"cell health: " + state.hp + "/" + state.hp0,
 			"RNA: " + state.RNA + "   DNA: " + state.DNA,
+			"cell health: " + state.hp + "/" + state.hp0,
 		])
 		gl.progs.text.draw(text.join("\n"), {
 			fontname: "Sansita One",

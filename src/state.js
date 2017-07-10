@@ -52,6 +52,7 @@ let state = {
 		this.ecorpses = []
 		this.tlevel = 0
 		this.wavespecs = []
+		this.wavespecs0 = []
 		this.RNA = 0
 		this.DNA = 0
 		this.RNArate = 0
@@ -72,6 +73,7 @@ let state = {
 		this.RNArate = spec.RNArate || 0
 		this.DNArate = spec.DNArate || 0
 		this.wavespecs = spec.wavespecs.slice()
+		this.wavespecs0 = this.wavespecs.slice()
 	},
 	colliders: function () {
 		return [this.cell].concat(this.antibodies, this.viruses, this.bosses)
@@ -129,7 +131,7 @@ let state = {
 		this.hp -= strength
 	},
 	think: function (dt) {
-		if (!dialog.quiet()) {
+		if (dialog.quiet()) {
 			this.tlevel += dt
 		}
 		let isalive = obj => obj.alive
@@ -183,8 +185,7 @@ let state = {
 		if (this.lost) this.tlost += dt
 	},
 
-	addvirus: function (vtype, theta, step) {
-		step = step || UFX.random(30, 60)
+	outstep: function (theta, step) {
 		theta *= tau
 		let dx = step * Math.sin(theta), dy = step * Math.cos(theta)
 		let x = this.cell.x, y = this.cell.y, r2 = (this.Rlevel + 10) * (this.Rlevel + 10)
@@ -192,6 +193,11 @@ let state = {
 			x += dx
 			y += dy
 		}
+		return [x, y]
+	},
+	addvirus: function (vtype, theta, step) {
+		step = step || UFX.random(30, 60)
+		let [x, y] = this.outstep(theta, step)
 		vtype = VirusTypes[vtype]
 		let obj = new vtype({ x: x, y: y })
 		obj.target = this.cell
@@ -226,7 +232,43 @@ let state = {
 		this.addobj(obj)
 		this.cell.addobj(obj)
 	},
-
+	drawwaves: function () {
+		let drawn = {}
+		gl.progs.text.use()
+		this.wavespecs0.forEach(wave => {
+			let t = this.tlevel - wave[0]
+			let angle = wave[3]
+			let text, alpha
+			if (t < -10) {
+				return
+			} else if (t < 0) {
+				text = "Wave\nincoming\nin:\n" + (-t).toFixed(0) + " sec"
+				alpha = clamp(t + 10, 0, 1)
+			} else if (t < 10) {
+				text = "Wave\nincoming"
+				alpha = clamp(10 - t, 0, 1)
+			} else {
+				return
+			}
+			if (drawn[angle]) return
+			drawn[angle] = true
+			let fontsize = Math.ceil(20 * view.VscaleG)
+			let [x, y] = this.outstep(angle, 20)
+			x += 0.2 * (this.cell.x - x)
+			y += 0.2 * (this.cell.y - y)
+			gl.progs.text.draw(text, {
+				midtop: view.VconvertG([x, y]),
+				rotation: -360 * angle,
+				fontsize: fontsize,
+				fontname: "Stint Ultra Condensed",
+				lineheight: 0.85,
+				color: "#FF4F4F",
+				outline: 2,
+				ocolor: "black",
+				alpha: 0.4 * alpha,
+			})
+		})
+	},
 }
 state.reset()
 
