@@ -53,6 +53,7 @@ let state = {
 		this.tlevel = 0
 		this.wavespecs = []
 		this.wavespecs0 = []
+		this.twaveticks = []
 		this.RNA = 0
 		this.DNA = 0
 		this.RNArate = 0
@@ -74,6 +75,10 @@ let state = {
 		this.DNArate = spec.DNArate || 0
 		this.wavespecs = spec.wavespecs.slice()
 		this.wavespecs0 = this.wavespecs.slice()
+		let flatten = arrs => [].concat.apply([], arrs)
+		let uniq = (x, j, arr) => j == 0 || x != arr[j-1]
+		this.twaveticks = flatten(this.wavespecs.map(wave => wave[0]).map(t => [t, t - 1, t - 2]))
+			.sort((a, b) => a - b).filter(uniq)
 	},
 	colliders: function () {
 		return [this.cell].concat(this.antibodies, this.viruses, this.bosses)
@@ -156,6 +161,10 @@ let state = {
 		}
 	},
 	spawnresources: function (dt) {
+		while (this.twaveticks.length && this.tlevel >= this.twaveticks[0]) {
+			this.twaveticks.shift()
+			audio.playsfx("tick")
+		}
 		let randompos = () => {
 			while (true) {
 				let [x, y] = UFX.random.rdisk()
