@@ -52,6 +52,7 @@ UFX.scenes.play = {
 		state.think(dt)
 		hud.think(dt)
 		dialog.think(dt)
+		quest.think(dt)
 		this.checkcomplete()
 	},
 	control: function () {
@@ -199,6 +200,7 @@ UFX.scenes.play = {
 		})
 		profiler.stop("drawinfo")
 
+		quest.draw()
 		profiler.start("drawdialog")
 		dialog.draw()
 		profiler.stop("drawdialog")

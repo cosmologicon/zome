@@ -215,7 +215,10 @@ var HasSlots = {
 		return this.slots.length >= this.nslot
 	},
 	cantake: function (obj) {
-		return !this.disabled && obj.slots.length + this.slots.length <= this.nslot
+		return !this.disabled && this.canfit(obj.slots.map(a => a.flavor))
+	},
+	canfit: function (newflavors) {
+		return newflavors.length + this.slots.length <= this.nslot
 	},
 	addobj: function (obj) {
 		this.slots.push(obj)
@@ -261,6 +264,12 @@ var HasSlots = {
 		})
 		adjust(this.slots, dt)
 	},
+}
+
+let FitsRecipe = {
+	canfit: function (newflavors) {
+		return progress.learned[this.flavors.split("").concat(newflavors).sort().join("")]
+	}
 }
 
 // Antibody resizing

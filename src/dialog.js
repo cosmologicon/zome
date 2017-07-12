@@ -146,6 +146,7 @@ DialogLine.prototype = {
 let dialog = {
 	reset: function () {
 		this.queue = []
+		this.tquiet = 0
 	},
 	play: function (dname) {
 		let lines = UFX.resource.data.transcript[dname]
@@ -154,6 +155,7 @@ let dialog = {
 		})
 	},
 	think: function (dt) {
+		this.tquiet = this.quiet() ? this.tquiet + dt : 0
 		if (!this.queue.length) return
 		this.queue[0].think(dt)
 		if (!this.queue[0].alive) this.queue.shift()

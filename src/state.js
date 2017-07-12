@@ -65,6 +65,7 @@ let state = {
 	},
 	load: function (level) {
 		this.reset()
+		this.levelname = level
 		let spec = levelspec[level]
 		this.Rlevel = spec.R
 		this.hp0 = this.hp = spec.hp
