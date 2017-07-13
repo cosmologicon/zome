@@ -29,6 +29,9 @@ let settings = {
 	AUDIO: !window.location.href.includes("NOAUDIO"),
 
 	DEBUG: window.location.href.includes("DEBUG"),
+
+	xspeed: 1,
+	xspeeds: [0.5, 1, 1.5, 2, 3],
 }
 
 

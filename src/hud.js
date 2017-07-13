@@ -103,6 +103,16 @@ function GrowButton(flavor, corner, offset, opts) {
 	opts.color = settings.ocolors[flavor]
 	return new Button(text, onclick, corner, offset, opts)
 }
+function SpeedControlButton(corner, offset, opts) {
+	let onclick = function () {
+		let index = (settings.xspeeds.indexOf(settings.xspeed) + 1) % settings.xspeeds.length
+		settings.xspeed = settings.xspeeds[index]
+		this.text = "" + settings.xspeed + "x"
+	}
+	opts = Object.create(opts || {})
+	let button = new Button("" + settings.xspeed + "x", onclick, corner, offset, opts)
+	return button
+}
 
 const hud = {
 	bmessages: [],

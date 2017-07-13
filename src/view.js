@@ -108,8 +108,7 @@ var view = {
 	},
 
 	setVscaleG: function () {
-		var s = Math.sqrt(this.wV * this.hV)
-		this.VscaleG = this.zoom * s / 250
+		this.VscaleG = this.zoom * this.sV / 250
 	},
 
 	VconvertG: function (pG) {
@@ -158,6 +157,12 @@ var view = {
 		this.setVscaleG()
 		if (posG) this.dragto(posG, posP)
 		this.constrain()
+	},
+	
+	zoomtofit: function () {
+		this.zoom = 100 / state.Rlevel
+		this.Z = Math.log(this.zoom)
+		this.setVscaleG()
 	},
 
 	// Move the camera such that the given game position is at the given pointer position.

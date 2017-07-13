@@ -18,11 +18,13 @@ UFX.scenes.play = {
 		}
 
 		state.load(this.level)
+		view.zoomtofit()
 
 		this.t = 0
 		hud.buttons.push(
 			new Button("Pause", (() => UFX.scene.push("pause")), "topright", [0, 1]),
-			new Button("Full\nscreen", (() => UFX.scene.push("gofull")), "topright", [0, 2])
+			new Button("Full\nscreen", (() => UFX.scene.push("gofull")), "topright", [0, 2]),
+			SpeedControlButton("topright", [0, 3])
 		)
 		;"XYZ".split("").forEach((flavor, jflavor) => {
 			if (state.flavorunlocked(flavor)) {
@@ -34,6 +36,7 @@ UFX.scenes.play = {
 
 
 	think: function (dt, jframe, nframe) {
+		dt *= settings.xspeed
 		this.t += dt
 		if (jframe == 0) this.think0(dt * nframe)
 		adjust(state.colliders(), dt)
