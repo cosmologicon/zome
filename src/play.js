@@ -22,9 +22,8 @@ UFX.scenes.play = {
 
 		this.t = 0
 		this.hud.addbuttons([
-			new Button("Pause", (() => UFX.scene.push("pause")), "topright", [0, 1]),
-			new Button("Full\nscreen", (() => UFX.scene.push("gofull")), "topright", [0, 2]),
-			SpeedControlButton("topright", [0, 3])
+			new Button("Menu", (() => UFX.scene.push("pause")), "bottomright", [0, 0]),
+			SpeedControlButton("bottomright", [0, 1])
 		])
 		this.hud.addbuttons(
 			"XYZ".split("")
@@ -62,12 +61,10 @@ UFX.scenes.play = {
 	control: function () {
 		if (settings.DEBUG) this.debugcontrol()
 		let pstate = UFX.pointer(canvas)
-		let ppos = pstate.pos && [pstate.pos[0] * view.pixelratio, pstate.pos[1] * view.pixelratio]
+		let ppos = view.scaleppos(pstate.pos)
 		control.pos = view.GconvertP(ppos)
 		control.pointed = control.getpointed(state.pointables())
-		if (ppos) {
-			this.hud.pointed = this.hud.getpointed([ppos[0], view.hV - ppos[1]])
-		}
+		this.hud.setpointed(ppos)
 
 		if (pstate.down && this.hud.pointed) {
 			this.hud.pointed.onclick()

@@ -9,8 +9,10 @@ UFX.scenes.levelselect = {
 	},
 	start: function () {
 		audio.playmusic("menu")
+		this.t = 0
 	},
 	think: function (dt) {
+		this.t += dt
 		let pstate = UFX.pointer(canvas)
 		let blobspecs = []
 		let Rsmall = 0.05 * view.sV, Rlarge = 0.08 * view.sV
@@ -40,7 +42,7 @@ UFX.scenes.levelselect = {
 			})
 		}
 		canvas.style.cursor = this.pointed ? "pointer" : "default"
-		if (this.pointed && pstate.click) {
+		if (this.t > 0.5 && this.pointed && pstate.click) {
 			progress.selected = this.pointed
 			if (this.pointed == "credits") {
 				UFX.scene.push("credits")

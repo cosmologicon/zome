@@ -1,5 +1,6 @@
 // Control module
-// Handles the cursor state, i.e. the object that's being dragged, if any.
+// Handles the in-game cursor state, i.e. the game object that's being pointed to and dragged, if
+// any.
 
 "use strict"
 

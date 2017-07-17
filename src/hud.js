@@ -77,9 +77,11 @@ Button.prototype = {
 			topleft: [0, 1],
 			topright: [1, 1],
 			bottom: [0.5, 0],
+			bottomright: [1, 0],
+			lower: [0.5, 0.3],
 		}[this.corner]
-		let [dx0, dx] = { 0: [1, 1], 0.5: [0, 1], 1: [-1, -1] }[x0]
-		let [dy0, dy] = { 0: [1, 1], 0.5: [0, 1], 1: [-1, -1] }[y0]
+		let [dx0, dx] = { 0: [1, 1], 0.5: [0, 1], 0.3: [0, 1], 1: [-1, -1] }[x0]
+		let [dy0, dy] = { 0: [1, 1], 0.5: [0, 1], 0.3: [0, 1], 1: [-1, -1] }[y0]
 		this.pV = [
 			x0 * view.wV + (dx0 * 1.1 + dx * 2.1 * this.offset[0]) * bsize,
 			y0 * view.hV + (dy0 * 1.1 + dy * 2.1 * this.offset[1]) * bsize,
@@ -156,6 +158,12 @@ HUD.prototype = {
 			if (this.buttons[j].within(pV)) return this.buttons[j]
 		}
 		return null
+	},
+	setpointed: function (ppos) {
+		if (!ppos) return this.pointed
+		let pV = [ppos[0], view.hV - ppos[1]]
+		this.pointed = this.getpointed(pV)
+		return this.pointed
 	},
 	drawback: function () {
 		gl.progs.text.use()

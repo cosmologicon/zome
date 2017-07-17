@@ -148,6 +148,10 @@ var view = {
 		}
 	},
 
+	scaleppos: function (ppos) {
+		return ppos ? [ppos[0] * this.pixelratio, ppos[1] * this.pixelratio] : null
+	},
+
 	// Adjust the zoom by an amount dz such that the given game position remains at the same
 	// screen position.
 	zoomat: function (dz, posG) {
