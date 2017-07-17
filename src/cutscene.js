@@ -51,6 +51,7 @@ Cutscene.prototype = {
 		gl.progs.text.draw(this.message, {
 			centerx: view.wV / 2,
 			centery: view.hV * 0.6,
+			witdth: view.wV * 0.95,
 			color: this.color,
 			gcolor: this.gcolor,
 			ocolor: "black",

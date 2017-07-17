@@ -33,6 +33,16 @@ let audio = {
 		win: ["win"],
 		lose: ["lose"],
 	},
+	// Sound effects that have multiple different versions, to keep them from sounding too
+	// repetitive. Maps the name of the sound effect to the filenames. Sound effects that have only
+	// a single version are referred to by their filenames.
+	_multisounds: {
+		blobup: ["blobup1", "blobup2"],
+		blobdown: ["blobdown1"],
+		get: ["get1", "get2", "get3", "get4"],
+		no: ["no1", "no2"],
+		shot: ["shot1", "shot2", "shot3", "shot4", "shot5", "shot6", "shot7"],
+	},
 	// Whether the corresponding music track loops.
 	_mloops: {
 		X: true,
@@ -77,7 +87,11 @@ let audio = {
 		this.musicgain.connect(this.soundgain)
 
 		let sounds = {}
-		this.sfxfiles.forEach(sfile => { sounds["abuffer" + sfile] = "data/sfx/" + sfile + ".ogg" })
+		this.sfxfiles.forEach(sname => {
+			;(this._multisounds[sname] || [sname]).forEach(sfile => {
+				sounds["abuffer" + sfile] = "data/sfx/" + sfile + ".ogg"
+			})
+		})
 		this.musictracks.forEach(sfile => this._mlist[sfile].forEach(
 			mfile => { sounds["mbuffer" + mfile] = "data/music/" + mfile + ".ogg" }))
 		UFX.resource.onaudiobuffererror = () => { this.fail() }
@@ -133,21 +147,38 @@ let audio = {
 		if (!this.context) return
 		this.context.resume()
 	},
-
+	// Call occasionally to update the dampening values with the passage of time.
+	think: function (dt) {
+		for (let sname in this._sfxdamp) {
+			this._sfxdamp[sname] *= Math.exp(-2 * dt)
+		}
+	},
 	// Immediately play the given sound effect name, e.g. "blobup1". Sends a warning to the console
 	// if the track is not ready.
+	// Sound volume is dampened by a factor related to how recently that same sound effect was
+	// played. This is to keep frequently-played sounds (especially the shot sound) from getting
+	// too overwhelming when they're played many times in rapid succession.
 	// A no-op if audio is disabled.
 	playsfx: function (sname) {
 		if (!this.context) return
+		let volume = 0.5 * Math.exp(-(this._sfxdamp[sname] || 0))
+		this._sfxdamp[sname] = (this._sfxdamp[sname] || 0) + 1
+		if (this._multisounds[sname]) sname = UFX.random.choice(this._multisounds[sname])
 		if (!UFX.resource.data["abuffer" + sname]) {
 			console.warn("Missing sound effect: " + sname)
 			return
 		}
+		let gain = this.context.createGain()
+		gain.gain.setValueAtTime(volume, 0)
+		gain.connect(this.sfxgain)
 		let source = this.context.createBufferSource()
 		source.buffer = UFX.resource.data["abuffer" + sname]
-		source.connect(this.sfxgain)
+		source.connect(gain)
 		source.start(0)
 	},
+	// Log of current damping factor for each sound effect. Starts at 0 and returns to 0 over time
+	// if the sound is not played.
+	_sfxdamp: {},
 	// Play the given music track name, e.g. "X", from the beginning, stopping the current music
 	// track as necessary. You can also set a crossfade time (dt) in seconds, which defaults to
 	// audio.defaultfade.
@@ -246,10 +277,11 @@ let audio = {
 UFX.scenes.noaudio = {
 	start: function () {
 		this.t = 0
-		this.buttons = [
+		this.hud = new HUD()
+		this.hud.addbuttons([
 			new Button("Learn\nmore", (() => window.location.href = "noaudio"), "bottom", [-0.7, 0.2]),
 			new Button("Play\nwithout\nsound", (() => UFX.scene.pop()), "bottom", [0.7, 0.2], { fontscale: 0.4 }),
-		]
+		])
 	},
 	think: function (dt) {
 		this.t += dt
@@ -283,7 +315,7 @@ UFX.scenes.noaudio = {
 			width: 0.8 * view.wV,
 			lineheight: 1.2,
 		})
-		hud.drawbuttons(this.buttons)
+		this.hud.draw()
 	},
 }
 

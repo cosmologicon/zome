@@ -1,4 +1,5 @@
-// Control state module
+// Control module
+// Handles the cursor state, i.e. the object that's being dragged, if any.
 
 "use strict"
 

@@ -75,14 +75,16 @@ Rename ../src/setup.js to setup.js.
 
 UFX.scene.init({ ups: settings.ups, maxupf: settings.maxupf, })
 view.init()
-audio.sfxfiles = ["blobup1", "blobdown1", "tick"]
+audio.sfxfiles = [
+	"blobup", "blobdown", "tick", "yes", "no", "get", "shot", "die", "hatch",
+]
 audio.musictracks = ["X", "win", "lose", "menu"]
 audio.init()
 if (settings.DEBUG) {
 	UFX.key.init()
 	UFX.key.watchlist = "F1 F2 F3 F4 F5 F6 F7 F8 F9 F10".split(" ")
 }
-let levelspec = {
+var levelspec = {
 	1: {
 		music: "X",
 		dialog: "C01",
@@ -138,7 +140,7 @@ UFX.scenes.load = {
 			fontname: "Sansita One",
 			fontsize: 1.4 * h,
 		})
-		var text = this.done ? "Click to begin" : "Loading (" + (this.f * 100).toFixed(0) + "%)"
+		var text = this.done ? "Click to begin" : "Loading (" + Math.floor(this.f * 100) + "%)"
 		gl.progs.text.draw(text, {
 			centerx: view.wV / 2,
 			centery: view.hV / 2 - 2 * h,
@@ -147,11 +149,24 @@ UFX.scenes.load = {
 			fontname: "Sansita One",
 			fontsize: 1.2 * h,
 		})
+		if (settings.DEBUG) {
+//			var text = "Loaded:\n" + Object.keys(UFX.resource.data).sort().join(" ") + " | " + Object.keys(UFX.resource.images).sort().join(" ")
+			var text = "Loaded:\n" + this.loaded.join(" ")
+			gl.progs.text.draw(text, {
+				midbottom: [view.wV / 2, view.hV * 0.05],
+				width: view.wV * 0.9,
+				color: "black",
+				fontname: "monospace",
+				fontsize: 0.4 * h,
+			})
+		}
 	},
+	loaded: [],
 }
 UFX.scene.push("load")
-UFX.resource.onloading = function (f) {
+UFX.resource.onloading = function (f, obj, objtype, objname, url) {
 	UFX.scenes.load.f = f
+	UFX.scenes.load.loaded.push(objname + ":" + Math.round(f * 100))
 }
 UFX.resource.onload = function () {
 	UFX.scenes.load.done = true
@@ -160,7 +175,7 @@ UFX.resource.onload = function () {
 	}
 }
 UFX.resource.loadwebfonts("Sansita One", "Patrick Hand", "Stint Ultra Condensed", "Architects Daughter",
-	"Stint Ultra Condensed", "Passion One", "Permanent Marker", {
+	"Passion One", "Permanent Marker", {
 	onload: function () {
 		if (gl) gl.progs.text.clear()
 	},

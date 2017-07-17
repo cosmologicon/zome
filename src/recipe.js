@@ -89,6 +89,10 @@ const recipes = {
 		var type = laser ? Laser : Bullet
 		state.addobj(new type(this, target, mechanic))
 		this.lastshot = this.t + UFX.random(-0.2, 0.2)
+		if (laser) {
+		} else {
+			audio.playsfx("shot")
+		}
 	},
 	trytolaser: function (mechanic) {
 		recipes.trytoshoot.call(this, mechanic, true)

@@ -1,3 +1,6 @@
+// HUD, or generally all on-screen controls.
+// Different scenes can have their own HUD.
+
 const DrawAsText = {
 	start: function (opts) {
 		this.text = opts.text
@@ -98,7 +101,14 @@ Button.prototype = {
 function GrowButton(flavor, corner, offset, opts) {
 	let [RNA, DNA] = mechanics.cost[flavor]
 	let text = "Grow\n" + (DNA && RNA ? RNA + " RNA + " + DNA + " DNA" : DNA ? DNA + " DNA" : RNA + " RNA")
-	let onclick = state.grow.bind(state, flavor)
+	let onclick = function () {
+		if (state.cangrow(flavor)) {
+			state.grow(flavor)
+			audio.playsfx("yes")
+		} else {
+			audio.playsfx("no")
+		}
+	}
 	opts = Object.create(opts || {})
 	opts.color = settings.ocolors[flavor]
 	return new Button(text, onclick, corner, offset, opts)
@@ -114,11 +124,10 @@ function SpeedControlButton(corner, offset, opts) {
 	return button
 }
 
-const hud = {
-	bmessages: [],
-	buttons: [],
-	pointed: null,
-
+function HUD() {
+	this.reset()
+}
+HUD.prototype = {
 	reset: function () {
 		this.bmessages = []
 		this.buttons = []
@@ -129,6 +138,12 @@ const hud = {
 		let bmessage = new Bmessage(text, pos, options)
 		this.bmessages.push(bmessage)
 		return bmessage
+	},
+	addbutton: function (button) {
+		this.buttons.push(button)
+	},
+	addbuttons: function (buttons) {
+		this.buttons.push.apply(this.buttons, buttons)
 	},
 	think: function (dt) {
 		this.bmessages.forEach(obj => obj.think(dt))
@@ -172,6 +187,9 @@ const hud = {
 		}
 		gl.progs.text.use()
 		buttons.forEach(button => button.drawtext())
+	},
+	draw: function () {
+		this.drawbuttons()
 	},
 	drawcombos: function () {
 		let combos = Object.keys(comboinfo), h = 0.02 * view.sV

@@ -26,7 +26,7 @@ function builddata(objs, fvals) {
 }
 
 
-function drawscene() {
+function drawscene(hud) {
 	profiler.start("drawscene")
 	gl.disable(gl.DEPTH_TEST)
 	gl.enable(gl.BLEND)

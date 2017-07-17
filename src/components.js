@@ -322,6 +322,7 @@ const Hatches = {
 		this.container.addobj(obj)
 		state.addobj(obj)
 		state.addobj(new EggCorpse(this))
+		audio.playsfx("hatch")
 	},
 }
 
@@ -459,6 +460,7 @@ var ResourcesOnArrival = {
 	arrive: function () {
 		state.RNA += this.RNA
 		state.DNA += this.DNA
+		audio.playsfx("get")
 	},
 }
 

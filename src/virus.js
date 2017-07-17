@@ -12,6 +12,7 @@ var Shootable = {
 		this.hp -= strength
 		if (this.hp <= 0) {
 			this.die()
+			audio.playsfx("die")
 			if (RNAprob && UFX.random.flip(RNAprob)) {
 				state.addobj(new RNA({ x: this.x, y: this.y }))
 			}

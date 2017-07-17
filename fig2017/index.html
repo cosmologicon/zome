@@ -46,6 +46,7 @@ See <a href="http://enable-javascript.com/">enable-javascript.com</a> for more i
 <script src="../src/hill.js"></script>
 <script src="../src/shaders.js"></script>
 <script src="../src/draw.js"></script>
+<script src="../src/audio.js"></script>
 <script src="demoscene.js"></script>
 <script>
 /*
@@ -65,6 +66,7 @@ Remove the script tags (other than UFX and setup) and replace them with a single
 */
 
 "use strict"
+audio.disable()
 unlockallcombos()
 UFX.resource.onload = function () {
 	view.init()

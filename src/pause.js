@@ -8,7 +8,7 @@ UFX.scenes.pause = {
 		audio.fullresume()
 	},
 	think: function (dt) {
-		hud.think(0)
+		UFX.scenes.play.hud.think(0)
 		var pstate = UFX.pointer(canvas)
 		this.t += dt
 		this.alpha = clamp(3 * this.t, 0, 1)

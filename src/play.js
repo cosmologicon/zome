@@ -9,7 +9,7 @@ UFX.scenes.play = {
 		let spec = levelspec[this.level]
 		view.reset()
 		control.reset()
-		hud.reset()
+		this.hud = new HUD()
 		dialog.reset()
 		audio.playmusic(spec.music)
 		if (spec.dialog) {
@@ -21,16 +21,16 @@ UFX.scenes.play = {
 		view.zoomtofit()
 
 		this.t = 0
-		hud.buttons.push(
+		this.hud.addbuttons([
 			new Button("Pause", (() => UFX.scene.push("pause")), "topright", [0, 1]),
 			new Button("Full\nscreen", (() => UFX.scene.push("gofull")), "topright", [0, 2]),
 			SpeedControlButton("topright", [0, 3])
+		])
+		this.hud.addbuttons(
+			"XYZ".split("")
+				.filter((flavor, jflavor) => state.flavorunlocked(flavor))
+				.map((flavor, jflavor) => GrowButton(flavor, "topleft", [0, jflavor]))
 		)
-		;"XYZ".split("").forEach((flavor, jflavor) => {
-			if (state.flavorunlocked(flavor)) {
-				hud.buttons.push(GrowButton(flavor, "topleft", [0, jflavor]))
-			}
-		})
 		this.think(0, 0, 1)
 	},
 
@@ -53,9 +53,10 @@ UFX.scenes.play = {
 			control.cursor.constraintoworld()
 		}
 		state.think(dt)
-		hud.think(dt)
+		this.hud.think(dt)
 		dialog.think(dt)
 		quest.think(dt)
+		audio.think(dt)
 		this.checkcomplete()
 	},
 	control: function () {
@@ -65,11 +66,11 @@ UFX.scenes.play = {
 		control.pos = view.GconvertP(ppos)
 		control.pointed = control.getpointed(state.pointables())
 		if (ppos) {
-			hud.pointed = hud.getpointed([ppos[0], view.hV - ppos[1]])
+			this.hud.pointed = this.hud.getpointed([ppos[0], view.hV - ppos[1]])
 		}
 
-		if (pstate.down && hud.pointed) {
-			hud.pointed.onclick()
+		if (pstate.down && this.hud.pointed) {
+			this.hud.pointed.onclick()
 		} else if (pstate.rdown && control.pointed && !control.cursor) {
 			control.pointed.onrdown()
 		} else if (pstate.click && UFX.pointer.touch && control.pointed && !control.cursor) {
@@ -139,11 +140,11 @@ UFX.scenes.play = {
 	},
 
 	draw: function () {
-		drawscene()
+		drawscene(this.hud)
 		if (control.cursor) drawantibody(control.cursor)
 
 		profiler.start("drawhud")
-		hud.drawbuttons()
+		this.hud.draw()
 		gl.progs.text.use()
 		let h = 0.01 * Math.sqrt(view.hV * view.wV)
 		gl.progs.text.draw("The Laboratory of", {
