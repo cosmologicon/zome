@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+<link href="https://fonts.googleapis.com/css?family=Sansita+One|Londrina+Solid|Slackey|Fontdiner+Swanky|Chicle|Irish+Grover" rel="stylesheet">
+<title>The Laboratory of Dr. Zome: logo</title>
+<canvas id=canvas></canvas>
+<script src="http://ufx.space/UFX.js" crossorigin=anonymous></script>
+<script>
+let query = {}
+location.search.replace(/\?/g, "").split("&").forEach(param => {
+	if (!param.includes("=")) return
+	let [k, v] = param.split(/=/)
+	query[k] = JSON.parse(v)
+})
+
+let font = "Irish Grover"
+let lines = [
+	{ h: 60, x: 0, y: -58, text: "The Laboratory of", },
+	{ h: 140, x: -186, y: 25, text: "Dr", },
+	{ h: 140, x: 94, y: 25, text: "Zome", },
+	{ h: 140, x: -111, y: 25, text: ".", },
+]
+
+lines.forEach(line => {
+	line.text = line.text.replace(/ /g, "~")
+	line.font = "font " + line.h + "px~'" + font.replace(/ /g, "~") + "'"
+	line.fill = UFX.draw.lingrad(0, -line.h/5, 0, line.h/2, 0, "yellow", 1, "#F84")
+})
+
+let canvas = document.getElementById("canvas")
+canvas.style.background = "linear-gradient(to bottom, #249 0%,#7be 100%)"
+let context = canvas.getContext("2d")
+UFX.draw.setcontext(context)
+UFX.maximize.onadjust = (canvas, w, h) => {
+	if (query.w && query.h) {
+		canvas.width = query.w
+		canvas.height = query.h
+	} else if (query.w) {
+		canvas.width = query.w
+		canvas.height = Math.round(220 / 600 * query.w)
+	} else if (query.h) {
+		canvas.width = Math.round(600 / 220 * query.h)
+		canvas.height = query.h
+	} else {
+		let ratio = window.devicePixelRatio || 1
+		canvas.width = w * ratio
+		canvas.height = h * ratio
+	}
+	let r = Math.min(w / canvas.width, h / canvas.height)
+	canvas.style.width = Math.round(canvas.width * r) + "px"
+	canvas.style.height = Math.round(canvas.height * r) + "px"
+}
+UFX.maximize(canvas)
+UFX.pointer.allowcontextmenu = true
+
+function wid(w0, h) {
+	return w0 * Math.pow(h / 140, 0.4)
+}
+UFX.ticker.init(function (dt) {
+	let pstate = UFX.pointer(canvas)
+	context.lineJoin = "round"
+	UFX.draw(pstate.within ? "c0" : "fs #335 f0")
+	let scale = canvas.width / 600
+	UFX.draw("[ t", canvas.width / 2, canvas.height / 2, "z", scale, scale, "tab center middle")
+
+	if (!pstate.within) {
+		UFX.draw("[ fs rgba(255,255,255,0.2)")
+		context.globalCompositeOperation = "xor"
+		for (let y = -300 ; y < 300 ; y += 20) UFX.draw("fr", -500, y, 1000, 10)
+		for (let x = -500 ; x < 500 ; x += 20) UFX.draw("fr", x, -300, 10, 600)
+		UFX.draw("]")
+	}
+
+	let color = query.mono ? "black" : "#222"
+	lines.forEach(line => UFX.draw(
+		"[ ss", color, "lw", wid(35, line.h), "sh", color, 0, 9 * scale, 4 * scale,
+		"t", line.x, line.y, line.font, "st0", line.text, "]"
+	))
+
+	lines.forEach(line => UFX.draw(
+		"ss #fff lw", wid(22, line.h),
+		"[ t", line.x, line.y, line.font, "st0", line.text, "]",
+		"ss #fff lw", wid(16, line.h),
+		"[ t", line.x, line.y, line.font, "st0", line.text, "]"
+	))
+
+	color = query.mono ? "black" : "#840"
+	let owidth = query.mono ? 2 : 8
+	lines.forEach(line => UFX.draw(
+		"ss", color, "lw", wid(owidth, line.h),
+		"[ t", line.x, line.y, line.font, "st0", line.text, "]"
+	))
+
+	lines.forEach(line => UFX.draw(
+		"[ fs", query.mono ? "black" : line.fill, "t", line.x, line.y, line.font, "ft0", line.text, "]"
+	))
+
+//	UFX.draw("fs rgba(0,0,0,0.4) fr -300 -110 600 220")
+	UFX.draw("]")
+})
+</script>
