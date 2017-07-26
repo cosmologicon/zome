@@ -71,5 +71,8 @@ UFX.scenes.levelselect = {
 				scolor: "black",
 			})
 		})
+
+		h = 0.01 * view.sV
+		tracers.title.draw([view.wV - 18 * h, view.hV - 6 * h], 0.06 * h)
 	},
 }

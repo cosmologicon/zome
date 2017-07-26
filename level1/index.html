@@ -48,6 +48,7 @@ See <a href="http://enable-javascript.com/">enable-javascript.com</a> for more i
 <script src="../src/hill.js"></script>
 <script src="../src/shaders.js"></script>
 <script src="../src/draw.js"></script>
+<script src="../src/tracer.js"></script>
 <script src="../src/pause.js"></script>
 <script src="../src/levelselect.js"></script>
 <script src="../src/credits.js"></script>
@@ -73,8 +74,10 @@ Rename ../src/setup.js to setup.js.
 
 "use strict"
 
+settings.subtitle = "Stage 1 demo"
 UFX.scene.init({ ups: settings.ups, maxupf: settings.maxupf, })
 view.init()
+tracers.init()
 audio.sfxfiles = [
 	"blobup", "blobdown", "tick", "yes", "no", "get", "shot", "die", "hatch",
 ]
@@ -121,29 +124,15 @@ UFX.scenes.load = {
 		if (!gl) return
 		gl.clearColor(0, 0.5, 0.5, 1)
 		gl.clear(gl.COLOR_BUFFER_BIT)
-		gl.progs.text.use()
 		var h = 0.05 * view.sV
-		gl.progs.text.draw("Dr. Zome", {
-			centerx: view.wV / 2,
-			centery: view.hV / 2 + h,
-			color: "yellow",
-			ocolor: "black",
-			fontname: "Sansita One",
-			fontsize: 3 * h,
-		})
-		gl.progs.text.draw("  The Laboratory of  ", {
-			centerx: view.wV / 2,
-			centery: view.hV / 2 + 2.6 * h,
-			color: "yellow",
-			ocolor: "black",
-			owidth: 2,
-			fontname: "Sansita One",
-			fontsize: 1.4 * h,
-		})
+		tracers.title.draw([view.wV / 2, view.hV / 2], 0.025 * h)
+
+		gl.progs.text.use()
+		
 		var text = this.done ? "Click to begin" : "Loading (" + Math.floor(this.f * 100) + "%)"
 		gl.progs.text.draw(text, {
 			centerx: view.wV / 2,
-			centery: view.hV / 2 - 2 * h,
+			centery: view.hV / 2 - 5 * h,
 			color: "orange",
 			ocolor: "black",
 			fontname: "Sansita One",
@@ -175,9 +164,10 @@ UFX.resource.onload = function () {
 	}
 }
 UFX.resource.loadwebfonts("Sansita One", "Patrick Hand", "Stint Ultra Condensed", "Architects Daughter",
-	"Passion One", "Permanent Marker", {
+	"Passion One", "Permanent Marker", "Irish Grover", {
 	onload: function () {
 		if (gl) gl.progs.text.clear()
+		if (tracers.title) tracers.title.clear()
 	},
 })
 UFX.gltext.fontmargins["Architects Daughter"] = 0.5

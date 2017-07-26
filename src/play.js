@@ -139,30 +139,15 @@ UFX.scenes.play = {
 	draw: function () {
 		drawscene(this.hud)
 		if (control.cursor) drawantibody(control.cursor)
+		let h = 0.01 * view.sV
 
 		profiler.start("drawhud")
 		this.hud.draw()
-		gl.progs.text.use()
-		let h = 0.01 * Math.sqrt(view.hV * view.wV)
-		gl.progs.text.draw("The Laboratory of", {
-			fontsize: 3 * h,
-			fontname: "Sansita One",
-			topright: [view.wV - 1 * h, view.hV - 0 * h],
-			ocolor: "black",
-			color: "yellow",
-			owidth: 1,
-		})
-		gl.progs.text.draw("Dr. Zome", {
-			fontsize: 6 * h,
-			fontname: "Sansita One",
-			topright: [view.wV - 1 * h, view.hV - 2 * h],
-			ocolor: "black",
-			color: "yellow",
-			owidth: 1,
-		})
+		tracers.title.draw([view.wV - 18 * h, view.hV - 6 * h], 0.06 * h)
 		profiler.stop("drawhud")
 
 		profiler.start("drawinfo")
+		gl.progs.text.use()
 		let text = []
 		if (settings.DEBUG) {
 			let m = Math.floor(this.t / 60), s = this.t % 60

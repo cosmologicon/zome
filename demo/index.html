@@ -47,6 +47,7 @@ See <a href="http://enable-javascript.com/">enable-javascript.com</a> for more i
 <script src="../src/hill.js"></script>
 <script src="../src/shaders.js"></script>
 <script src="../src/draw.js"></script>
+<script src="../src/tracer.js"></script>
 <script src="demoscene.js"></script>
 <script>
 /*
@@ -68,10 +69,13 @@ Rename ../src/setup.js to setup.js.
 
 "use strict"
 
+settings.subtitle = "Demo version"
+
 unlockallcombos()
 
 UFX.scene.init({ ups: settings.ups, maxupf: settings.maxupf, })
 view.init()
+tracers.init()
 audio.sfxfiles = ["blobup1", "blobdown1"]
 audio.init()
 
@@ -89,7 +93,7 @@ UFX.resource.onload = function () {
 		UFX.gltext.fontmargins["Sansita One"] = 0.3
 	}
 }
-UFX.resource.loadwebfonts("Sansita One", "Stint Ultra Condensed", "Architects Daughter")
+UFX.resource.loadwebfonts("Sansita One", "Stint Ultra Condensed", "Architects Daughter", "Irish Grover")
 UFX.resource.load({
 	zome: "data/zome.png",
 })
