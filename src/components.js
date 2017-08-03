@@ -48,6 +48,9 @@ const FadesInAndOut = {
 		let f = Math.min(this.t, this.lifetime - this.t) / this.fadetime
 		this.alpha = clamp(f, 0, 1)
 	},
+	fadeout: function () {
+		this.lifetime = Math.min(this.lifetime, this.t + this.fadetime)
+	},
 }
 
 const Expands = {
@@ -370,6 +373,25 @@ var Draggable = {
 	},
 }
 
+let DraggableProgress = {
+	drag: function () {
+		this.dragging = true
+		this.xdrag0 = this.x
+		this.ydrag0 = this.y
+	},
+	think: function (dt) {
+		if (!this.dragging || progress.did.drag) return
+		let dx = this.xdrag0 - this.x
+		let dy = this.ydrag0 - this.y
+		if (dx * dx + dy * dy > 10 * 10) {
+			progress.did.drag = true
+		}
+	},
+	drop: function (target) {
+		this.dragging = false
+	},
+}
+
 // If an organelle is within a draggable container (i.e. an antibody), then dragging the organelle
 // results in dragging the container. If its container is undraggable (i.e. the cell), then dragging
 // the organelle results in the creation of an antibody containing it.
@@ -447,7 +469,7 @@ var KicksOnArrival = {
 	},
 	arrive: function () {
 		if (!this.tkick) return
-		var [ix, iy] = norm(this.target.x - this.x, this.target.y - this.y, this.tkick)
+		var [ix, iy] = norm(this.target.x - this.x, this.target.y - this.y, this.tkick * 10 / this.target.mass)
 		this.target.kick(ix, iy)
 	},
 }
@@ -491,6 +513,7 @@ var TargetsThing = {
 	init: function (speed0, dspeed) {
 		this.speed0 = speed0
 		this.dspeed = dspeed || 0
+		this.arrived = false
 	},
 	start: function () {
 		this.speed = this.speed0 * (1 + this.dspeed * UFX.random(-1, 1))
@@ -504,5 +527,45 @@ var TargetsThing = {
 			}
 		}
 	},
+	arrive: function () {
+		this.arrived = true
+	},
 }
 
+const LabelsThing = {
+	think: function (dt) {
+		if (!this.obj.alive) this.die()
+	},
+	draw: function () {
+		let fontsize = Math.ceil(view.VscaleG * 9)
+		let pos = view.VconvertG([this.obj.x + this.obj.rcollide, this.obj.y + this.obj.rcollide])
+		gl.progs.text.use()
+		gl.progs.text.draw(this.text, {
+			color: "black",
+			scolor: "white",
+			fontname: "Sansita One",
+			fontsize: fontsize,
+			bottomleft: pos,
+			alpha: this.alpha * 0.6,
+		})
+		let pos0 = [this.obj.x, this.obj.y]
+		let pos1 = [this.obj.x + 1 * this.obj.rcollide, this.obj.y + 0.9 * this.obj.rcollide]
+		let pos2 = [this.obj.x + 1.7 * this.obj.rcollide, this.obj.y + 0.9 * this.obj.rcollide]
+		let width = 0.2 * view.VscaleG
+		gl.lineWidth(Math.ceil(width))
+		gl.progs.laser.use()
+		gl.progs.laser.set({
+			scenterG: [view.xcenterG, view.ycenterG],
+			screensizeV: [view.wV, view.hV],
+			VscaleG: view.VscaleG,
+			color: [0, 0, 0],
+			alpha: width / Math.ceil(width) * this.alpha,
+		})
+		gl.makeArrayBuffer([].concat(pos0, pos1, pos1, pos2)).bind()
+		gl.progs.laser.assignAttribOffsets({
+			pG: 0,
+		}, {stride: 2})
+		gl.drawArrays(gl.LINES, 0, 4)
+		
+	},
+}

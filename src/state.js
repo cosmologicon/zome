@@ -20,6 +20,8 @@ let progress0 = {
 	},
 	// dialogs heard
 	heard: {},
+	// actions performed, for the sake of tutorials
+	did: {}
 }
 
 let progress
@@ -40,6 +42,7 @@ let state = {
 	reset: function () {
 		this.hp = 1000
 		this.cell = null
+		this.labels = []
 		this.organelles = []
 		this.antibodies = []
 		this.viruses = []
@@ -86,7 +89,8 @@ let state = {
 	},
 	thinkers: function () {
 		return [this.cell].concat(this.organelles, this.antibodies, this.viruses, this.bosses,
-			this.resources, this.shots, this.lasers, this.vcorpses, this.eggs, this.ecorpses)
+			this.resources, this.shots, this.lasers, this.vcorpses, this.eggs, this.ecorpses,
+			this.labels)
 	},
 	pointables: function () {
 		return [this.cell].concat(this.organelles, this.antibodies)
@@ -121,6 +125,7 @@ let state = {
 		if (obj instanceof Injection) return "vcorpses"
 		if (obj instanceof Egg) return "eggs"
 		if (obj instanceof EggCorpse) return "ecorpses"
+		if (obj instanceof TutorialLabel) return "labels"
 		for (let s in VirusTypes) {
 			if (obj instanceof VirusTypes[s]) return "viruses"
 		}
@@ -128,6 +133,7 @@ let state = {
 	addobj: function (obj) {
 		let type = this.gettype(obj)
 		this[type].push(obj)
+		return obj
 	},
 	removeobj: function (obj) {
 		let type = this.gettype(obj)
@@ -151,6 +157,7 @@ let state = {
 		this.eggs = this.eggs.filter(isalive)
 		this.vcorpses = this.vcorpses.filter(isalive)
 		this.ecorpses = this.ecorpses.filter(isalive)
+		this.labels = this.labels.filter(isalive)
 		this.spawnwaves(dt)
 		this.spawnresources(dt)
 		this.checkwin(dt)
@@ -211,13 +218,17 @@ let state = {
 		vtype = VirusTypes[vtype]
 		let obj = new vtype({ x: x, y: y })
 		obj.target = this.cell
-		this.addobj(obj)
+		return this.addobj(obj)
 	},
 	launchwave: function (wavespec) {
+		let viruses = []
 		wavespec.forEach(wave => {
 			let [vtype, n, theta] = wave
-			for (let i = 0 ; i < n ; ++i) this.addvirus(vtype, theta + UFX.random(-0.05, 0.05))
+			for (let i = 0 ; i < n ; ++i) {
+				viruses.push(this.addvirus(vtype, theta + UFX.random(-0.05, 0.05)))
+			}
 		})
+		return viruses
 	},
 
 	flavorunlocked: function (flavor) {

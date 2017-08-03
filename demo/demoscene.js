@@ -4,6 +4,7 @@ UFX.scenes.demo = {
 			UFX.key.init()
 			UFX.key.watchlist = "F1 F2 F3 F4 F5 F6 F7 F8 F9 F10".split(" ")
 		}
+		audio.playmusic("X")
 		snapshot.init()
 		view.reset()
 		control.reset()
@@ -52,32 +53,23 @@ UFX.scenes.demo = {
 
 			["final", 460]
 		]
-		;"XX".split("").forEach(flavor => {
-			let obj = new Organelle({
-				x: state.cell.x + UFX.random(-1, 1),
-				y: state.cell.y + UFX.random(-1, 1),
-				flavor: flavor,
-			})
-			state.addobj(obj)
-			state.cell.addobj(obj)
-		})
-		this.nextegg = 10
-		this.jegg = 2
+		this.nextgrow = 2
+		this.jgrow = 0
 		this.hud.addbuttons([
 			new Button("Pause", (() => UFX.scene.push("pause")), "topleft", [0, 0]),
 			new Button("Full\nscreen", (() => UFX.scene.push("gofull")), "topleft", [0, 1]),
 			new Button("Reset\ndemo", (() => UFX.scene.swap("demo")), "topleft", [0, 2])
 		])
 		this.tlines = [
-			[0, "Have you got what it takes to join my lab?"],
-			[0, "Drag organelles to defend the cell from viruses!"],
-			[70, "Big wave incoming! Don't let them slip through the cracks!"],
-			[95, "Stronger viruses incoming! Combine organelles to make a strong antibody."],
-			[150, "Large viruses carry smaller viruses. Don't let them get too close!"],
-			[230, "A few kickback antibodies behind the cell make a good last line of defense."],
-			[300, "The full game has 19 antibody types, 9 stages, boss battles, economy, and endless mode!"],
-			[360, "Completely free and open source with no ads or transactions, for mobile or desktop."],
-			[480, "Not bad! Thanks for playing and I'll see you in the lab!"],
+//			[0, "Have you got what it takes to join my lab?"],
+//			[0, "Drag organelles to defend the cell from viruses!"],
+//			[70, "Big wave incoming! Don't let them slip through the cracks!"],
+//			[95, "Stronger viruses incoming! Combine organelles to make a strong antibody."],
+//			[150, "Large viruses carry smaller viruses. Don't let them get too close!"],
+//			[230, "A few kickback antibodies behind the cell make a good last line of defense."],
+//			[300, "The full game has 19 antibody types, 9 stages, boss battles, economy, and endless mode!"],
+//			[360, "Completely free and open source with no ads or transactions, for mobile or desktop."],
+//			[480, "Not bad! Thanks for playing and I'll see you in the lab!"],
 		]
 		this.think(0, 0, 1)
 
@@ -104,6 +96,8 @@ UFX.scenes.demo = {
 		this.hud.think(dt)
 		dialog.think(dt)
 		snapshot.think(dt)
+		quest.think(dt)
+		audio.think(dt)
 	},
 	control: function () {
 		if (settings.DEBUG) this.debugcontrol()
@@ -183,6 +177,7 @@ UFX.scenes.demo = {
 		}
 	},
 	addwaves: function () {
+		/*
 		this.nexts.forEach(nspec => {
 			if (this.t > nspec[1]) {
 				if (nspec[0] == "final") {
@@ -205,20 +200,20 @@ UFX.scenes.demo = {
 				}
 			}
 		})
-		if (this.t > this.nextegg) {
-			if (!state.cell.isfull()) {
-				let flavor = "XXY"[this.jegg % 3]
-				this.jegg++
-				let obj = new Egg({
-					x: state.cell.x + UFX.random(-1, 1),
-					y: state.cell.y + UFX.random(-1, 1),
-					flavor: flavor,
-				})
-				state.addobj(obj)
-				state.cell.addobj(obj)
-				this.nextegg = this.t + 13
-			}
+		if (this.t > this.nextgrow) {
+			let theta = this.jgrow * tau / phi
+			let obj = new Organelle({
+				x: state.cell.x + Math.cos(theta),
+				y: state.cell.y + Math.sin(theta),
+				flavor: "X",
+			})
+			state.addobj(obj)
+			state.cell.addobj(obj)
+			state.cell.ejectall()
+			this.nextgrow = this.t + 11
+			this.jgrow += 1
 		}
+		*/
 	},
 	adddialog: function () {
 		while (this.tlines.length && this.tlines[0][0] < this.t) {
@@ -292,6 +287,7 @@ UFX.scenes.demo = {
 		})
 		profiler.stop("drawinfo")
 
+		quest.draw()
 		profiler.start("drawdialog")
 		dialog.draw()
 		profiler.stop("drawdialog")
@@ -303,6 +299,10 @@ UFX.scenes.pause = {
 		this.t = 0
 		this.lastdims = null
 		this.alpha = 0
+		audio.fullpause()
+	},
+	stop: function () {
+		audio.fullresume()
 	},
 	think: function (dt) {
 		UFX.scenes.demo.hud.think(0)

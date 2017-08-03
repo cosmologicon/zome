@@ -38,6 +38,7 @@ function drawscene(hud) {
 	hud.drawback()
 	
 	state.drawwaves()
+	state.labels.forEach(label => label.draw())
 
 	// cell and state-bound antibodies
 	let data = builddata(state.drawblobs(), obj => {
@@ -196,6 +197,7 @@ function drawscene(hud) {
 			scenterG: [view.xcenterG, view.ycenterG],
 			screensizeV: [view.wV, view.hV],
 			VscaleG: view.VscaleG,
+			color: [0.8, 0.8, 1],
 			alpha: width / Math.ceil(width),
 		})
 		gl.makeArrayBuffer(data).bind()

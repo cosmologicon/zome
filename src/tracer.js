@@ -18,7 +18,7 @@ let tracers = {
 		function wid(w0, h) {
 			return w0 * Math.pow(h / 140, 0.4)
 		}
-		let ymax = settings.subtitle ? 150 : 110
+		let ymax = settings.subtitle ? 155 : 110
 		this.title = UFX.gltracer(gl, [-300, -100, 300, ymax], (context, scale) => {
 			context.lineJoin = "round"
 			UFX.draw(context, "tab center middle")

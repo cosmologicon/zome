@@ -560,8 +560,8 @@ void main() {
 `
 shaders.laser.frag = `
 precision highp float;
+uniform vec3 color;
 uniform float alpha;
-const vec3 color = vec3(0.8, 0.8, 1.0);
 void main() {
 	gl_FragColor = vec4(color, alpha);
 }

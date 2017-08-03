@@ -48,6 +48,7 @@ See <a href="http://enable-javascript.com/">enable-javascript.com</a> for more i
 <script src="../src/shaders.js"></script>
 <script src="../src/draw.js"></script>
 <script src="../src/tracer.js"></script>
+<script src="../src/quest.js"></script>
 <script src="demoscene.js"></script>
 <script>
 /*
@@ -69,15 +70,17 @@ Rename ../src/setup.js to setup.js.
 
 "use strict"
 
-settings.subtitle = "Demo version"
-
-unlockallcombos()
+settings.subtitle = "Tutorial demo"
 
 UFX.scene.init({ ups: settings.ups, maxupf: settings.maxupf, })
 view.init()
 tracers.init()
-audio.sfxfiles = ["blobup1", "blobdown1"]
+audio.sfxfiles = [
+	"blobup", "blobdown", "tick", "yes", "no", "get", "shot", "die", "hatch",
+]
+audio.musictracks = ["X"]
 audio.init()
+quest.init([DemoTutorial])
 
 UFX.resource.onload = function () {
 	if (gl) {
@@ -93,7 +96,13 @@ UFX.resource.onload = function () {
 		UFX.gltext.fontmargins["Sansita One"] = 0.3
 	}
 }
-UFX.resource.loadwebfonts("Sansita One", "Stint Ultra Condensed", "Architects Daughter", "Irish Grover")
+UFX.resource.loadwebfonts("Sansita One", "Patrick Hand", "Stint Ultra Condensed", "Architects Daughter",
+	"Passion One", "Permanent Marker", "Irish Grover", {
+	onload: function () {
+		if (gl) gl.progs.text.clear()
+		if (tracers.title) tracers.title.clear()
+	},
+})
 UFX.resource.load({
 	zome: "data/zome.png",
 })
