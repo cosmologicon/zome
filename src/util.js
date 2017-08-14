@@ -14,6 +14,10 @@ function norm (x, y, r) {
 	const f = r / Math.sqrt(d2)
 	return [f * x, y * f]
 }
+function paction(mouseonly, touchonly, mouseandtouch) {
+	if (!mouseandtouch) mouseandtouch = mouseonly + " or " + touchonly.toLowerCase()
+	return !UFX.pointer.touch ? mouseonly : UFX.pointer.mouse ? mouseandtouch : touchonly
+}
 let profiler = {
 	t0s: {},
 	records: {},

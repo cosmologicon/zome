@@ -19,16 +19,74 @@ let QuestSteps = {
 	},
 }
 
+let QuestStateInteractions = {
+	instagrow: function (dx, dy, flavor) {
+		let org = state.addobj(new Organelle({
+			x: state.cell.x + dx,
+			y: state.cell.y + dy,
+			flavor: flavor,
+		}))
+		state.cell.addobj(org)
+		state.cell.ejectall()
+	},
+	checkarrival: function () {
+		if (!this.viruses.some(v => v.alive)) {
+			if (this.viruses.some(v => v.arrived)) {
+				this.jstep -= 1
+			} else {
+				this.advance()
+			}
+		}
+	},
+	followallviruses: function () {
+		state.viruses.forEach(v => {
+			if (!this.viruses.some(virus => virus === v)) this.viruses.push(v)
+		})
+	},
+	clearorganelles: function () {
+		state.organelles.forEach(o => o.die())
+		state.antibodies.forEach(a => a.die())
+	},
+	advance: function () {
+		this.steadywaves = []
+	},
+	addsteadywave: function (vtype, t0, t1, dt) {
+		this.steadywaves.push({
+			vtype: vtype,
+			t: t0,
+			tmax: t1,
+			dt: dt,
+		})
+	},
+	runsteadywaves: function () {
+		this.steadywaves.forEach(wave => {
+			if (this.tstep < wave.t || wave.t > wave.tmax) return
+			wave.t += wave.dt
+			state.launchwave([[wave.vtype, 1, UFX.random(-0.2, 0.2)]])
+		})
+	},
+	buildtostate: function (nX, nY, nZ) {
+		;[["X", nX || 0], ["Y", nY || 0], ["Z", nZ || 0]].forEach(flavorn => {
+			let [flavor, n] = flavorn
+			while (state.organelles.filter(o => o.flavor == flavor).length < n) {
+				this.instagrow(UFX.random(-1, 1), UFX.random(-1, 1), flavor)
+			}
+		})
+	},
+}
+
+
 let newquest = function (think) {
 	return UFX.Thing()
 		.addcomp(QuestSteps)
+		.addcomp(QuestStateInteractions)
 		.addcomp({ think: think })
 }
 
 let Level1Tutorial = newquest(function (dt) {
 	if (!state.levelname == 1) return
 	if (this.jstep == 0) {
-		if (dialog.tquiet > 3) this.display("Click on the Grow button to grow an organelle.")
+		if (dialog.tquiet > 3) this.display(paction("Click", "Tap") + " on the Grow button to grow an organelle.")
 		if (state.cell.slots.length) this.advance()
 	} else if (this.jstep == 1) {
 		if (dialog.tquiet > 3 && this.tstep > 2 + mechanics.hatchtime.X) {
@@ -48,66 +106,39 @@ let Level1Tutorial = newquest(function (dt) {
 	}
 })
 
-let DemoTutorial = newquest(function (dt) {
+
+// Covers basics of antibodies and viruses. Introduces X antibody, ticks, and ants.
+let DemoTutorial1 = newquest(function (dt) {
 	if (this.jstep == 0) {
 		state.cell.nslot = 0
 		dialog.queue.push(new TimedLine("zome", "Have you got what it takes to join my lab?"))
 		this.advance()
 	} else if (this.jstep == 1) {
 		if (dialog.tquiet > 1) {
-			this.celllabel = state.addobj(new TutorialLabel("Cell", state.cell))
-			let org = state.addobj(new Organelle({
-				x: state.cell.x + 1,
-				y: state.cell.y - 0.2,
-				flavor: "X",
-			}))
-			state.cell.addobj(org)
-			state.cell.ejectall()
-			this.antilabel = state.addobj(new TutorialLabel("Antibody", state.antibodies[0]))
+//			this.celllabel = state.addobj(new TutorialLabel("Cell", state.cell))
+			this.instagrow(1, -0.2, "X")
+//			this.antilabel = state.addobj(new TutorialLabel("Rapid-fire\nAntibody", state.antibodies[0]))
 			this.advance()
 		}
 	} else if (this.jstep == 2) {
 		this.display("The cell makes antibodies. Move an antibody by dragging it.")
 		if (progress.did.drag) this.advance()
 	} else if (this.jstep == 3) {
-		this.virus = state.addvirus("tick", 0)
-		this.viruslabel = state.addobj(new TutorialLabel("Virus", this.virus))
-		this.celllabel.fadeout()
+		this.viruses = [state.addvirus("tick", 0)]
+//		this.viruslabel = state.addobj(new TutorialLabel("Small\nVirus", this.virus))
+//		this.celllabel.fadeout()
 		this.advance()
 	} else if (this.jstep == 4) {
 		if (this.tstep > 2) this.display("Incoming virus! Drop the antibody into its path.")
-		if (!this.virus.alive) {
-			if (this.virus.arrived) {
-				this.jstep = 3
-			} else {
-//				dialog.queue.push(new TimedLine("zome", "Keep that cell safe if you want to keep your funding!"))
-				this.antilabel.fadeout()
-				this.advance()
-			}
-		}
+		this.checkarrival()
 	} else if (this.jstep == 5) {
 		this.viruses = [0.9, 0, 0.1].map(d => state.addvirus("tick", d))
 		this.advance()
 	} else if (this.jstep == 6) {
-		if (!this.viruses.some(v => v.alive)) {
-			if (this.viruses.some(v => v.arrived)) {
-				this.jstep = 5
-			} else {
-				this.advance()
-			}
-		}
+		this.checkarrival()
 	} else if (this.jstep == 7) {
-		state.cell.addobj(state.addobj(new Organelle({
-			x: state.cell.x + 1,
-			y: state.cell.y - 1,
-			flavor: "X",
-		})))
-		state.cell.addobj(state.addobj(new Organelle({
-			x: state.cell.x - 1,
-			y: state.cell.y - 1,
-			flavor: "X",
-		})))
-		state.cell.ejectall()
+		this.instagrow(1, -1, "X")
+		this.instagrow(-1, -1, "X")
 		this.advance()
 	} else if (this.jstep == 8) {
 		if (this.tstep > 2) {
@@ -119,13 +150,7 @@ let DemoTutorial = newquest(function (dt) {
 		}
 	} else if (this.jstep == 9) {
 		this.display("Keep the cell safe from viruses if you want to keep your funding!")
-		if (!this.viruses.some(v => v.alive)) {
-			if (this.viruses.some(v => v.arrived)) {
-				this.jstep = 8
-			} else {
-				this.advance()
-			}
-		}
+		this.checkarrival()
 	} else if (this.jstep == 10) {
 		if (this.tstep > 2) {
 			this.viruses = state.launchwave([
@@ -135,41 +160,53 @@ let DemoTutorial = newquest(function (dt) {
 		}
 	} else if (this.jstep == 11) {
 		this.display("Larger viruses require more hits to defeat.")
-		if (!this.viruses.some(v => v.alive)) {
-			if (this.viruses.some(v => v.arrived)) {
-				this.jstep = 10
-			} else {
-				progress.learned.XX = true
-				state.cell.addobj(state.addobj(new Organelle({
-					x: state.cell.x - 0.2,
-					y: state.cell.y - 1,
-					flavor: "X",
-				})))
-				state.cell.ejectall()
-				this.advance()
-			}
-		}
+		this.checkarrival()
 	} else if (this.jstep == 12) {
+		this.instagrow(-0.2, -1, "X")
+		this.advance()
+	} else if (this.jstep == 13) {
+		this.advance()
+		this.addsteadywave("ant", 0, 20, 1.2)
+		this.addsteadywave("tick", 15, 30, 0.6)
+	} else if (this.jstep == 14) {
+		this.runsteadywaves()
+		if (this.tstep >= 30) this.advance()
+	} else if (this.jstep == 15) {
+		if (!state.viruses.length) this.advance()
+	} else if (this.jstep == 16) {
+		this.done = true
+	}
+})
+
+
+let DemoTutorial2 = newquest(function (dt) {
+	if (this.jstep == 0) {
+		if (DemoTutorial1.done) this.advance()
+	} else if (this.jstep == 1) {
+		state.cell.nslot = 0
+		progress.learned.XX = true
+		this.buildtostate(4)
+		dialog.queue.push(new TimedLine("zome", "Looks like you discovered a new type of antibody! How fascinating!"))
+		this.advance()
+	} else if (this.jstep == 2) {
+		if (dialog.tquiet > 1) {
+			this.advance()
+		}
+	} else if (this.jstep == 3) {
 		this.display("Make a stronger antibody by dropping one onto another.")
 		if (state.antibodies.some(a => a.flavors == "XX")) this.advance()	
-	} else if (this.jstep == 13) {
+	} else if (this.jstep == 4) {
 		if (this.tstep > 2) {
 			this.viruses = state.launchwave([
 				["katydid", 8, 0],
 			])
 			this.advance()
 		}
-	} else if (this.jstep == 14) {
+	} else if (this.jstep == 5) {
 		this.display("Stronger antibodies are good for larger viruses.")
-		if (!this.viruses.some(v => v.alive)) {
-			if (this.viruses.some(v => v.arrived)) {
-				this.jstep = 13
-			} else {
-				this.advance()
-			}
-		}
-	} else if (this.jstep == 15) {
-		this.display("Split apart strong antibodies by right-clicking on them.")
+		this.checkarrival()
+	} else if (this.jstep == 6) {
+		this.display("Split apart strong antibodies by " + paction("right-clicking", "tapping") + " on them.")
 		if (!state.antibodies.some(a => a.flavors == "XX")) {
 			this.viruses = state.launchwave([
 				["tick", 8, -0.1],
@@ -178,36 +215,102 @@ let DemoTutorial = newquest(function (dt) {
 			])
 			this.advance()	
 		}
-	} else if (this.jstep == 16) {
-		if (!this.viruses.some(v => v.alive)) {
-			if (this.viruses.some(v => v.arrived)) {
-				this.jstep = 15
-			} else {
-				this.advance()
-			}
-		}
-	} else if (this.jstep == 17) {
+	} else if (this.jstep == 7) {
+		this.checkarrival()
+	} else if (this.jstep == 8) {
 		this.viruses = state.launchwave([
 			["megatick", 1, 0],
 		])
 		this.advance()	
-	} else if (this.jstep == 18) {
+	} else if (this.jstep == 9) {
 		this.display("Large viruses can carry small viruses. Take them out before they get too close.")
-		state.viruses.forEach(v => {
-			if (!this.viruses.some(virus => virus === v)) this.viruses.push(v)
-		})
-		if (!this.viruses.some(v => v.alive)) {
-			if (this.viruses.some(v => v.arrived)) {
-				this.jstep = 17
-			} else {
-				this.advance()
-			}
-		}
-	} else if (this.jstep == 19) {
-		this.display("Tutorial demo complete.")
+		this.followallviruses()
+		this.checkarrival()
+	} else if (this.jstep == 10) {
+		this.done = true
 	}
 })
 
+let DemoTutorial3 = newquest(function (dt) {
+	if (this.jstep == 0) {
+		if (DemoTutorial2.done) this.advance()
+	} else if (this.jstep == 1) {
+		state.cell.nslot = 0
+		this.clearorganelles()
+		progress.learned.XX = true
+		progress.learned.Y = true
+		this.instagrow(0, 1, "Y")
+		dialog.queue.push(new TimedLine("zome", "Keep it up!"))
+		this.advance()
+	} else if (this.jstep == 2) {
+		if (dialog.tquiet > 1) this.advance()
+	} else if (this.jstep == 3) {
+		this.viruses = state.launchwave([
+			["ant", 1, -0.1],
+			["ant", 1, 0],
+			["ant", 1, 0.1],
+		])
+		this.advance()
+	} else if (this.jstep == 4) {
+		this.display("Kickback antibodies buy you some time.")
+		this.checkarrival()
+	} else if (this.jstep == 5) {
+		this.instagrow(0, 1, "Y")
+		this.instagrow(1, 1, "Y")
+		this.instagrow(-1, 1, "Y")
+		this.advance()
+		this.addsteadywave("ant", 0, 20, 1)
+		this.addsteadywave("katydid", 0, 1, 3)
+	} else if (this.jstep == 6) {
+		this.runsteadywaves()
+		if (this.tstep > 40) this.advance()
+	} else if (this.jstep == 7) {
+		if (!state.viruses.length) this.advance()
+	} else if (this.jstep == 8) {
+		this.done = true
+	}
+})
+
+let DemoTutorial4 = newquest(function (dt) {
+	if (this.jstep == 0) {
+		if (DemoTutorial3.done) this.advance()
+	} else if (this.jstep == 1) {
+		state.cell.nslot = 0
+		progress.learned.XX = true
+		progress.learned.Y = true
+		progress.learned.XY = true
+		this.buildtostate(3, 3)
+		dialog.queue.push(new TimedLine("zome", "Recombining antibodies is the name of the game!"))
+		this.advance()
+	} else if (this.jstep == 2) {
+		if (dialog.tquiet > 1) this.advance()
+	} else if (this.jstep == 3) {
+		this.display("Combine two different colors to make a strong antibody.")
+		if (state.antibodies.filter(a => a.flavors == "XY").length) this.advance()	
+	} else if (this.jstep == 4) {
+		this.viruses = state.launchwave([
+			["katydid", 10, 0],
+		])
+		this.advance()
+	} else if (this.jstep == 5) {
+		this.checkarrival()
+	} else if (this.jstep == 6) {
+		this.advance()
+		this.buildtostate(5, 3)
+		this.addsteadywave("tick", 15, 60, 1)
+		this.addsteadywave("ant", 0, 40, 2)
+		this.addsteadywave("katydid", 0, 25, 5)
+		this.addsteadywave("megatick", 30, 40, 10)
+	} else if (this.jstep == 7) {
+		this.runsteadywaves()
+		if (this.tstep > 40 && !state.viruses.length) this.advance()
+		if (this.tstep < 10) {
+//			this.display()
+		}
+	} else if (this.jstep == 8) {
+		this.done = true
+	}
+})
 
 let quest = {
 	init: function (quests) {
@@ -219,6 +322,7 @@ let quest = {
 	think: function (dt) {
 		this.message = null
 		this.quests.forEach(q => q.think(dt))
+		this.quests = this.quests.filter(q => !q.done)
 	},
 	draw: function () {
 		if (!this.message) return

@@ -200,7 +200,8 @@ HUD.prototype = {
 		this.drawbuttons()
 	},
 	drawcombos: function () {
-		let combos = Object.keys(comboinfo), h = 0.02 * view.sV
+		let combos = Object.keys(comboinfo).filter(combo => progress.learned[combo])
+		let h = 0.02 * view.sV
 		combos.sort((a, b) => a.length - b.length || a.localeCompare(b))
 		gl.progs.text.use()
 		combos.forEach((combo, j) => gl.progs.text.draw(comboinfo[combo], {
@@ -213,6 +214,15 @@ HUD.prototype = {
 			ocolor: "black",
 			owidth: 6,
 		}))
+		gl.progs.text.draw("Unlocked\nantibodies", {
+			fontname: "Architects Daughter",
+			fontsize: 1.2 * h,
+			centerx: view.wV - 5 * h,
+			centery: ((combos.length + 1) * 2.5 - 0.5) * h,
+			color: "white",
+			ocolor: "black",
+			owidth: 6,
+		})
 		let data = [], nvert = 0
 		combos.forEach((combo, jcombo) => {
 			let y = ((combos.length - jcombo) * 2.5 - 0.7) * h
