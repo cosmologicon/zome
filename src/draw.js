@@ -38,7 +38,7 @@ function drawscene(hud) {
 	hud.drawback()
 	
 	state.drawwaves()
-	state.labels.forEach(label => label.draw())
+	quest.getlabels().forEach(label => label.draw())
 
 	// cell and state-bound antibodies
 	let data = builddata(state.drawblobs(), obj => {

@@ -42,7 +42,6 @@ let state = {
 	reset: function () {
 		this.hp = 1000
 		this.cell = null
-		this.labels = []
 		this.organelles = []
 		this.antibodies = []
 		this.viruses = []
@@ -89,8 +88,7 @@ let state = {
 	},
 	thinkers: function () {
 		return [this.cell].concat(this.organelles, this.antibodies, this.viruses, this.bosses,
-			this.resources, this.shots, this.lasers, this.vcorpses, this.eggs, this.ecorpses,
-			this.labels)
+			this.resources, this.shots, this.lasers, this.vcorpses, this.eggs, this.ecorpses)
 	},
 	pointables: function () {
 		return [this.cell].concat(this.organelles, this.antibodies)
@@ -125,7 +123,6 @@ let state = {
 		if (obj instanceof Injection) return "vcorpses"
 		if (obj instanceof Egg) return "eggs"
 		if (obj instanceof EggCorpse) return "ecorpses"
-		if (obj instanceof TutorialLabel) return "labels"
 		for (let s in VirusTypes) {
 			if (obj instanceof VirusTypes[s]) return "viruses"
 		}
@@ -157,7 +154,6 @@ let state = {
 		this.eggs = this.eggs.filter(isalive)
 		this.vcorpses = this.vcorpses.filter(isalive)
 		this.ecorpses = this.ecorpses.filter(isalive)
-		this.labels = this.labels.filter(isalive)
 		this.spawnwaves(dt)
 		this.spawnresources(dt)
 		this.checkwin(dt)

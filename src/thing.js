@@ -128,10 +128,11 @@ function TutorialLabel(text, obj) {
 	this.text = text
 	this.obj = obj
 	this.start({})
+	this.alpha = 1
 }
 TutorialLabel.prototype = UFX.Thing()
 	.addcomp(Lives)
 	.addcomp(Lifetime, 10000000)
-	.addcomp(FadesInAndOut, 0.3)
+//	.addcomp(FadesInAndOut, 0.3)
 	.addcomp(LabelsThing)
 

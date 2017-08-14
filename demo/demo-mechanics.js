@@ -172,7 +172,7 @@ let comboinfo = {
 	XX: "Medium strength",
 	Y: "Kickback",
 	XY: "Strong long-range",
-	YY: "Laser",
+	YY: "Electric",
 }
 
 
