@@ -69,6 +69,9 @@ let QuestStateInteractions = {
 			wave.t += wave.dt
 			state.launchwave([[wave.vtype, 1, UFX.random(-0.2, 0.2)]])
 		})
+		if (this.steadywaves.every(wave => wave.t > wave.tmax) && !state.viruses.length) {
+			this.advance()
+		}
 	},
 	buildtostate: function (nX, nY, nZ) {
 		;[["X", nX || 0], ["Y", nY || 0], ["Z", nZ || 0]].forEach(flavorn => {
@@ -120,9 +123,7 @@ let DemoTutorial1 = newquest(function (dt) {
 		this.advance()
 	} else if (this.jstep == 1) {
 		if (dialog.tquiet > 1) {
-//			this.celllabel = state.addobj(new TutorialLabel("Cell", state.cell))
 			this.instagrow(1, -0.2, "X")
-//			this.antilabel = state.addobj(new TutorialLabel("Rapid-fire\nAntibody", state.antibodies[0]))
 			this.advance()
 		}
 	} else if (this.jstep == 2) {
@@ -195,7 +196,6 @@ let DemoTutorial1 = newquest(function (dt) {
 		this.addsteadywave("tick", 15, 30, 0.6)
 	} else if (this.jstep == 14) {
 		this.runsteadywaves()
-		if (this.tstep >= 30) this.advance()
 	} else if (this.jstep == 15) {
 		if (!state.viruses.length) this.advance()
 	} else if (this.jstep == 16) {
@@ -301,7 +301,6 @@ let DemoTutorial3 = newquest(function (dt) {
 	} else if (this.jstep == 6) {
 		this.label("Y", 2)
 		this.runsteadywaves()
-		if (this.tstep > 40) this.advance()
 	} else if (this.jstep == 7) {
 		this.label("Y", 2)
 		if (!state.viruses.length) this.advance()
@@ -348,7 +347,6 @@ let DemoTutorial4 = newquest(function (dt) {
 		this.label("XY", 1)
 		this.label("megatick", 1)
 		this.runsteadywaves()
-		if (this.tstep > 40 && !state.viruses.length) this.advance()
 		if (this.tstep < 10) {
 //			this.display()
 		}
@@ -357,6 +355,38 @@ let DemoTutorial4 = newquest(function (dt) {
 	}
 })
 
+let DemoTutorial5 = newquest(function (dt) {
+	if (this.jstep == 0) {
+		if (DemoTutorial4.done) this.advance()
+	} else if (this.jstep == 1) {
+		state.cell.nslot = 0
+		progress.learned.XX = true
+		progress.learned.Y = true
+		progress.learned.XY = true
+		progress.learned.YY = true
+		this.buildtostate(10, 7)
+		dialog.queue.push(new TimedLine("zome", "A boss battle would be pretty cool here!"))
+		this.advance()
+	} else if (this.jstep == 2) {
+		if (dialog.tquiet > 1) this.advance()
+	} else if (this.jstep == 3) {
+		this.advance()
+		this.addsteadywave("tick", 15, 80, 1)
+		this.addsteadywave("ant", 0, 70, 2)
+		this.addsteadywave("katydid", 0, 55, 5)
+		this.addsteadywave("megatick", 30, 70, 10)
+		this.addsteadywave("tick", 30, 31, 1/40)
+		this.addsteadywave("tick", 60, 61, 1/40)
+		this.addsteadywave("ant", 30, 31, 1/20)
+	} else if (this.jstep == 4) {
+		this.runsteadywaves()
+	} else if (this.jstep == 5) {
+		dialog.queue.push(new TimedLine("zome", "Thanks for playing, and I'll see you in the lab!"))
+	} else if (this.jstep == 6) {
+		this.advance()
+		this.done = true
+	}
+})
 let quest = {
 	init: function (quests) {
 		this.quests = quests || [
