@@ -3,6 +3,7 @@ UFX.scenes.demo = {
 		if (settings.DEBUG) {
 			UFX.key.init()
 			UFX.key.watchlist = "F1 F2 F3 F4 F5 F6 F7 F8 F9 F10".split(" ")
+			settings.debugmenu = 1
 		}
 		audio.playmusic("X")
 		snapshot.init()
@@ -58,19 +59,8 @@ UFX.scenes.demo = {
 		this.hud.addbuttons([
 			new Button("Pause", (() => UFX.scene.push("pause")), "topleft", [0, 0]),
 			new Button("Full\nscreen", (() => UFX.scene.push("gofull")), "topleft", [0, 1]),
-			new Button("Reset\ndemo", (() => UFX.scene.swap("demo")), "topleft", [0, 2])
+//			new Button("Reset\ndemo", (() => UFX.scene.swap("demo")), "topleft", [0, 2]),
 		])
-		this.tlines = [
-//			[0, "Have you got what it takes to join my lab?"],
-//			[0, "Drag organelles to defend the cell from viruses!"],
-//			[70, "Big wave incoming! Don't let them slip through the cracks!"],
-//			[95, "Stronger viruses incoming! Combine organelles to make a strong antibody."],
-//			[150, "Large viruses carry smaller viruses. Don't let them get too close!"],
-//			[230, "A few kickback antibodies behind the cell make a good last line of defense."],
-//			[300, "The full game has 19 antibody types, 9 stages, boss battles, economy, and endless mode!"],
-//			[360, "Completely free and open source with no ads or transactions, for mobile or desktop."],
-//			[480, "Not bad! Thanks for playing and I'll see you in the lab!"],
-		]
 		this.think(0, 0, 1)
 
 	},
@@ -83,8 +73,6 @@ UFX.scenes.demo = {
 	},
 	think0: function (dt) {
 		this.control()
-		this.addwaves()
-		this.adddialog()
 		state.thinkers().forEach(obj => obj.think(dt))
 		state.antibodies.forEach(obj => obj.constraintoworld())
 		if (control.cursor) {
@@ -165,63 +153,16 @@ UFX.scenes.demo = {
 	debugcontrol: function () {
 		let kstate = UFX.key.state()
 		if (kstate.down.F1) {
-			state.antibodies.forEach(obj => {
-				obj.x = state.cell.x + UFX.random(-30, 30)
-				obj.y = state.cell.y + UFX.random(-30, 30)
-			})
-			for (let j = 0 ; j < 50 ; j += 0.1) this.think(0.1, 0, 1)
+			settings.debugmenu = (settings.debugmenu + 1) % 3
 		}
-		if (kstate.down.F2) {
+		if (kstate.down.F2) state.instagrow("X")
+		if (kstate.down.F3) state.instagrow("Y")
+		if (kstate.down.F4) state.instagrow("Z")
+		if (kstate.down.F8) {
 			view.pixelratio /= Math.sqrt(2)
 			if (view.pixelratio < 1/4) view.pixelratio = 1
 		}
 	},
-	addwaves: function () {
-		/*
-		this.nexts.forEach(nspec => {
-			if (this.t > nspec[1]) {
-				if (nspec[0] == "final") {
-					this.nexts = []
-					this.nextegg = 10000000
-					return
-				}
-				let type, n
-				if (nspec[0].startsWith("wave")) {
-					type = nspec[0].substr(4)
-					nspec[1] += 100000000
-					n = nspec[2]
-				} else {
-					type = nspec[0]
-					nspec[1] += nspec[2]
-					n = 1
-				}
-				for (let j = 0 ; j < n ; ++j) {
-					state.addvirus(type, UFX.random(-0.2, 0.2))
-				}
-			}
-		})
-		if (this.t > this.nextgrow) {
-			let theta = this.jgrow * tau / phi
-			let obj = new Organelle({
-				x: state.cell.x + Math.cos(theta),
-				y: state.cell.y + Math.sin(theta),
-				flavor: "X",
-			})
-			state.addobj(obj)
-			state.cell.addobj(obj)
-			state.cell.ejectall()
-			this.nextgrow = this.t + 11
-			this.jgrow += 1
-		}
-		*/
-	},
-	adddialog: function () {
-		while (this.tlines.length && this.tlines[0][0] < this.t) {
-			let line = this.tlines.shift()[1]
-			dialog.queue.push(new TimedLine("zome", line))
-		}
-	},
-
 
 	draw: function () {
 		drawscene(this.hud)
@@ -240,19 +181,30 @@ UFX.scenes.demo = {
 		if (settings.DEBUG) {
 			let m = Math.floor(this.t / 60), s = this.t % 60
 			let demotime = m + "m" + ("0000" + s.toFixed(1)).slice(-4) + "s"
-			text = text.concat([
-				"control.pointed = " + control.pointed,
-				"control.pos = [" + control.pos[0].toFixed(1) + "," + control.pos[1].toFixed(1) + "]",
-				"canvas size = " + view.wV.toFixed(1) + "x" + view.hV.toFixed(1) +
-					" (ratio = " + view.pixelratio.toPrecision(3) + ")",
-				UFX.ticker.getrates(),
-				"demo time: " + demotime,
-			])
+			text = ["F1: cycle debug menu"]
+			if (settings.debugmenu == 1) {
+				text = text.concat([
+					"playback ID = " + snapshot.id,
+					"control.pointed = " + control.pointed,
+					"control.pos = [" + control.pos[0].toFixed(1) + "," + control.pos[1].toFixed(1) + "]",
+					"canvas size = " + view.wV.toFixed(1) + "x" + view.hV.toFixed(1) +
+						" (ratio = " + view.pixelratio.toPrecision(3) + ")",
+					UFX.ticker.getrates(),
+					"demo time: " + demotime,
+				])
+			} else if (settings.debugmenu == 2) {
+				text = text.concat([
+					"F2: insta-grow X",
+					"F3: insta-grow Y",
+					"F4: insta-grow Z",
+					"F8: cycle pixel device ratio",
+				])
+			}
 			gl.progs.text.draw(text.join("\n"), {
 				fontname: "sans-serif",
 				fontsize: 3 * h,
 				lineheight: 1.2,
-				bottomleft: [1 * h, 22 * h],
+				topleft: [1 * h, view.hV - 1 * h],
 				ocolor: "black",
 				owidth: 3,
 				color: "#AAF",

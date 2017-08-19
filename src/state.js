@@ -249,6 +249,18 @@ let state = {
 		this.addobj(obj)
 		this.cell.addobj(obj)
 	},
+	instagrow: function (flavor, dx, dy) {
+		if (dx === undefined) {
+			dx = UFX.random(-1, 1)
+			dy = UFX.random(-1, 1)
+		}
+		let org = this.addobj(new Organelle({
+			x: this.cell.x + dx,
+			y: this.cell.y + dy,
+			flavor: flavor,
+		}))
+		this.cell.addobj(org)
+	},
 	drawwaves: function () {
 		let drawn = {}
 		gl.progs.text.use()

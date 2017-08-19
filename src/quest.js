@@ -25,13 +25,8 @@ let QuestSteps = {
 }
 
 let QuestStateInteractions = {
-	instagrow: function (dx, dy, flavor) {
-		let org = state.addobj(new Organelle({
-			x: state.cell.x + dx,
-			y: state.cell.y + dy,
-			flavor: flavor,
-		}))
-		state.cell.addobj(org)
+	instagrow: function (flavor, dx, dy) {
+		state.instagrow(flavor, dx, dy)
 		state.cell.ejectall()
 	},
 	checkarrival: function () {
@@ -77,7 +72,7 @@ let QuestStateInteractions = {
 		;[["X", nX || 0], ["Y", nY || 0], ["Z", nZ || 0]].forEach(flavorn => {
 			let [flavor, n] = flavorn
 			while (state.organelles.filter(o => o.flavor == flavor).length < n) {
-				this.instagrow(UFX.random(-1, 1), UFX.random(-1, 1), flavor)
+				this.instagrow(flavor, UFX.random(-1, 1), UFX.random(-1, 1))
 			}
 		})
 	},
@@ -123,7 +118,7 @@ let DemoTutorial1 = newquest(function (dt) {
 		this.advance()
 	} else if (this.jstep == 1) {
 		if (dialog.tquiet > 1) {
-			this.instagrow(1, -0.2, "X")
+			this.instagrow("X", 1, -0.2)
 			this.advance()
 		}
 	} else if (this.jstep == 2) {
@@ -156,8 +151,8 @@ let DemoTutorial1 = newquest(function (dt) {
 	} else if (this.jstep == 7) {
 		this.label("X")
 		this.label("tick", 3)
-		this.instagrow(1, -1, "X")
-		this.instagrow(-1, -1, "X")
+		this.instagrow("X", 1, -1)
+		this.instagrow("X", -1, -1)
 		this.advance()
 	} else if (this.jstep == 8) {
 		this.label("X")
@@ -188,7 +183,7 @@ let DemoTutorial1 = newquest(function (dt) {
 		this.label("ant", 3)
 		this.checkarrival()
 	} else if (this.jstep == 12) {
-		this.instagrow(-0.2, -1, "X")
+		this.instagrow("X", -0.2, -1)
 		this.advance()
 	} else if (this.jstep == 13) {
 		this.advance()
@@ -272,7 +267,7 @@ let DemoTutorial3 = newquest(function (dt) {
 		this.clearorganelles()
 		progress.learned.XX = true
 		progress.learned.Y = true
-		this.instagrow(0, 1, "Y")
+		this.instagrow("Y", 0, 1)
 		dialog.queue.push(new TimedLine("zome", "Keep it up!"))
 		this.advance()
 	} else if (this.jstep == 2) {
@@ -292,9 +287,9 @@ let DemoTutorial3 = newquest(function (dt) {
 		this.checkarrival()
 	} else if (this.jstep == 5) {
 		this.label("Y", 2)
-		this.instagrow(0, 1, "Y")
-		this.instagrow(1, 1, "Y")
-		this.instagrow(-1, 1, "Y")
+		this.instagrow("Y", 0, 1)
+		this.instagrow("Y", 1, 1)
+		this.instagrow("Y", -1, 1)
 		this.advance()
 		this.addsteadywave("ant", 0, 20, 1)
 		this.addsteadywave("katydid", 0, 1, 3)

@@ -7,8 +7,19 @@
 <script>
 "use strict"
 
+let qobj = {}
+window.location.search.replace(/\?/, "").split("&").forEach(param => {
+	if (!param.length) return
+	if (param.includes("=")) {
+		let [key, value] = param.split("=")
+		qobj[key] = value
+	} else {
+		qobj[param] = true
+	}
+})
+
 let playback = null
-let url = "http://drzome.com/getsnapshot/?id=sbeemiuy"
+let url = "http://drzome.com/getsnapshot/?id=" + qobj.id
 let req = new XMLHttpRequest()
 req.open("GET", url, true)
 req.onload = function () {

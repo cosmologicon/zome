@@ -1,7 +1,7 @@
 let snapshot = {
 	version: 2,
 	init: function () {
-		this.id = UFX.random.word()
+		this.id = UFX.random.word(5)
 		this.send("zomesetup", {
 			id: this.id,
 			timestamp: Date.now(),
