@@ -1,4 +1,8 @@
+// The quest module is an all-purpose catch-all for game events that are not a regular part of the
+// main game loop. In this game, mostly used for tutorials.
 
+
+"use strict"
 
 let QuestSteps = {
 	init: function () {
@@ -17,7 +21,7 @@ let QuestSteps = {
 		this.tstep = 0
 	},
 	display: function (message) {
-		if (!quest.message) quest.message = message
+		quest.messages.push(message)
 	},
 	label: function (otype, n) {
 		quest.labels[otype] = Math.max(quest.labels[otype] || 0, n || 99999)
@@ -387,27 +391,55 @@ let quest = {
 		this.quests = quests || [
 			Level1Tutorial,
 		]
-		this.message = null
+		this.messages = []
+		this.tmessage = {}
 	},
 	think: function (dt) {
-		this.message = null
+		this.messages = []
 		this.labels = {}
 		this.quests.forEach(q => q.think(dt))
 		this.quests = this.quests.filter(q => !q.done)
+		this.messages.forEach(m => {
+			this.tmessage[m] = (this.tmessage[m] || 0) + dt
+		})
+		// Newest first
+		this.messages.sort((m1, m2) => this.tmessage[m2] - this.tmessage[m1])
 	},
 	draw: function () {
-		if (!this.message) return
 		gl.progs.text.use()
-		gl.progs.text.draw(this.message, {
-			centerx: view.wV * 0.5,
-			centery: view.hV * 0.7,
-			width: view.wV * 0.85,
-			color: "#FF6",
-			gcolor: "#BB2",
-			scolor: "black",
-			shadow: [2, 2],
-			fontname: "Permanent Marker",
-			fontsize: 0.04 * view.sV,
+		this.messages.forEach((message, jmessage) => {
+			let t = this.tmessage[message] || 0
+			let f = Math.pow(clamp((t - 4) * 2, 0, 1), 0.3)
+			let h = 0.04 * view.sV
+			let fontsize = h * (1 - 0.3 * f)
+			let width = 12 * fontsize
+			let x = (1 - f) * (0.5 * view.wV) + f * (view.wV - 5 * h)
+			let y = (1 - f) * (0.7 * view.hV) + f * (view.hV - 0.2 * view.sV)
+			gl.progs.text.draw(message, {
+				centerx: x,
+				centery: y,
+				width: Math.round(width),
+				color: "#FF6",
+				gcolor: "#BB2",
+				scolor: "black",
+				shadow: [2, 2],
+				fontname: "Permanent Marker",
+				fontsize: Math.round(fontsize),
+				alpha: clamp(3 * t, 0, 1),
+			})
+			if (f == 1 && jmessage == 0) {
+				gl.progs.text.draw("!", {
+					centerx: x - 6.5 * fontsize,
+					centery: y + 0.4 * fontsize,
+					color: "#FF6",
+					gcolor: "#BB2",
+					scolor: "black",
+					shadow: [1, 1],
+					fontname: "Permanent Marker",
+					fontsize: Math.round(3 * fontsize),
+					alpha: clamp(3 * t, 0, 1),
+				})
+			}
 		})
 	},
 	getlabels: function () {
