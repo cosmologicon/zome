@@ -205,7 +205,7 @@ let DemoTutorial1 = newquest(function (dt) {
 
 let DemoTutorial2 = newquest(function (dt) {
 	if (this.jstep == 0) {
-		if (DemoTutorial1.done) this.advance()
+		if (DemoTutorial1.done && dialog.tquiet > 0.1) this.advance()
 	} else if (this.jstep == 1) {
 		state.cell.nslot = 0
 		progress.learned.XX = true
@@ -265,7 +265,7 @@ let DemoTutorial2 = newquest(function (dt) {
 
 let DemoTutorial3 = newquest(function (dt) {
 	if (this.jstep == 0) {
-		if (DemoTutorial2.done) this.advance()
+		if (DemoTutorial2.done && dialog.tquiet > 0.1) this.advance()
 	} else if (this.jstep == 1) {
 		state.cell.nslot = 0
 		this.clearorganelles()
@@ -310,7 +310,7 @@ let DemoTutorial3 = newquest(function (dt) {
 
 let DemoTutorial4 = newquest(function (dt) {
 	if (this.jstep == 0) {
-		if (DemoTutorial3.done) this.advance()
+		if (DemoTutorial3.done && dialog.tquiet > 0.1) this.advance()
 	} else if (this.jstep == 1) {
 		state.cell.nslot = 0
 		progress.learned.XX = true
@@ -356,7 +356,7 @@ let DemoTutorial4 = newquest(function (dt) {
 
 let DemoTutorial5 = newquest(function (dt) {
 	if (this.jstep == 0) {
-		if (DemoTutorial4.done) this.advance()
+		if (DemoTutorial4.done && dialog.tquiet > 0.1) this.advance()
 	} else if (this.jstep == 1) {
 		state.cell.nslot = 0
 		progress.learned.XX = true
@@ -380,12 +380,21 @@ let DemoTutorial5 = newquest(function (dt) {
 	} else if (this.jstep == 4) {
 		this.runsteadywaves()
 	} else if (this.jstep == 5) {
-		dialog.queue.push(new TimedLine("zome", "Thanks for playing, and I'll see you in the lab!"))
-	} else if (this.jstep == 6) {
 		this.advance()
 		this.done = true
 	}
 })
+
+let DemoTutorialEnd = newquest(function (dt) {
+	if (this.jstep == 0) {
+		if (DemoTutorial5.done && dialog.tquiet > 0.1) this.advance()
+	} else if (this.jstep == 1) {
+		dialog.queue.push(new TimedLine("zome", "Thanks for playing, and I'll see you in the lab!", { lifetime: 999999, rock: 1.5, }))
+		this.advance()
+		this.done = true
+	}
+})
+
 let quest = {
 	init: function (quests) {
 		this.quests = quests || [

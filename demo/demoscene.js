@@ -63,6 +63,7 @@ UFX.scenes.demo = {
 		])
 		this.think(0, 0, 1)
 
+		this.tfinal = 0
 	},
 
 
@@ -86,6 +87,7 @@ UFX.scenes.demo = {
 		snapshot.think(dt)
 		quest.think(dt)
 		audio.think(dt)
+		if (DemoTutorialEnd.done) this.tfinal += dt
 	},
 	control: function () {
 		if (settings.DEBUG) this.debugcontrol()
@@ -162,6 +164,14 @@ UFX.scenes.demo = {
 			view.pixelratio /= Math.sqrt(2)
 			if (view.pixelratio < 1/4) view.pixelratio = 1
 		}
+		if (kstate.down.F9) {
+			if (!DemoTutorial1.done) DemoTutorial1.done = true
+			else if (!DemoTutorial2.done) DemoTutorial2.done = true
+			else if (!DemoTutorial3.done) DemoTutorial3.done = true
+			else if (!DemoTutorial4.done) DemoTutorial4.done = true
+			else if (!DemoTutorial5.done) DemoTutorial5.done = true
+			dialog.reset()
+		}
 	},
 
 	draw: function () {
@@ -198,6 +208,7 @@ UFX.scenes.demo = {
 					"F3: insta-grow Y",
 					"F4: insta-grow Z",
 					"F8: cycle pixel device ratio",
+					"F9: advance tutorial stage",
 				])
 			}
 			gl.progs.text.draw(text.join("\n"), {
@@ -239,10 +250,41 @@ UFX.scenes.demo = {
 		})
 		profiler.stop("drawinfo")
 
+		if (this.tfinal) {
+			view.fill([0, 0, 0, 0.6])
+		}
+
 		quest.draw()
 		profiler.start("drawdialog")
 		dialog.draw()
 		profiler.stop("drawdialog")
+
+		if (this.tfinal) {
+			let text = [
+				"Demo complete",
+				"Your score: " + (this.hp0 - state.hp) + " damage",
+				"Full version coming soon!",
+				"More than double the number of antibodies!",
+				"9 level story mode!",
+				"Endless mode!",
+				"Voiceover audio!",
+			].join("\n")
+			gl.progs.text.use()
+			gl.progs.text.draw(text, {
+				centerx: view.wV / 2,
+				centery: view.hV * 0.65,
+				width: view.wV * 0.85,
+				fontname: "Sansita One",
+				fontsize: 5 * h,
+				lineheight: 1.2,
+				ocolor: "black",
+				color: "#AAF",
+				gcolor: "#66A",
+				owidth: 3,
+			})
+			tracers.title.draw([view.wV - 18 * h, view.hV - 6 * h], 0.06 * h)
+		}
+
 	
 	},
 }
