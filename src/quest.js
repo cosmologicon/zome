@@ -145,22 +145,22 @@ let DemoTutorial1 = newquest(function (dt) {
 		this.viruses = [0.9, 0, 0.1].map(d => state.addvirus("tick", d))
 		this.label("cell")
 		this.label("X")
-		this.label("tick")
+		this.label("tick", 1)
 		this.advance()
 	} else if (this.jstep == 6) {
 		this.label("cell")
 		this.label("X")
-		this.label("tick")
+		this.label("tick", 1)
 		this.checkarrival()
 	} else if (this.jstep == 7) {
 		this.label("X")
-		this.label("tick", 3)
+		this.label("tick", 1)
 		this.instagrow("X", 1, -1)
 		this.instagrow("X", -1, -1)
 		this.advance()
 	} else if (this.jstep == 8) {
 		this.label("X")
-		this.label("tick", 3)
+		this.label("tick", 1)
 		if (this.tstep > 2) {
 			this.viruses = state.launchwave([
 				["tick", 6, 0.9],
@@ -169,13 +169,13 @@ let DemoTutorial1 = newquest(function (dt) {
 			this.advance()
 		}
 	} else if (this.jstep == 9) {
-		this.label("X")
-		this.label("tick", 3)
+		this.label("X", 1)
+		this.label("tick", 1)
 		this.display("Keep the cell safe from viruses if you want to keep your funding!")
 		this.checkarrival()
 	} else if (this.jstep == 10) {
-		this.label("X")
-		this.label("ant", 3)
+		this.label("X", 1)
+		this.label("ant", 1)
 		if (this.tstep > 2) {
 			this.viruses = state.launchwave([
 				["ant", 20, 0],
@@ -184,7 +184,7 @@ let DemoTutorial1 = newquest(function (dt) {
 		}
 	} else if (this.jstep == 11) {
 		this.display("Larger viruses require more hits to defeat.")
-		this.label("ant", 3)
+		this.label("ant", 1)
 		this.checkarrival()
 	} else if (this.jstep == 12) {
 		this.instagrow("X", -0.2, -1)
@@ -232,7 +232,7 @@ let DemoTutorial2 = newquest(function (dt) {
 		}
 	} else if (this.jstep == 5) {
 		this.display("Stronger antibodies are good for larger viruses.")
-		this.label("katydid", 2)
+		this.label("katydid", 1)
 		this.label("X", 1)
 		this.label("XX", 1)
 		this.checkarrival()
@@ -255,7 +255,7 @@ let DemoTutorial2 = newquest(function (dt) {
 		this.advance()	
 	} else if (this.jstep == 9) {
 		this.display("Large viruses can carry small viruses. Take them out before they get too close.")
-		this.label("megatick")
+		this.label("megatick", 1)
 		this.followallviruses()
 		this.checkarrival()
 	} else if (this.jstep == 10) {
@@ -275,10 +275,10 @@ let DemoTutorial3 = newquest(function (dt) {
 		dialog.queue.push(new TimedLine("zome", "Keep it up!"))
 		this.advance()
 	} else if (this.jstep == 2) {
-		this.label("Y")
+		this.label("Y", 1)
 		if (dialog.tquiet > 1) this.advance()
 	} else if (this.jstep == 3) {
-		this.label("Y")
+		this.label("Y", 1)
 		this.viruses = state.launchwave([
 			["ant", 1, -0.1],
 			["ant", 1, 0],
@@ -287,10 +287,10 @@ let DemoTutorial3 = newquest(function (dt) {
 		this.advance()
 	} else if (this.jstep == 4) {
 		this.display("Kickback antibodies buy you some time.")
-		this.label("Y")
+		this.label("Y", 1)
 		this.checkarrival()
 	} else if (this.jstep == 5) {
-		this.label("Y", 2)
+		this.label("Y", 1)
 		this.instagrow("Y", 0, 1)
 		this.instagrow("Y", 1, 1)
 		this.instagrow("Y", -1, 1)
@@ -298,10 +298,10 @@ let DemoTutorial3 = newquest(function (dt) {
 		this.addsteadywave("ant", 0, 20, 1)
 		this.addsteadywave("katydid", 0, 1, 3)
 	} else if (this.jstep == 6) {
-		this.label("Y", 2)
+		this.label("Y", 1)
 		this.runsteadywaves()
 	} else if (this.jstep == 7) {
-		this.label("Y", 2)
+		this.label("Y", 1)
 		if (!state.viruses.length) this.advance()
 	} else if (this.jstep == 8) {
 		this.done = true
@@ -454,7 +454,7 @@ let quest = {
 	getlabels: function () {
 		let ls = []
 		if (this.labels.cell) {
-			ls.push(new TutorialLabel("Cell", state.cell))
+			ls.push(new TutorialLabel("Home\n(Defend this)", state.cell))
 		}
 		let antibodylabels = {
 			X: "Weak\nAntibody",
@@ -466,7 +466,11 @@ let quest = {
 		for (let flavor in antibodylabels) {
 			if (this.labels[flavor]) {
 				let objs = state.antibodies.filter(a => a.flavors == flavor).filter((a, j) => j < this.labels[flavor])
-				if (objs.length) ls = ls.concat(objs.map(a => new TutorialLabel(antibodylabels[flavor], a)))
+				if (objs.length) {
+					let text = "Antibody\n(Defender)"
+					ls = ls.concat(objs.map(a => new TutorialLabel(text, a)))
+					break
+				}
 			}
 		}
 		let viruslabels = {
@@ -478,7 +482,11 @@ let quest = {
 		for (let vtype in viruslabels) {
 			if (this.labels[vtype]) {
 				let objs = state.viruses.filter(v => v instanceof VirusTypes[vtype]).filter((v, j) => j < this.labels[vtype])
-				if (objs.length) ls = ls.concat(objs.map(v => new TutorialLabel(viruslabels[vtype], v)))
+				if (objs.length) {
+					let text = "Virus\n(Enemy)"
+					ls = ls.concat(objs.map(v => new TutorialLabel(text, v)))
+					break
+				}
 			}
 		}
 		return ls
