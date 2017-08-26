@@ -54,12 +54,12 @@ let QuestStateInteractions = {
 	advance: function () {
 		this.steadywaves = []
 	},
-	addsteadywave: function (vtype, t0, t1, dt) {
+	addsteadywave: function (vtype, t0, t1, n) {
 		this.steadywaves.push({
 			vtype: vtype,
 			t: t0,
 			tmax: t1,
-			dt: dt,
+			dt: (t1 - t0) / (n - 0.5),
 		})
 	},
 	runsteadywaves: function () {
@@ -191,8 +191,8 @@ let DemoTutorial1 = newquest(function (dt) {
 		this.advance()
 	} else if (this.jstep == 13) {
 		this.advance()
-		this.addsteadywave("ant", 0, 20, 1.2)
-		this.addsteadywave("tick", 15, 30, 0.6)
+		this.addsteadywave("ant", 0, 20, 16)
+		this.addsteadywave("tick", 15, 30, 25)
 	} else if (this.jstep == 14) {
 		this.runsteadywaves()
 	} else if (this.jstep == 15) {
@@ -295,8 +295,8 @@ let DemoTutorial3 = newquest(function (dt) {
 		this.instagrow("Y", 1, 1)
 		this.instagrow("Y", -1, 1)
 		this.advance()
-		this.addsteadywave("ant", 0, 20, 1)
-		this.addsteadywave("katydid", 0, 1, 3)
+		this.addsteadywave("ant", 0, 20, 20)
+		this.addsteadywave("katydid", 0, 1, 1)
 	} else if (this.jstep == 6) {
 		this.label("Y", 1)
 		this.runsteadywaves()
@@ -335,10 +335,10 @@ let DemoTutorial4 = newquest(function (dt) {
 	} else if (this.jstep == 6) {
 		this.advance()
 		this.buildtostate(5, 3)
-		this.addsteadywave("tick", 15, 60, 1)
-		this.addsteadywave("ant", 0, 40, 2)
+		this.addsteadywave("tick", 15, 50, 45)
+		this.addsteadywave("ant", 0, 40, 20)
 		this.addsteadywave("katydid", 0, 25, 5)
-		this.addsteadywave("megatick", 30, 40, 10)
+		this.addsteadywave("megatick", 30, 40, 1)
 	} else if (this.jstep == 7) {
 		this.label("X", 1)
 		this.label("Y", 1)
@@ -370,13 +370,13 @@ let DemoTutorial5 = newquest(function (dt) {
 		if (dialog.tquiet > 1) this.advance()
 	} else if (this.jstep == 3) {
 		this.advance()
-		this.addsteadywave("tick", 15, 80, 1)
-		this.addsteadywave("ant", 0, 70, 2)
-		this.addsteadywave("katydid", 0, 55, 5)
-		this.addsteadywave("megatick", 30, 70, 10)
-		this.addsteadywave("tick", 30, 31, 1/40)
-		this.addsteadywave("tick", 60, 61, 1/40)
-		this.addsteadywave("ant", 30, 31, 1/20)
+		this.addsteadywave("tick", 15, 80, 40)
+		this.addsteadywave("ant", 0, 70, 30)
+		this.addsteadywave("katydid", 0, 55, 12)
+		this.addsteadywave("megatick", 30, 70, 3)
+		this.addsteadywave("tick", 30, 31, 40)
+		this.addsteadywave("tick", 60, 61, 40)
+		this.addsteadywave("ant", 30, 31, 20)
 	} else if (this.jstep == 4) {
 		this.runsteadywaves()
 	} else if (this.jstep == 5) {
