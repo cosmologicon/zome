@@ -68,6 +68,7 @@ UFX.scenes.demo = {
 
 
 	think: function (dt, jframe, nframe) {
+		dt *= quest.slowfactor()
 		this.t += dt
 		adjust(state.colliders(), dt)
 		if (jframe == 0) this.think0(dt * nframe)

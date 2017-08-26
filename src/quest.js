@@ -29,6 +29,9 @@ let QuestSteps = {
 }
 
 let QuestStateInteractions = {
+	init: function () {
+		this.waverepeat = 0
+	},
 	instagrow: function (flavor, dx, dy) {
 		state.instagrow(flavor, dx, dy)
 		state.cell.ejectall()
@@ -36,9 +39,24 @@ let QuestStateInteractions = {
 	checkarrival: function () {
 		if (!this.viruses.some(v => v.alive)) {
 			if (this.viruses.some(v => v.arrived)) {
-				this.jstep -= 1
+				this.nextstep = this.jstep - 1
+				this.jstep = "repeat"
+				this.tstep = 0
+				this.waverepeat += 1
 			} else {
 				this.advance()
+				this.waverepeat = 0
+			}
+		}
+	},
+	think: function (dt) {
+		if (this.jstep == "repeat") {
+			if (progress.did.repeatwave || this.tstep > 5) {
+				progress.did.repeatwave = true
+				this.jstep = this.nextstep
+				this.tstep = 0
+			} else {
+				this.display("Oops! Try again, and don't let any virus reach the cell!")
 			}
 		}
 	},
@@ -364,7 +382,7 @@ let DemoTutorial5 = newquest(function (dt) {
 		progress.learned.XY = true
 		progress.learned.YY = true
 		this.buildtostate(10, 7)
-		dialog.queue.push(new TimedLine("zome", "A boss battle would be pretty cool here!"))
+		dialog.queue.push(new TimedLine("zome", "This is it! Let's see what you can really do!"))
 		this.advance()
 	} else if (this.jstep == 2) {
 		if (dialog.tquiet > 1) this.advance()
@@ -378,6 +396,7 @@ let DemoTutorial5 = newquest(function (dt) {
 		this.addsteadywave("tick", 60, 61, 40)
 		this.addsteadywave("ant", 30, 31, 20)
 	} else if (this.jstep == 4) {
+		if (this.tstep < 10) this.display("Electric antibody unlocked")
 		this.runsteadywaves()
 	} else if (this.jstep == 5) {
 		this.advance()
@@ -490,6 +509,10 @@ let quest = {
 			}
 		}
 		return ls
+	},
+	slowfactor: function () {
+		let nslow = Math.min(this.quests.map(q => q.waverepeat || 0).reduce((a, b) => a + b, 0), 3)
+		return Math.pow(0.5, nslow)
 	},
 }
 quest.init()
