@@ -54,7 +54,7 @@ let audio = {
 	},
 	// Create the web audio context.
 	// Set up the volume control gains.
-	// Add the necessary resources to UFX.resaurce.
+	// Add the necessary resources to UFX.resource.
 	// Push the noaudio scene on failure.
 	// Should be called after view.init.
 	init: function () {
@@ -77,6 +77,11 @@ let audio = {
 		this.sfxgain = this.context.createGain()
 		this.musicgain = this.context.createGain()
 		this.dialoggain = this.context.createGain()
+		this.gainlevels = {
+			sfx: settings.gainlevels,
+			music: settings.gainlevels,
+			dialog: settings.gainlevels,
+		}
 		// Used to soften music and sound effects while dialog is playing.
 		this.soundgain = this.context.createGain()
 
@@ -152,6 +157,14 @@ let audio = {
 		for (let sname in this._sfxdamp) {
 			this._sfxdamp[sname] *= Math.exp(-2 * dt)
 		}
+	},
+	// Increase or decrease the given audio type (e.g. "music") by the given amount (e.g. 1).
+	adjustgain: function (gtype, amount) {
+		let gain = this[gtype + "gain"]
+		if (!gain) throw "Unrecognized gain type: " + gtype
+		this.gainlevels[gtype] = clamp(this.gainlevels[gtype] + amount, 0, settings.gainlevels)
+		let value = Math.pow(this.gainlevels[gtype] / settings.gainlevels, settings.gainexponent)
+		gain.gain.setValueAtTime(value, 0)
 	},
 	// Immediately play the given sound effect name, e.g. "blobup1". Sends a warning to the console
 	// if the track is not ready.

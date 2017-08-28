@@ -304,6 +304,22 @@ UFX.scenes.options = UFX.Thing()
 				new Button("Reset\nDemo", (() => UFX.scene.swap("reset")), anchor, [0, 0]),
 				new Button("Full\nscreen", (() => UFX.scene.push("gofull")), anchor, [1, 0]),
 			])
+			let anchor0 = [[0.3, 0.45, 0.7], [0.5, 0.55, 0.8], [0.5, 0.6, 0.9]]
+			let anchor1 = [[0.7, 0.45, 0.7], [0.5, 0.35, 0.8], [0.5, 0.4, 0.9]]
+			this.hud.addbuttons([
+				new Button("-", (() => audio.adjustgain("sfx", -1)), anchor0, [-2, 0], {fontscale: 6}),
+				new Button("+", (() => audio.adjustgain("sfx", 1)), anchor0, [2, 0], {fontscale: 6}),
+				new Button("-", (() => audio.adjustgain("music", -1)), anchor1, [-2, 0], {fontscale: 6}),
+				new Button("+", (() => audio.adjustgain("music", 1)), anchor1, [2, 0], {fontscale: 6}),
+			])
+			this.hud.addlabels([
+				new HUDLabel("sfx", anchor0, [0, 0], {fontscale: 4, gettext:
+					() => "sfx\n" + (audio.gainlevels.sfx / settings.gainlevels * 100).toFixed(0) + "%"
+				}),
+				new HUDLabel("music", anchor1, [0, 0], {fontscale: 4, gettext:
+					() => "music\n" + (audio.gainlevels.music / settings.gainlevels * 100).toFixed(0) + "%"
+				}),
+			])
 		},
 	})
 UFX.scenes.reset = UFX.Thing()

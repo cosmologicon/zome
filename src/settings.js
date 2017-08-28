@@ -23,6 +23,8 @@ let settings = {
 		laser:     [0.8, 0.5, 0.0],
 	},
 
+	gainlevels: 5,
+	gainexponent: 1.7,
 	// Disabling audio is a one-time thing. This prevents the sound files from even being
 	// downloaded, so it can't be re-enabled.
 	// Will also be set to true by audio.init() if web audio context is not available.

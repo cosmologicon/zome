@@ -100,7 +100,8 @@ const HUDDrawText = {
 		let [xV, yV] = this.drawposV()
 		let scaleV = this.drawscaleV()
 		let fontsize = 0.4 * scaleV * this.fontscale
-		gl.progs.text.draw(this.text, {
+		let text = this.gettext ? this.gettext() : this.text
+		gl.progs.text.draw(text, {
 			center: [xV, yV + 0.2 * fontsize],
 			fontsize: fontsize,
 			fontname: "Sansita One",
@@ -123,6 +124,20 @@ function Button(text, onclick, anchor, offset, opts) {
 Button.prototype = UFX.Thing()
 	.addcomp(UsesAnchorPoint)
 	.addcomp(RoundDrawable)
+	.addcomp(HUDDrawText)
+
+function HUDLabel(text, anchor, offset, opts) {
+	opts = opts || {}
+	this.text = text
+	this.onclick = onclick
+	this.anchor = anchor
+	this.offset = offset || [0, 0]
+	this.scale = opts.scale || 1
+	this.fontscale = opts.fontscale || 1
+	this.gettext = opts.gettext
+}
+HUDLabel.prototype = UFX.Thing()
+	.addcomp(UsesAnchorPoint)
 	.addcomp(HUDDrawText)
 
 
@@ -159,6 +174,7 @@ HUD.prototype = {
 	reset: function () {
 		this.bmessages = []
 		this.buttons = []
+		this.labels = []
 		this.pointed = null
 	},
 
@@ -172,6 +188,9 @@ HUD.prototype = {
 	},
 	addbuttons: function (buttons) {
 		this.buttons.push.apply(this.buttons, buttons)
+	},
+	addlabels: function (labels) {
+		this.labels.push.apply(this.labels, labels)
 	},
 	think: function (dt) {
 		this.bmessages.forEach(obj => obj.think(dt))
@@ -219,6 +238,7 @@ HUD.prototype = {
 	},
 	draw: function () {
 		this.drawbuttons()
+		this.labels.forEach(label => label.drawtext())
 	},
 	drawcombos: function () {
 		let combos = Object.keys(comboinfo).filter(combo => progress.learned[combo])
