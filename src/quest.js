@@ -5,7 +5,7 @@
 "use strict"
 
 let QuestSteps = {
-	init: function () {
+	start: function () {
 		this.t = 0
 		this.jstep = 0
 		this.tstep = 0
@@ -29,7 +29,7 @@ let QuestSteps = {
 }
 
 let QuestStateInteractions = {
-	init: function () {
+	start: function () {
 		this.waverepeat = 0
 	},
 	instagrow: function (flavor, dx, dy) {
@@ -102,10 +102,12 @@ let QuestStateInteractions = {
 
 
 let newquest = function (think) {
-	return UFX.Thing()
+	let quest = UFX.Thing()
 		.addcomp(QuestSteps)
 		.addcomp(QuestStateInteractions)
 		.addcomp({ think: think })
+	quest.start()
+	return quest
 }
 
 let Level1Tutorial = newquest(function (dt) {
@@ -419,6 +421,7 @@ let quest = {
 		this.quests = quests || [
 			Level1Tutorial,
 		]
+		this.quests.forEach(q => q.start())
 		this.messages = []
 		this.tmessage = {}
 	},
@@ -440,13 +443,12 @@ let quest = {
 			let f = Math.pow(clamp((t - 4) * 2, 0, 1), 0.3)
 			let h = 0.04 * view.sV
 			let fontsize = h * (1 - 0.3 * f)
-			let width = 12 * fontsize
 			let x = (1 - f) * (0.5 * view.wV) + f * (view.wV - 5 * h)
-			let y = (1 - f) * (0.7 * view.hV) + f * (view.hV - 0.2 * view.sV)
+			let y = (1 - f) * (0.7 * view.hV) + f * (view.hV - 0.2 * view.sV - 6 * h * jmessage)
 			gl.progs.text.draw(message, {
 				centerx: x,
 				centery: y,
-				width: Math.round(width),
+				widthem: 12,
 				color: "#FF6",
 				gcolor: "#BB2",
 				scolor: "black",

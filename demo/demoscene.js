@@ -12,6 +12,8 @@ UFX.scenes.demo = {
 		this.hud = new HUD()
 		dialog.reset()
 		state.reset()
+		quest.init([DemoTutorial1, DemoTutorial2, DemoTutorial3, DemoTutorial4, DemoTutorial5, DemoTutorialEnd])
+		resetprogress()
 
 		state.Rlevel = 100
 		state.hp = this.hp0 = 10000000
@@ -57,9 +59,9 @@ UFX.scenes.demo = {
 		this.nextgrow = 2
 		this.jgrow = 0
 		this.hud.addbuttons([
-			new Button("Pause", (() => UFX.scene.push("pause")), "topleft", [0, 0]),
-			new Button("Full\nscreen", (() => UFX.scene.push("gofull")), "topleft", [0, 1]),
-//			new Button("Reset\ndemo", (() => UFX.scene.swap("demo")), "topleft", [0, 2]),
+			new Button("Options", (() => UFX.scene.push("options")), anchors.topleft, [0.5, -0.5]),
+			new Button("Full\nscreen", (() => UFX.scene.push("gofull")), anchors.topleft, [0.5, -1.5]),
+			new Button("Reset\ndemo", (() => UFX.scene.push("reset")), anchors.topleft, [0.5, -2.5]),
 		])
 		this.think(0, 0, 1)
 
@@ -289,41 +291,33 @@ UFX.scenes.demo = {
 	
 	},
 }
-UFX.scenes.pause = {
-	start: function () {
-		this.t = 0
-		this.lastdims = null
-		this.alpha = 0
-		audio.fullpause()
-	},
-	stop: function () {
-		audio.fullresume()
-	},
-	think: function (dt) {
-		UFX.scenes.demo.hud.think(0)
-		var pstate = UFX.pointer(canvas)
-		this.t += dt
-		this.alpha = clamp(3 * this.t, 0, 1)
-		if (this.t > 0.5 && pstate.up) UFX.scene.pop()
-	},
-	draw: function () {
-		let dims = [view.wV, view.hV, this.alpha]
-		if ("" + dims == this.lastdims) return
-		this.lastdims = dims
-		UFX.scenes.demo.draw()
-		view.fill([0.2, 0.2, 0.2, 0.85])
-		gl.progs.text.use()
-		gl.progs.text.draw("Paused", {
-			centerx: view.wV / 2,
-			centery: view.hV * 0.6,
-			color: "yellow",
-			gcolor: "orange",
-			ocolor: "black",
-			owidth: 3,
-			fontname: "Sansita One",
-			fontsize: 0.16 * view.sV,
-			alpha: this.alpha,
-		})
-	},
-}
+UFX.scenes.options = UFX.Thing()
+	.addcomp(CurtainOverPlayScene, "demo")
+	.addcomp(MenuText, "Options")
+	.addcomp(PausesAudio)
+	.addcomp(MenuHUD)
+	.addcomp({
+		start: function () {
+			let anchor = [[0.5, 0.15, 1.4], [0.5, 0.15, 1.8], [0.5, 0.15, 2]]
+			this.hud.addbuttons([
+				new Button("Resume\nGame", (() => UFX.scene.pop()), anchor, [-1, 0]),
+				new Button("Reset\nDemo", (() => UFX.scene.swap("reset")), anchor, [0, 0]),
+				new Button("Full\nscreen", (() => UFX.scene.push("gofull")), anchor, [1, 0]),
+			])
+		},
+	})
+UFX.scenes.reset = UFX.Thing()
+	.addcomp(CurtainOverPlayScene, "demo")
+	.addcomp(MenuText, "Reset the demo?")
+	.addcomp(PausesAudio)
+	.addcomp(MenuHUD)
+	.addcomp({
+		start: function () {
+			let anchor = [[0.5, 0.25, 2], [0.5, 0.25, 2], [0.5, 0.25, 2]]
+			this.hud.addbuttons([
+				new Button("Reset", (() => { UFX.scene.pop() ; UFX.scene.swap("demo") }), anchor, [-0.6, 0]),
+				new Button("Resume\nGame", (() => UFX.scene.pop()), anchor, [0.6, 0]),
+			])
+		},
+	})
 

@@ -49,6 +49,7 @@ See <a href="http://enable-javascript.com/">enable-javascript.com</a> for more i
 <script src="../src/draw.js"></script>
 <script src="../src/tracer.js"></script>
 <script src="../src/quest.js"></script>
+<script src="../src/pause.js"></script>
 <script src="demoscene.js"></script>
 <script>
 /*
@@ -80,11 +81,6 @@ audio.sfxfiles = [
 ]
 audio.musictracks = ["X"]
 audio.init()
-quest.init([DemoTutorial1, DemoTutorial2, DemoTutorial3, DemoTutorial4, DemoTutorial5, DemoTutorialEnd])
-//quest.init([DemoTutorial2]) ; DemoTutorial1.done = true
-//quest.init([DemoTutorial3]) ; DemoTutorial2.done = true
-//quest.init([DemoTutorial4]) ; DemoTutorial3.done = true
-//quest.init([DemoTutorial5]) ; DemoTutorial4.done = true
 
 UFX.resource.onload = function () {
 	if (gl) {

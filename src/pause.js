@@ -37,11 +37,14 @@ let MenuText = {
 }
 
 let CurtainOverPlayScene = {
+	init: function (curtainscenename) {
+		this.curtainscenename = curtainscenename || "play"
+	},
 	think: function (dt) {
-		UFX.scenes.play.hud.think(0)
+		UFX.scenes[this.curtainscenename].hud.think(0)
 	},
 	draw: function () {
-		UFX.scenes.play.draw()
+		UFX.scenes[this.curtainscenename].draw()
 		view.fill([0.2, 0.2, 0.2, 0.85])
 	},
 }

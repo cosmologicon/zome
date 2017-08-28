@@ -55,52 +55,78 @@ Bmessage.prototype = UFX.Thing()
 	.addcomp(WorldBound)
 	.addcomp(DrawAsText)
 	.addcomp(WorldBoundText)
-	
 
-function Button(text, onclick, corner, offset, opts) {
-	opts = opts || {}
-	this.text = text
-	this.color = opts.color || [0.4, 0.4, 0.4]
-	this.onclick = onclick
-	this.fontscale = opts.fontscale || 0.5
-	this.fontsize = 10
-	this.rV = 10
-	this.pV = [0, 0]
-	this.corner = corner
-	this.offset = offset
-}
-Button.prototype = {
-	setsize: function (bsize) {
-		this.rV = bsize
-		this.fontsize = this.fontscale * bsize
-		let [x0, y0] = {
-			topleft: [0, 1],
-			topright: [1, 1],
-			bottom: [0.5, 0],
-			bottomright: [1, 0],
-			lower: [0.5, 0.3],
-		}[this.corner]
-		let [dx0, dx] = { 0: [1, 1], 0.5: [0, 1], 0.3: [0, 1], 1: [-1, -1] }[x0]
-		let [dy0, dy] = { 0: [1, 1], 0.5: [0, 1], 0.3: [0, 1], 1: [-1, -1] }[y0]
-		this.pV = [
-			x0 * view.wV + (dx0 * 1.1 + dx * 2.1 * this.offset[0]) * bsize,
-			y0 * view.hV + (dy0 * 1.1 + dy * 2.1 * this.offset[1]) * bsize,
+// Requires a member anchor, which is a length-3 list of [fx, fy, scale].
+const UsesAnchorPoint = {
+	drawposV: function () {
+		let layout = this.anchor[view.jaspect]
+		let x0 = layout[0], y0 = layout[1]
+		let [dx, dy] = this.offset
+		let scaleV = this.drawscaleV()
+		return [
+			x0 * view.wV + 2.1 * dx * scaleV,
+			y0 * view.hV + 2.1 * dy * scaleV,
 		]
 	},
-	within: function (pV) {
-		var dx = pV[0] - this.pV[0], dy = pV[1] - this.pV[1]
-		return dx * dx + dy * dy < this.rV * this.rV
+	// Roughly, the radius.
+	drawscaleV: function () {
+		let ascale = this.anchor[view.jaspect][2] || 1
+		return 0.05 * view.sV * ascale * this.scale
 	},
+}
+let anchors = {
+	topleft: [[0, 1], [0, 1], [0, 1]],
+}
+
+
+
+const RoundDrawable = {
+	// x, y, R, r, g, b, T, alpha
+	rounddrawspec: function () {
+		let [xV, yV] = this.drawposV()
+		let rV = this.drawscaleV()
+		let [r, g, b] = this.color
+		return [xV, yV, rV, r, g, b, 0, 1]
+	},
+	within: function (pV) {
+		let [xV, yV] = this.drawposV(), rV = this.drawscaleV()
+		let dxV = pV[0] - xV, dyV = pV[1] - yV
+		return dxV * dxV + dyV * dyV < rV * rV
+	},
+}
+	
+const HUDDrawText = {
 	drawtext: function () {
+		let [xV, yV] = this.drawposV()
+		let scaleV = this.drawscaleV()
+		let fontsize = 0.4 * scaleV * this.fontscale
 		gl.progs.text.draw(this.text, {
-			center: [this.pV[0], this.pV[1] + 0.2 * this.fontsize],
-			fontsize: this.fontsize,
+			center: [xV, yV + 0.2 * fontsize],
+			fontsize: fontsize,
 			fontname: "Sansita One",
 			ocolor: "black",
 		})
 	},
 }
-function GrowButton(flavor, corner, offset, opts) {
+
+
+function Button(text, onclick, anchor, offset, opts) {
+	opts = opts || {}
+	this.text = text
+	this.onclick = onclick
+	this.anchor = anchor
+	this.offset = offset || [0, 0]
+	this.color = opts.color || [0.4, 0.4, 0.4]
+	this.scale = opts.scale || 1
+	this.fontscale = opts.fontscale || 1
+}
+Button.prototype = UFX.Thing()
+	.addcomp(UsesAnchorPoint)
+	.addcomp(RoundDrawable)
+	.addcomp(HUDDrawText)
+
+
+function GrowButton(flavor, anchor, offset, opts) {
 	let [RNA, DNA] = mechanics.cost[flavor]
 	let text = "Grow\n" + (DNA && RNA ? RNA + " RNA + " + DNA + " DNA" : DNA ? DNA + " DNA" : RNA + " RNA")
 	let onclick = function () {
@@ -113,7 +139,7 @@ function GrowButton(flavor, corner, offset, opts) {
 	}
 	opts = Object.create(opts || {})
 	opts.color = settings.ocolors[flavor]
-	return new Button(text, onclick, corner, offset, opts)
+	return new Button(text, onclick, anchor, offset, opts)
 }
 function SpeedControlButton(corner, offset, opts) {
 	let onclick = function () {
@@ -150,8 +176,6 @@ HUD.prototype = {
 	think: function (dt) {
 		this.bmessages.forEach(obj => obj.think(dt))
 		this.bmessages = this.bmessages.filter(obj => obj.alive)
-		let bsize = 0.05 * view.sV
-		this.buttons.forEach(button => button.setsize(bsize))
 	},
 	getpointed: function (pV) {
 		for (var j = 0 ; j < this.buttons.length ; ++j) {
@@ -171,10 +195,7 @@ HUD.prototype = {
 	},
 	drawbuttons: function (buttons) {
 		buttons = buttons || this.buttons
-		let data = builddata(buttons, button => {
-			const [r, g, b] = button.color
-			return [button.pV[0], button.pV[1], button.rV, r, g, b, 0, 1]
-		})
+		let data = builddata(buttons, button => button.rounddrawspec())
 		if (data.length) {
 			gl.progs.organelle.use()
 			gl.progs.organelle.set({

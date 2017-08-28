@@ -53,7 +53,7 @@ var view = {
 			return
 		}
 		UFX.gltext.init(gl)
-		UFX.maximize.onadjust = (canvas, w, h) => {
+		UFX.maximize.onadjust = (canvas, w, h, aspect) => {
 			this.wV = canvas.width = w * this.pixelratio
 			this.hV = canvas.height = h * this.pixelratio
 			canvas.style.width = w + "px"
@@ -61,6 +61,8 @@ var view = {
 			this.sV = Math.sqrt(this.wV * this.hV)
 			gl.viewport(0, 0, this.wV, this.hV)
 			this.setVscaleG()
+			this.aspect = aspect
+			this.jaspect = aspect > 1.2 ? 0 : aspect > 0.8 ? 1 : 2
 		}
 		canvas.style.background = "#222"
 		UFX.maximize(canvas, { aspects: [16/9, 1, 9/16], fillcolor: "#222" })
