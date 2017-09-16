@@ -1,3 +1,5 @@
+# Retrieve the specified playback id.
+
 import os, sqlite3, sys, cgi, json
 
 dbfilename = "/var/data/dump.db"
@@ -26,7 +28,8 @@ form = cgi.FieldStorage()
 form = { field: form.getfirst(field) for field in form }
 playbackid = form.get("id", "")
 
-if not playbackid:
+if not playbackid or not playbackid.isalnum() or len(playbackid) > 100:
+	print("Invalid playback id: {}".format(playbackid))
 	exit()
 
 ret = { "snapshots": [] }
@@ -35,12 +38,12 @@ with DB() as db:
 		setup = json.loads(value)
 		if setup["id"] == playbackid:
 			ret["setup"] = setup
+			break
 	if "setup" in ret:
-		query = "SELECT data FROM dump WHERE project = 'zomesnap' AND data LIKE ?;"
-		params = ("%" + playbackid + "%",)
+		query = "SELECT data FROM dump WHERE project = ?;"
+		params = ("zomesnap-" + playbackid,)
 		for (value,) in db.query(query, params):
 			snapshot = json.loads(value)
-			if snapshot["id"] == playbackid:
-				ret["snapshots"].append(snapshot)
+			ret["snapshots"].append(snapshot)
 print(json.dumps(ret))
 

@@ -1,0 +1,12 @@
+scp getsnapshot/index.py night@night.xen.prgmr.com:/var/drzome/getsnapshot
+scp getsnapshot/list/index.py night@night.xen.prgmr.com:/var/drzome/getsnapshot/list
+
+scp playback/index.html night@night.xen.prgmr.com:/var/drzome/playback
+scp playback/list/index.html night@night.xen.prgmr.com:/var/drzome/playback/list
+
+
+pushd /tmp
+curl https://raw.githubusercontent.com/faisalman/ua-parser-js/master/src/ua-parser.js > ua-parser.js
+scp ua-parser.js night@night.xen.prgmr.com:/var/drzome/playback
+popd
+

@@ -4,6 +4,7 @@
 <title>The Laboratory of Dr. Zome | demo playback</title>
 <canvas id=canvas></canvas>
 <script src="http://ufx.space/UFX.js" crossorigin=anonymous></script>
+<script src="http://drzome.com/playback/ua-parser.js" crossorigin=anonymous></script>
 <script>
 "use strict"
 
@@ -24,8 +25,7 @@ let req = new XMLHttpRequest()
 req.open("GET", url, true)
 req.onload = function () {
 	playback = JSON.parse(req.responseText)
-	UFX.scene.init()
-	UFX.scene.push("playback")
+	UFX.scene.swap("playback")
 }
 req.send()
 UFX.maximize(canvas, { aspects: [16/9] })
@@ -62,44 +62,84 @@ UFX.scenes.playback = {
 		}
 		let current = playback.snapshots[this.jframe]
 		let [w, h] = current.screensize
-		let scale = canvas.width / 854
-		UFX.draw("fs #044 f0 [ z", scale, scale)
+		let scale0 = canvas.width / 854
+		UFX.draw("fs #044 f0 [ z", scale0, scale0)
 		function drawfield() {
 			UFX.draw("[ b o 0 0 100 clip")
 			UFX.draw("lw 0.5 font 6px~'sans-serif' tab center middle")
 			let adraw = obj => UFX.draw("[ t", obj.x, -obj.y, "b o 0 0", obj.r, "ss gray s fs gray ft0", obj.flavors, "]")
 			let cdraw = obj => UFX.draw("[ t", obj.x, -obj.y + 8, "fs #F77 ft0 damage:~" + (10000000 - current.hp), "]")
-			let vdraw = obj => UFX.draw("[ t", obj.x, -obj.y, "b o 0 0", obj.r, "ss", obj.color, "s fs white ft0 " + obj.hp, "]")
+			let vdraw = obj => {
+				UFX.draw("[ t", obj.x, -obj.y,
+					"[ z", obj.r * 0.86 * 1.1, obj.r * 0.5 * 1.1,
+					"( m 0 2 l 1 1 l 1 -1 l 0 -2 l -1 -1 l -1 1 ) ]",
+					"ss", obj.color, "s fs white ft0 " + obj.hp, "]")
+			}
+			let sdraw = obj => UFX.draw("[ t", obj.x, -obj.y, "b o 0 0 1 fs orange f ]")
 			adraw(current.cell)
 			cdraw(current.cell)
 			current.antibodies.forEach(adraw)
 			current.viruses.forEach(vdraw)
-			if (current.cursor) adraw(current.cursor)
+			current.shots.forEach(sdraw)
+			if (current.cursor) {
+				UFX.draw("[ alpha 0.5")
+				adraw(current.cursor)
+				UFX.draw("]")
+			}
 			if (playback.setup.version >= 2 && current.pos) {
-				UFX.draw("[ t", current.pos, "b o 0 0 3 lw 1 ss blue s ]")
+				UFX.draw("[ t", current.pos[0], -current.pos[1], "b o 0 0 3 lw 1 ss blue s ]")
 			}
 			UFX.draw("] lw 1 b o 0 0 100 ss black s")
 		}
-		UFX.draw("[ t 260 240 z 2.1 2.1")
-			drawfield()
-		UFX.draw("]")
 
 		let sV = Math.sqrt(w * h)
-		scale = 200 / sV
+		let scale = 200 / sV
 		UFX.draw("[ t 680 240 z", scale, scale)
 			UFX.draw("[ z", current.view[2], current.view[2], "t", -current.view[0], current.view[1])
 				drawfield()
 				UFX.draw("b o", current.view[0], -current.view[1], 4, "fs orange f")
 			UFX.draw("]")
-		UFX.draw("ss black tr", -w/2, -h/2, w, h, "] lw 2 s")
-		UFX.draw("[ tab left top font 10px~'sans-serif' fs white",
-			"[ t 3 3 ft0", playback.setup.support.useragent.replace(/ /g, "~"), "]",
-			"[ t 3 16 ft0", this.datestr.replace(/ /g, "~"), "]",
-			"[ t 3 29 ft0", current.rates.replace(/ /g, "~"), "]",
-			"[ t 3 42 ft0", w + "x" + h + "~px", "]",
-			"[ t 3 55 ft0", "playback~version:~" + playback.setup.version, "]",
-		"]")
+		UFX.draw("( m", -w/2, -h/2, "l", w/2, -h/2, "l", w/2, h/2, "l", -w/2, h/2, "l", -w/2, -h/2,
+			"l", -999999, -999999, "l", 0, 999999, "l", 999999, 0, "l", -999999, -999999, ") fs #044 f") 
+		UFX.draw("ss black tr", -w/2, -h/2, w, h, "]")
+		UFX.draw("lw 2 s")
+
+		UFX.draw("[ t 260 240 z 2.1 2.1")
+			drawfield()
+		UFX.draw("]")
+
+		let uainfo = new UAParser(playback.setup.support.useragent).getResult()
 		let texts = [
+			"URL: " + playback.setup.url,
+			"Browser: " + uainfo.browser.name + " " + uainfo.browser.version,
+			"Device: " + uainfo.device.vendor + " " + uainfo.device.model + " [" + uainfo.device.type + "]",
+			"OS: " + uainfo.os.name + " " + uainfo.os.version,
+			"User agent: " + playback.setup.support.useragent,
+			this.datestr,
+			"playback version: " + playback.setup.version,
+			" ",
+			"frame #" + this.jframe + " | " + this.tplay.toFixed(1) + "s",
+			w + "x" + h + "px (" + current.view[3].toFixed(2) + "x)",
+			current.rates,
+			" ",
+			"Messages:",
+		]
+		let abbrev = m => m.length < 40 ? m : m.slice(0, 30) + "..."
+		texts = texts.concat(current.qmessages.map(abbrev))
+		texts.push(" ", "Dialog:")
+		if (current.dialog) texts.push(abbrev(current.dialog))
+		texts.forEach((text, jtext, ntext) => {
+			UFX.draw("[ tab right bottom font 10px~'sans-serif' fs white")
+			UFX.draw("ft", text.replace(/ /g, "~"), 853, 480 - 13 * (ntext - jtext))
+			UFX.draw("]")
+		})
+
+		texts.forEach((text, jtext) => {
+			UFX.draw("[ tab left top font 10px~'sans-serif' fs white",
+				"ft", text.replace(/ /g, "~"), 3, 3 + 13 * jtext,
+				"]")
+		})
+		texts = [
 			"playback speed: " + this.pfactor.toFixed(2) + "x",
 			"Controls:",
 			"space: pause",
@@ -107,20 +147,32 @@ UFX.scenes.playback = {
 			"1/2: skip back/ahead 30 sec",
 			"backspace: skip to beginning",
 			"up/down: adjust playback speed",
-			"",
-			"frame #" + this.jframe + " | " + this.tplay.toFixed(1) + "s",
 		]
 		texts.forEach((text, jtext) => {
 			UFX.draw("[ tab right top font 10px~'sans-serif' fs white")
-			UFX.draw("ft", text.replace(/ /g, "~"), 853, 16 + 13 * jtext)
+			UFX.draw("ft", text.replace(/ /g, "~"), 848, 5 + 13 * jtext)
 			UFX.draw("]")
 		})
+
+		// Progress bar
 		UFX.draw("fs #111 fr", 5, 460, this.tmax * 1.2, 15)
 		UFX.draw("fs #333 fr", 5, 460, this.tplay * 1.2, 15)
 		let ttext = "" + this.tplay.toFixed(1) + "s~/~" + this.tmax.toFixed(1) + "s"
 		UFX.draw("[ font 10px~'monospace' tab left top fs white ft", ttext, 5, 462, "]")
 		UFX.draw("]")
+
 	},
 }
+UFX.scenes.loading = {
+	draw: function () {
+		let scale = canvas.height / 100
+		UFX.draw("fs #113 f0 [ t", canvas.width / 2, canvas.height / 2, "tab center middle")
+		UFX.draw("z", scale, scale, "font 10px~'sans-serif' fs white ft0 Loading....")
+		UFX.draw("]")
+	},
+}
+UFX.scene.push("loading")
+UFX.scene.init()
+
 
 </script>

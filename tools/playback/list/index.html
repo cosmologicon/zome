@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+<link href="https://fonts.googleapis.com/css?family=Sansita+One" rel="stylesheet">
+<title>The Laboratory of Dr. Zome | playbacks</title>
+<style>
+body {
+	background: #337;
+	color: white;
+	font-family: monospace;
+}
+a:link {
+	color: #77F;
+}
+a:visited {
+	color: #F5F;
+}
+th, td {
+	text-align: center;
+	padding: 0.6em 1.2em;
+}
+tr:nth-child(even) {
+	background-color: rgba(0,0,0,0.1);
+}
+tr:nth-child(odd) {
+	background-color: rgba(0,0,0,0.2);
+}
+</style>
+<script src="http://drzome.com/playback/ua-parser.js" crossorigin=anonymous></script>
+<table id="table">
+<tr><th>playback ID
+<th>url
+<th>time
+<th>duration
+<th>browser
+<th>device
+<th>OS
+</tr>
+</table>
+<script>
+let url = "http://drzome.com/getsnapshot/list/"
+let req = new XMLHttpRequest()
+req.open("GET", url, true)
+req.onload = function () {
+	let data = JSON.parse(req.responseText)
+	data.sort((x, y) => x.timestamp - y.timestamp)
+	data.forEach(obj => {
+		let ua = new UAParser(obj.useragent).getResult()
+		let row = document.createElement("tr")
+		let timestamp = "" + new Date(obj.timestamp)
+		timestamp = timestamp.replace(/ GMT.*/, "")
+		let url = obj.url.replace(/http:../, "")
+		row.innerHTML = `
+			<td><a href="../?id=${obj.id}">${obj.id}</a>
+			<td>${url}
+			<td>${timestamp}
+			<td>${obj.duration.toFixed(0)}s
+			<td>${ua.browser.name}
+			<td>${ua.device.type}
+			<td>${ua.os.name} ${ua.os.version}
+		`
+		document.getElementById("table").appendChild(row)
+	})
+}
+req.send()
+</script>

@@ -70,10 +70,12 @@ UFX.scenes.demo = {
 
 
 	think: function (dt, jframe, nframe) {
+		let dt0 = dt
 		dt *= quest.slowfactor()
 		this.t += dt
 		adjust(state.colliders(), dt)
 		if (jframe == 0) this.think0(dt * nframe)
+		snapshot.think(dt0)
 	},
 	think0: function (dt) {
 		this.control()
@@ -87,7 +89,6 @@ UFX.scenes.demo = {
 		state.think(dt)
 		this.hud.think(dt)
 		dialog.think(dt)
-		snapshot.think(dt)
 		quest.think(dt)
 		audio.think(dt)
 		if (DemoTutorialEnd.done) this.tfinal += dt

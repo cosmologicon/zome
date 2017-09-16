@@ -1,5 +1,5 @@
 let snapshot = {
-	version: 2,
+	version: 3,
 	init: function () {
 		this.id = UFX.random.word(5)
 		this.send("zomesetup", {
@@ -7,6 +7,7 @@ let snapshot = {
 			timestamp: Date.now(),
 			version: this.version,
 			support: UFX.support,
+			url: window.location.href,
 		})
 		this.t = 0
 		this.nextsnapshot = 0
@@ -37,25 +38,32 @@ let snapshot = {
 			color: obj.color,
 			hp: obj.hp,
 		})
+		let sdata = obj => ({
+			x: obj.x,
+			y: obj.y,
+		})
 		let obj = {
 			id: this.id,
-			t: UFX.scenes.demo.t,
+			t: this.t,
 			hp: state.hp,
+			qmessages: quest.messages,
+			dialog: dialog.queue.length > 0 ? dialog.queue[0].text : null,
 			cell: adata(state.cell),
 //			organelles: state.organelles.map(odata),
 			antibodies: state.antibodies.map(adata),
 			viruses: state.viruses.map(vdata),
+			shots: state.shots.map(sdata),
 			cursor: control.cursor && adata(control.cursor),
 			screensize: [view.wV, view.hV],
 			pos: control.pos,
-			view: [view.xcenterG, view.ycenterG, view.VscaleG],
+			view: [view.xcenterG, view.ycenterG, view.VscaleG, view.pixelratio],
 			rates: UFX.ticker.getrates(),
 		}
-		this.send("zomesnap", obj)
+		this.send("zomesnap-" + this.id, obj)
 	},
 	think: function (dt) {
 		this.t += dt
-		while (this.t < 600 && this.t >= this.nextsnapshot) {
+		while (this.t < 1000 && this.t >= this.nextsnapshot) {
 			this.take()
 			this.nextsnapshot += 0.25
 		}

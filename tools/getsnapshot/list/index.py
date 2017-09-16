@@ -19,16 +19,28 @@ class DB(object):
 			self.db.commit()
 		self.db.close()
 
+
+ret = []
 with DB() as db:
 	for (value,) in db.query("SELECT data FROM dump WHERE project = 'zomesetup';"):
 		setup = json.loads(value)
-		if setup["version"] == 0:
+		if setup["version"] < 3:
 			continue
 		playbackid = setup["id"]
-		query = "SELECT data FROM dump WHERE project = 'zomesnap' AND data LIKE ?;"
-		params = ("%" + playbackid + "%",)
-		nframe = len(db.query(query, params))
-		print(playbackid, nframe)
-
-
+		query = "SELECT timestamp, data FROM dump WHERE project = ? ORDER BY timestamp DESC LIMIT 1;"
+		params = ("zomesnap-" + playbackid,)
+		result = db.queryone(query, params)
+		if not result:
+			continue
+		timestamp, data = result
+		data = json.loads(data)
+		ret.append({
+			"id": playbackid,
+			"url": setup["url"],
+			"useragent": setup["support"]["useragent"],
+			"timestamp": setup["timestamp"],
+			"duration": data["t"],
+		})
+print("Content-type: application/json\n\n")
+print(json.dumps(ret))
 
