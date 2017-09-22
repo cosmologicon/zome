@@ -18,7 +18,7 @@ a:link, a:visited {
 	color: #77F;
 }
 </style>
-<title>The Laboratory of Dr. Zome: Boston FIG 2017 version</title>
+<title>The Laboratory of Dr. Zome: demo version</title>
 <noscript>
 <h1>JavaScript error</h1>
 <p>JavaScript is required to run this game.
@@ -43,10 +43,13 @@ See <a href="http://enable-javascript.com/">enable-javascript.com</a> for more i
 <script src="../src/view.js"></script>
 <script src="../src/hud.js"></script>
 <script src="../src/dialog.js"></script>
+<script src="../src/audio.js"></script>
 <script src="../src/hill.js"></script>
 <script src="../src/shaders.js"></script>
 <script src="../src/draw.js"></script>
-<script src="../src/audio.js"></script>
+<script src="../src/tracer.js"></script>
+<script src="../src/quest.js"></script>
+<script src="../src/pause.js"></script>
 <script src="demoscene.js"></script>
 <script>
 /*
@@ -55,24 +58,33 @@ To make:
 cd fig2017
 cat index.html | grep script | grep src | grep -v ufx | grep -v setup.js | sed 's|.*src=.||;s|.><.*||' | xargs cat > /tmp/demo.js
 open /tmp/demo.js and paste it into https://babeljs.io/repl/ then replace
-scp -r index.html ../src/setup.js /tmp/demo.js data/ "night@night.xen.prgmr.com:/var/drzome/fig2017"
+scp -r index.html ../src/setup.js /tmp/demo.js data/ "night@night.xen.prgmr.com:/var/drzome/fig2017/1"
 
 Remote:
 
-cd /var/drzome/fig2017
+cd /var/drzome/demo
 nano index.html
 Remove the script tags (other than UFX and setup) and replace them with a single script tag pointing to demo.js.
+Rename ../src/setup.js to setup.js.
 
 */
 
 "use strict"
-audio.disable()
-unlockallcombos()
+
+settings.subtitle = "Boston FIG demo"
+
+UFX.scene.init({ ups: settings.ups, maxupf: settings.maxupf, })
+view.init()
+tracers.init()
+audio.sfxfiles = [
+	"blobup", "blobdown", "tick", "yes", "no", "get", "shot", "die", "hatch",
+]
+audio.musictracks = ["X"]
+audio.init()
+
 UFX.resource.onload = function () {
-	view.init()
 	if (gl) {
 		hill.init()
-		UFX.scene.init({ ups: settings.ups, maxupf: settings.maxupf, })
 		UFX.scene.push("demo")
 		UFX.resource.onload = UFX.resource.onloading = function (f) {
 			UFX.gltext.CONSTANTS.MEMORY_LIMIT_MB = 0
@@ -84,7 +96,13 @@ UFX.resource.onload = function () {
 		UFX.gltext.fontmargins["Sansita One"] = 0.3
 	}
 }
-UFX.resource.loadwebfonts("Sansita One", "Stint Ultra Condensed", "Architects Daughter")
+UFX.resource.loadwebfonts("Sansita One", "Patrick Hand", "Stint Ultra Condensed", "Architects Daughter",
+	"Passion One", "Permanent Marker", "Irish Grover", {
+	onload: function () {
+		if (gl) gl.progs.text.clear()
+		if (tracers.title) tracers.title.clear()
+	},
+})
 UFX.resource.load({
 	zome: "data/zome.png",
 })

@@ -9,21 +9,67 @@ var canvas = document.getElementById("canvas")
 var context = canvas.getContext("2d")
 UFX.draw.setcontext(context)
 UFX.maximize(canvas, { aspects: [16/9, 1, 9/16] })
+var font = "Irish Grover"
+var lines = [
+	{ h: 60, x: 0, y: -58, text: "The Laboratory of", },
+	{ h: 140, x: -186, y: 25, text: "Dr", },
+	{ h: 140, x: 94, y: 25, text: "Zome", },
+	{ h: 140, x: -111, y: 25, text: ".", },
+	{ h: 50, x: 90, y: 105, text: "coming soon" },
+
+]
+lines.forEach(line => {
+	line.text = line.text.replace(/ /g, "~")
+	line.font = "font " + line.h + "px~'" + font.replace(/ /g, "~") + "'"
+	line.fill = UFX.draw.lingrad(0, -line.h/5, 0, line.h/2, 0, "yellow", 1, "#F84")
+})
+function drawlogo() {
+	context.lineJoin = "round"
+	function wid(w0, h) {
+		return w0 * Math.pow(h / 140, 0.4)
+	}
+	let color = "#222"
+	let scale = Math.sqrt(canvas.width * canvas.height) / 600
+	lines.forEach(line => UFX.draw(
+		"[ ss", color, "lw", wid(35, line.h), "sh", color, 0, 9 * scale, 4 * scale,
+		"t", line.x, line.y, line.font, "st0", line.text, "]"
+	))
+	lines.forEach(line => UFX.draw(
+		"ss #fff lw", wid(22, line.h),
+		"[ t", line.x, line.y, line.font, "st0", line.text, "]",
+		"ss #fff lw", wid(16, line.h),
+		"[ t", line.x, line.y, line.font, "st0", line.text, "]"
+	))
+
+	color = "#840"
+	let owidth = 8
+	lines.forEach(line => UFX.draw(
+		"ss", color, "lw", wid(owidth, line.h),
+		"[ t", line.x, line.y, line.font, "st0", line.text, "]"
+	))
+
+	lines.forEach(line => UFX.draw(
+		"[ fs", line.fill, "t", line.x, line.y, line.font, "ft0", line.text, "]"
+	))
+}
+
 UFX.ticker.init(function (dt) {
-	var z = Math.sqrt(canvas.width * canvas.height) / 300
-	UFX.draw("fs #077 f0")
+	var z = Math.sqrt(canvas.width * canvas.height) / 900
+//	UFX.draw("fs #077 f0")
 	UFX.draw(
 		"[ t", canvas.width / 2, canvas.height / 2, "z", z, z,
-		"fs yellow ss black lw 1.5 tab center middle",
-		"font 20px~'Sansita~One' sft The~Laboratory~of 0 -36",
-		"font 40px~'Sansita~One' sft Dr.~Zome 0 -10",
-		"font 16px~'Sansita~One' sft coming~soon 0 50",
+		"fs", UFX.draw.radgrad(0, 0, 0, 0, 0, 600, 0, "#0AC", 1, "#033"),
+		"fr -1000 -1000 2000 2000",
+		"fs yellow ss black lw 1.5 tab center middle"
+	)
+	drawlogo()
+	UFX.draw(
 		"] [ t", canvas.width, canvas.height, "z", z, z,
-		"fs orange ss black lw 1.5 tab right bottom",
-		"font 16px~'Squada~One' sft Play~the~demo~at -4 -18",
-		"font 16px~'Squada~One' sft drzome.com/demo -4 -2",
+		"fs orange ss black lw 5 tab right bottom",
+		"font 50px~'Acme' sft Play~the~demo~at -10 -52",
+		"font 50px~'Acme' sft drzome.com/demo -10 -2",
 	"]")
-})
-UFX.resource.loadwebfonts("Sansita One", "Squada One")
+}, null, { maxups: 2 })
+UFX.resource.loadwebfonts("Sansita One", "Irish Grover", "Acme")
 </script>
 

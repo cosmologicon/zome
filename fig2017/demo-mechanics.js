@@ -1,5 +1,5 @@
 
-var mechanics = {
+let mechanics = {
 	hatchtime: {
 		X: 8,
 		Y: 12,
@@ -19,19 +19,6 @@ var mechanics = {
 			targeting: null,
 		},
 	},
-	// Medium range/strength
-	Y: {
-		color: "mediumgun",
-		gun: {
-			recharge: 2,
-			range: 40,
-			strength: 3,
-			RNAprob: 0,
-			DNAprob: 0,
-			kick: 10,
-			targeting: null,
-		},
-	},
 	// Strong short-range
 	XX: {
 		color: "shortgun",
@@ -45,17 +32,30 @@ var mechanics = {
 			targeting: "strongest",
 		},
 	},
-	// Long-range with kickback
-	XY: {
-		color: "longgun",
+	// Kickback
+	Y: {
+		color: "mediumgun",
 		gun: {
 			recharge: 2,
-			range: 100,
-			strength: 10,
+			range: 40,
+			strength: 3,
 			RNAprob: 0,
 			DNAprob: 0,
 			kick: 60,
-			targeting: "frontmost",
+			targeting: null,
+		},
+	},
+	// Long-range
+	XY: {
+		color: "longgun",
+		gun: {
+			recharge: 8,
+			range: 100,
+			strength: 200,
+			RNAprob: 0,
+			DNAprob: 0,
+			kick: 20,
+			targeting: "strongest",
 		},
 	},
 	// Weak laser
@@ -139,7 +139,7 @@ var mechanics = {
 		speed: 3,
 		strength: 10,
 		size: 9,
-		mass: 25,
+		mass: 60,
 	},
 	tick: {
 		hp: 1,
@@ -160,7 +160,7 @@ var mechanics = {
 		hp: 80,
 		speed: 5,
 		size: 9,
-		mass: 30,
+		mass: 60,
 		strength: 20,
 		ncarry: 16,
 	},
@@ -168,15 +168,11 @@ var mechanics = {
 
 
 let comboinfo = {
-	X: "Weak rapid short-range",
-	Y: "Medium range/strength",
-	XX: "Strong short-range",
-	XY: "Long-range with kickback",
-	YY: "Rapid laser",
-	XXX: "Powerful long-range",
-	XXY: "Medium range, strong",
-	XYY: "Strong kickback",
-	YYY: "Strong laser",
+	X: "Weak rapid-fire",
+	XX: "Medium strength",
+	Y: "Kickback",
+	XY: "Strong long-range",
+	YY: "Electric",
 }
 
 
