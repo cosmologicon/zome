@@ -1,0 +1,10 @@
+Splash screen used as the landing page at drzome.com/ while under development
+
+cd pages/splash
+cp index.html /tmp
+gedit /tmp/index.html
+
+[ copy and paste into babel ]
+
+scp index.html "night@night.xen.prgmr.com:/var/drzome"
+
