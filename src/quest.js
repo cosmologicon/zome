@@ -514,7 +514,7 @@ let quest = {
 	},
 	slowfactor: function () {
 		let nslow = Math.min(this.quests.map(q => q.waverepeat || 0).reduce((a, b) => a + b, 0), 3)
-		return Math.pow(0.5, nslow)
+		return Math.pow(0.85, nslow)
 	},
 }
 quest.init()

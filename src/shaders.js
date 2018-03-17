@@ -452,9 +452,11 @@ varying vec3 fcolor;
 
 uniform float VscaleG;
 uniform sampler2D hilltextures[Nhill];
+varying float GscaleU;
 varying vec2 posH[Nhill];
 varying vec4 Jv1, Jv2;
-varying float GscaleU;
+
+uniform float alpha;
 
 const vec3 bordercolor = vec3(0.0, 0.0, 0.0);
 const float borderwidthG = 0.1;
@@ -504,6 +506,7 @@ void main() {
 	float borderwidthV = VscaleG * borderwidthG;
 	float a = clamp(0.5 * mV - borderwidthV, 0.0, 1.0);  // Not sure why 0.5 here?
 	gl_FragColor = mix(vec4(bordercolor, 1.0), color1, a);
+	gl_FragColor.a *= alpha;
 }
 `
 

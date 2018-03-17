@@ -56,6 +56,7 @@ function drawscene(hud) {
 			hilltextures: [1, 2, 3],
 			A: hill.A,
 			Ad: hill.Ad,
+			alpha: 1,
 		})
 		hill.textures.forEach(function (texture, j) {
 			gl.activeTexture(gl.TEXTURE1 + j)
@@ -290,6 +291,7 @@ function drawantibody(obj) {
 		hilltextures: [1, 2, 3],
 		A: hill.A,
 		Ad: hill.Ad,
+		alpha: 0.5,
 	})
 	hill.textures.forEach(function (texture, j) {
 		gl.activeTexture(gl.TEXTURE1 + j)
@@ -308,12 +310,11 @@ function drawantibody(obj) {
 	gl.drawArrays(gl.TRIANGLES, 0, data.nvert)
 
 
-	// state-bound organelles
 	data = builddata(obj.slots, obj => {
 		const [x, y] = obj.drawpos ? obj.drawpos() : [obj.x, obj.y], R = obj.rcollide
 		const [r, g, b] = (obj instanceof Organelle ? settings.ocolors : settings.ecolors)[obj.flavor]
 		const T = obj.T || 0
-		const alpha = 1
+		const alpha = 0.5
 		return [x, y, R, r, g, b, T, alpha]
 	})
 	if (data.length) {
@@ -354,6 +355,7 @@ function drawselectblobs(blobspecs) {
 		A: hill.A,
 		Ad: hill.Ad,
 		T: Date.now() / 50000 % 1,
+		alpha: 1,
 	})
 	// TODO: remove unnecessary bindings like this one.
 	hill.textures.forEach(function (texture, j) {
