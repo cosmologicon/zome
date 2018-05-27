@@ -63,16 +63,16 @@ function getcollisions(objs) {
 	// which you want to check against each other.
 	function qcollide(js) {
 		// Heuristic: don't even bother dividing and fall back to the base case if there are 4 or
-		//  fewer objects.
+		// fewer objects.
 		if (js.length < 5) return qcollide0(js)
 		// We're going to split the objects into two groups by drawing a line either in the x
 		// direction or the y direction. As a heuristic, we'll choose based on which dimension has
 		// a smaller extent.
-		// Objects will divided into two subsets based on which side of the line they fall on. An
+		// Objects will be divided into two subsets based on which side of the line they fall on. An
 		// object that intersects the dividing line will be placed in both subsets.
 		let xmin = objs[js[0]][0], ymin = objs[js[0]][1], xmax = xmin, ymax = ymin
-		for (var k = 1 ; k < js.length ; ++k) {
-			let [x, y, r, m] = objs[js[k]]
+		for (let j of js) {
+			let [x, y, r, m] = objs[j]
 			if (x < xmin) xmin = x
 			if (x > xmax) xmax = x
 			if (y < ymin) ymin = y
@@ -85,8 +85,8 @@ function getcollisions(objs) {
 		// with a vertical line).
 		if (xrange > yrange) {
 			let xc = (xmin + xmax) / 2
-			for (var k = 0 ; k < js.length ; ++k) {
-				let j = js[k], [x, y, r, m] = objs[j]
+			for (let j of js) {
+				let [x, y, r, m] = objs[j]
 				if (x - r <= xc) js1.push(j)
 				if (x + r >= xc) js2.push(j)
 			}
@@ -94,8 +94,8 @@ function getcollisions(objs) {
 		// with a horizontal line).
 		} else {
 			let yc = (ymin + ymax) / 2
-			for (var k = 0 ; k < js.length ; ++k) {
-				let j = js[k], [x, y, r, m] = objs[j]
+			for (let j of js) {
+				let [x, y, r, m] = objs[j]
 				if (y - r <= yc) js1.push(j)
 				if (y + r >= yc) js2.push(j)
 			}
@@ -121,8 +121,7 @@ function getcollisions(objs) {
 		if (ngrid <= 1) return qcollide0(objs.map((obj, j) => j))
 		// Determine the x and y extent so that we can divide each dimension in ngrid cells.
 		let xmin = objs[0][0], ymin = objs[0][1], xmax = xmin, ymax = ymin
-		for (var k = 1 ; k < objs.length ; ++k) {
-			let [x, y, r, m] = objs[k]
+		for (let [x, y, r, m] of objs) {
 			if (x < xmin) xmin = x
 			if (x > xmax) xmax = x
 			if (y < ymin) ymin = y
@@ -130,8 +129,8 @@ function getcollisions(objs) {
 		}
 		// x and y size of each grid cell.
 		let dxgrid = (xmax - xmin) / ngrid, dygrid = (ymax - ymin) / ngrid
-		// All objects are coincident in either x or y. This is going to cause problems with the
-		// division, so fall back to the reference implementation.
+		// Check for the case where all objects are coincident in either x or y. This is going to
+		// cause problems with the division, so fall back to the reference implementation.
 		if (!dxgrid || !dygrid) return qcollide0(objs.map((obj, j) => j))
 		// js[x][y] is the set of indices of all objects in the (x,y) cell. As in qcollide, any
 		// object that intersects a grid line will appear in more than one cell. Technically we're
@@ -179,6 +178,13 @@ function getcollisions(objs) {
 // getcollisions = getcollisions0
 
 
+// The push factor is the amount of impulse two overlapping objects exert on each other, in units of
+// game dimensions per second. This formula is pretty arbitary, just based on feel. Too strong and
+// the objects feel too rigid. Too weak and it takes a long time for colliding objects to separate.
+function pushfactor(overlap) {
+	return clamp(20 * overlap, 50, 200)
+}
+
 // Determine the amount by which to shift each object in a list of objects. Pass in a list of
 // objects in the form [x, y, r, m], and a timestep in seconds (dt). Returns a list of [dx, dy]
 // values, one for each object in the list. Objects that are not colliding with anything will have
@@ -202,10 +208,7 @@ function getbounce(objs, dt) {
 			dy = Math.cos(a)
 		}
 		let d = Math.sqrt(dx * dx + dy * dy)
-		// f is a push factor. This causes the two objects to push harder against each other when
-		// they overlap. This formula is pretty arbitary, just based on feel. If it's too weak, it
-		// will take a long time for colliding objects to separate.
-		let f = clamp(20 * (r0 + r1 - d), 50, 200)
+		let f = pushfactor(r0 + r1 - d)
 		// Total shift amounts. These amounts will be divided between the two objects, based on
 		// their relative masses.
 		dx *= dt / d * f

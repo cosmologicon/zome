@@ -25,7 +25,9 @@ function builddata(objs, fvals) {
 	return data
 }
 
-
+// Draw objects that are part of the gameplay arena area, that are scaled up and down with the zoom
+// level. Includes game objects (viruses, antibodies, shots in motion), background text that appears
+// in the arena, and foreground motes.
 function drawscene(hud) {
 	profiler.start("drawscene")
 	gl.disable(gl.DEPTH_TEST)
@@ -35,12 +37,15 @@ function drawscene(hud) {
 	gl.clearColor(0, 0.4, 0.4, 1)
 	gl.clear(gl.COLOR_BUFFER_BIT)
 
+	// ??? Not used as far as I can tell.
 	hud.drawback()
 	
+	// Incoming wave indicators
 	state.drawwaves()
+	// Diagram labels for game objects in the tutorial
 	quest.getlabels().forEach(label => label.draw())
 
-	// cell and state-bound antibodies
+	// The cell and state-bound antibodies (minus their organelles)
 	let data = builddata(state.drawblobs(), obj => {
 		const x = obj.x, y = obj.y, R = obj.rcollide * 1.8, T = obj.T, t0 = 0.1
 		const ix = obj.impulsex, iy = obj.impulsey
@@ -75,7 +80,7 @@ function drawscene(hud) {
 		gl.drawArrays(gl.TRIANGLES, 0, data.nvert)
 	}
 
-	// state-bound organelles
+	// state-bound organelles, eggs, and egg corpses.
 	data = builddata(state.organelles.concat(state.eggs, state.ecorpses), obj => {
 		const [x, y] = obj.drawpos ? obj.drawpos() : [obj.x, obj.y], R = obj.rcollide
 		const [r, g, b] = (obj instanceof Organelle ? settings.ocolors : settings.ecolors)[obj.flavor]

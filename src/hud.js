@@ -1,6 +1,8 @@
 // HUD, or generally all on-screen controls.
 // Different scenes can have their own HUD.
 
+"use strict"
+
 const DrawAsText = {
 	start: function (opts) {
 		this.text = opts.text
@@ -178,6 +180,7 @@ HUD.prototype = {
 		this.pointed = null
 	},
 
+	// TODO: What is this? I don't remember ever needing any bmessages, and it's never called.
 	addbmessage: function (text, pos, options) {
 		let bmessage = new Bmessage(text, pos, options)
 		this.bmessages.push(bmessage)

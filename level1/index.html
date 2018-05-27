@@ -139,7 +139,6 @@ UFX.scenes.load = {
 			fontsize: 1.2 * h,
 		})
 		if (settings.DEBUG) {
-//			var text = "Loaded:\n" + Object.keys(UFX.resource.data).sort().join(" ") + " | " + Object.keys(UFX.resource.images).sort().join(" ")
 			var text = "Loaded:\n" + this.loaded.join(" ")
 			gl.progs.text.draw(text, {
 				midbottom: [view.wV / 2, view.hV * 0.05],
