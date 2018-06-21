@@ -126,6 +126,9 @@ let state = {
 		for (let s in VirusTypes) {
 			if (obj instanceof VirusTypes[s]) return "viruses"
 		}
+		for (let s in BossTypes) {
+			if (obj instanceof BossTypes[s]) return "bosses"
+		}
 	},
 	addobj: function (obj) {
 		let type = this.gettype(obj)

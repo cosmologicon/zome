@@ -74,16 +74,12 @@ var TargetsAntibodies = {
 	},
 }
 
-const CarriesViruses = {
-	init: function (carrytype, ncarry) {
-		this.carrytype = carrytype
-		this.ncarry = ncarry || 3
-	},
-	killed: function () {
+const SpawnsViruses = {
+	spawn: function (vtype, n) {
 		let theta = UFX.random.angle()
-		let ctype = VirusTypes[this.carrytype]
-		for (let j = 0 ; j < this.ncarry ; ++j, theta += tau / phi) {
-			let f = Math.sqrt((j + 1) / this.ncarry)
+		let ctype = VirusTypes[vtype]
+		for (let j = 0 ; j < n ; ++j, theta += tau / phi) {
+			let f = Math.sqrt((j + 1) / n)
 			let dx = Math.sin(theta) * f, dy = Math.cos(theta) * f
 			let virus = new ctype({
 				x: this.x + 2 * dx,
@@ -93,6 +89,16 @@ const CarriesViruses = {
 			virus.target = state.cell
 			state.addobj(virus)
 		}
+	},
+}
+
+const SpawnsOnDeath = {
+	init: function (carrytype, ncarry) {
+		this.carrytype = carrytype
+		this.ncarry = ncarry || 3
+	},
+	killed: function () {
+		this.spawn(this.carrytype, this.ncarry)
 	},
 }
 
@@ -192,7 +198,8 @@ MegaAnt.prototype = UFX.Thing()
 	.addcomp(Shootable, mechanics.megaant.hp)
 	.addcomp(HarmsOnArrival, mechanics.megaant.strength)
 	.addcomp(InjectsOnArrival)
-	.addcomp(CarriesViruses, "ant", mechanics.megaant.ncarry)
+	.addcomp(SpawnsViruses)
+	.addcomp(SpawnsOnDeath, "ant", mechanics.megaant.ncarry)
 	.addcomp(DiesOnArrival)
 	.addcomp(TargetsThing, mechanics.megaant.speed, 0.3)
 	.addcomp(AnimationTicker, 100)
@@ -210,7 +217,8 @@ MegaTick.prototype = UFX.Thing()
 	.addcomp(Shootable, mechanics.megatick.hp)
 	.addcomp(HarmsOnArrival, mechanics.megatick.strength)
 	.addcomp(InjectsOnArrival)
-	.addcomp(CarriesViruses, "tick", mechanics.megatick.ncarry)
+	.addcomp(SpawnsViruses)
+	.addcomp(SpawnsOnDeath, "tick", mechanics.megatick.ncarry)
 	.addcomp(DiesOnArrival)
 	.addcomp(TargetsThing, mechanics.megatick.speed, 0.3)
 	.addcomp(AnimationTicker, 100)

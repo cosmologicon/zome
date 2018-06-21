@@ -107,6 +107,36 @@ function drawscene(hud) {
 		gl.drawArrays(gl.TRIANGLES, 0, data.nvert)
 	}
 
+	// Bosses (TODO: this just reuses the virus shader for now.
+	data = builddata(state.bosses, obj => {
+		const x = obj.x, y = obj.y, R = obj.rcollide * 1.25, T = obj.T
+		const [r, g, b] = obj.vcolor0
+		return [x, y, R, r, g, b, T]
+	})
+	if (data.length) {
+		gl.progs.virus.use()
+		const ktexture = getkscopetexture(64)
+		gl.activeTexture(gl.TEXTURE4)
+		gl.bindTexture(gl.TEXTURE_2D, ktexture)
+		gl.progs.virus.set({
+			scenterG: [view.xcenterG, view.ycenterG],
+			screensizeV: [view.wV, view.hV],
+			VscaleG: view.VscaleG,
+			ktexture: 4,
+			alpha: 1,
+		})
+		gl.disableVertexAttribArray(gl.progs.virus.attribs.alpha)
+		gl.makeArrayBuffer(data).bind()
+		gl.progs.virus.assignAttribOffsets({
+			pU: 0,
+			centerG: 2,
+			RG: 4,
+			vcolor: 5,
+			T: 8,
+		}, {stride: 9})
+		gl.drawArrays(gl.TRIANGLES, 0, data.nvert)
+	}
+
 	// Non-boss viruses
 	data = builddata(state.viruses, obj => {
 		const x = obj.x, y = obj.y, R = obj.rcollide * 1.25, T = obj.T

@@ -509,11 +509,12 @@ function approachpos(obj, target, D, rarrive) {
 	return dp - D < rarrive
 }
 
+// Speed and speed dispersion factor.
 var TargetsThing = {
 	init: function (speed0, dspeed) {
 		this.speed0 = speed0
 		this.dspeed = dspeed || 0
-		this.arrived = false
+		this.tarrived = 0
 	},
 	start: function () {
 		this.speed = this.speed0 * (1 + this.dspeed * UFX.random(-1, 1))
@@ -524,11 +525,12 @@ var TargetsThing = {
 			var dr = this.rcollide + this.target.rcollide
 			if (approachpos(this, this.target, this.speed * dt, dr)) {
 				this.arrive()
+				this.target = null
 			}
 		}
+		this.tarrived = this.target === null ? this.tarrived + dt : 0
 	},
 	arrive: function () {
-		this.arrived = true
 	},
 }
 
