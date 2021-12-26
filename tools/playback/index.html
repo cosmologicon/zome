@@ -3,8 +3,8 @@
 <link href="https://fonts.googleapis.com/css?family=Sansita+One" rel="stylesheet">
 <title>The Laboratory of Dr. Zome | demo playback</title>
 <canvas id=canvas></canvas>
-<script src="http://ufx.space/UFX.js" crossorigin=anonymous></script>
-<script src="http://drzome.com/playback/ua-parser.js" crossorigin=anonymous></script>
+<script src="https://ufx.space/UFX.js" crossorigin=anonymous></script>
+<script src="https://drzome.com/playback/ua-parser.js" crossorigin=anonymous></script>
 <script>
 "use strict"
 
@@ -20,7 +20,7 @@ window.location.search.replace(/\?/, "").split("&").forEach(param => {
 })
 
 let playback = null
-let url = "http://drzome.com/getsnapshot/?id=" + qobj.id
+let url = "https://drzome.com/getsnapshot/?id=" + qobj.id
 let req = new XMLHttpRequest()
 req.open("GET", url, true)
 req.onload = function () {
