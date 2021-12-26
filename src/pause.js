@@ -2,6 +2,9 @@ let PausesAudio = {
 	start: function () {
 		audio.fullpause()
 	},
+	resume: function () {
+		audio.fullpause()
+	},
 	stop: function () {
 		audio.fullresume()
 	},

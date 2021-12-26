@@ -52,6 +52,8 @@ let audio = {
 		win: false,
 		lose: false,
 	},
+	// True if the audio context has been successfully initialized, and it's not currently paused.
+	active: false,
 	// Create the web audio context.
 	// Set up the volume control gains.
 	// Add the necessary resources to UFX.resource.
@@ -71,6 +73,8 @@ let audio = {
 			this.fail()
 			return
 		}
+		
+		this.active = true
 
 		// Volume levels set by user settings.
 		this.mastergain = this.context.createGain()
@@ -114,6 +118,7 @@ let audio = {
 			this.context.close()
 		}
 		this.context = null
+		this.active = false
 	},
 	// Call with the name of a dialog sequence, e.g. "C01". All of the correspoinding tracks will be
 	// loaded.
@@ -146,16 +151,20 @@ let audio = {
 	fullpause: function () {
 		if (!this.context) return
 		this.context.suspend()
+		this.active = false
 	},
 	// Resume all audio tracks.
 	fullresume: function () {
 		if (!this.context) return
 		this.context.resume()
+		this.active = true
 	},
 	// Call occasionally to update the dampening values with the passage of time.
 	think: function (dt) {
-		for (let sname in this._sfxdamp) {
-			this._sfxdamp[sname] *= Math.exp(-2 * dt)
+		if (this.active) {
+			for (let sname in this._sfxdamp) {
+				this._sfxdamp[sname] *= Math.exp(-2 * dt)
+			}
 		}
 	},
 	// Increase or decrease the given audio type (e.g. "music") by the given amount (e.g. 1).

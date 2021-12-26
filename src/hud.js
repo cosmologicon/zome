@@ -61,8 +61,8 @@ Bmessage.prototype = UFX.Thing()
 // Requires a member anchor, which is a length-3 list of [fx, fy, scale].
 const UsesAnchorPoint = {
 	drawposV: function () {
-		let layout = this.anchor[view.jaspect]
-		let x0 = layout[0], y0 = layout[1]
+		let anchor = anchors[this.anchor] || this.anchor
+		let [x0, y0] = anchor[view.jaspect]
 		let [dx, dy] = this.offset
 		let scaleV = this.drawscaleV()
 		return [
@@ -78,6 +78,8 @@ const UsesAnchorPoint = {
 }
 let anchors = {
 	topleft: [[0, 1], [0, 1], [0, 1]],
+	bottomright: [[1, 0], [1, 0], [1, 0]],
+	lower: [[0.5, 0.2], [0.5, 0.2], [0.5, 0.2]]
 }
 
 

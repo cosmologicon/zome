@@ -22,13 +22,13 @@ UFX.scenes.play = {
 
 		this.t = 0
 		this.hud.addbuttons([
-			new Button("Menu", (() => UFX.scene.push("pause")), "bottomright", [0, 0]),
-			SpeedControlButton("bottomright", [0, 1])
+			new Button("Menu", (() => UFX.scene.push("pause")), "bottomright", [-0.6, 0.6]),
+			SpeedControlButton("bottomright", [-0.6, 1.6])
 		])
 		this.hud.addbuttons(
 			"XYZ".split("")
 				.filter((flavor, jflavor) => state.flavorunlocked(flavor))
-				.map((flavor, jflavor) => GrowButton(flavor, "topleft", [0, jflavor]))
+				.map((flavor, jflavor) => GrowButton(flavor, "topleft", [0.6, -0.6 + jflavor]))
 		)
 		this.think(0, 0, 1)
 	},

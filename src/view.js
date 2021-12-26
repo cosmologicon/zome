@@ -208,15 +208,19 @@ UFX.scenes.gofull = {
 		view.readyfullscreen()
 		this.t = 0
 		this.paused = false
+		this.toresumeaudio = false
 	},
 	stop: function () {
-		audio.fullresume()
+		if (this.toresumeaudio) audio.fullresume()
 	},
 	think: function (dt) {
 		this.t += dt
 		if (!this.paused && this.t > 0.4) {
 			this.paused = true
-			audio.fullpause()
+			if (audio.active) {
+				audio.fullpause()
+				this.toresumeaudio = true
+			}
 		}
 		if (this.t > 3) view.unreadyfullscreen()
 	},

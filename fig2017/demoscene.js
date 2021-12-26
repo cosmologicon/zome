@@ -59,9 +59,9 @@ UFX.scenes.demo = {
 		this.nextgrow = 2
 		this.jgrow = 0
 		this.hud.addbuttons([
-			new Button("Options", (() => UFX.scene.push("options")), anchors.topleft, [0.5, -0.5]),
-			new Button("Full\nscreen", (() => UFX.scene.push("gofull")), anchors.topleft, [0.5, -1.5]),
-			new Button("Reset\ndemo", (() => UFX.scene.push("reset")), anchors.topleft, [0.5, -2.5]),
+			new Button("Options", (() => UFX.scene.push("options")), "topleft", [0.5, -0.5]),
+			new Button("Full\nscreen", (() => UFX.scene.push("gofull")), "topleft", [0.5, -1.5]),
+			new Button("Reset\ndemo", (() => UFX.scene.push("reset")), "topleft", [0.5, -2.5]),
 		])
 		this.think(0, 0, 1)
 
