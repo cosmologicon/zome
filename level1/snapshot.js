@@ -62,3 +62,12 @@ let snapshot = {
 	},
 }
 
+
+// Disable snapshot. Server side broken as of Dec 2021. TODO: re-enable
+snapshot = {
+	version: -1,
+	init: function () {},
+	send: function () {},
+	think: function () {},
+}
+
