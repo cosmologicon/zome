@@ -57,11 +57,11 @@ To make:
 cd fig2017
 cat index.html | grep script | grep src | grep -v ufx | grep -v setup.js | sed 's|.*src=.||;s|.><.*||' | xargs cat > /tmp/demo.js
 open /tmp/demo.js and paste it into https://babeljs.io/repl/ then replace
-scp -r index.html ../src/setup.js /tmp/demo.js data/ "night@night.xen.prgmr.com:/var/drzome/fig2017/1"
+scp -r index.html ../src/setup.js /tmp/demo.js data/ "night@night.xen.prgmr.com:/var/www/zome/fig2017/1"
 
 Remote:
 
-cd /var/drzome/demo
+cd /var/www/zome/fig2017/1
 nano index.html
 Remove the script tags (other than UFX and setup) and replace them with a single script tag pointing to demo.js.
 Rename ../src/setup.js to setup.js.

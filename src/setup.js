@@ -20,10 +20,10 @@ window.onerror = function (message, url, line, col, errorobj) {
 		col: col,
 		stack: stack
 	}
-	var req = new XMLHttpRequest()
-	req.open("POST", "http://universefactory.net/tools/dump/", true)
-	req.setRequestHeader("Content-type", "application/x-www-form-urlencoded")
-	req.send("project=zomeerror&data=" + encodeURIComponent(JSON.stringify(report)))
+	// var req = new XMLHttpRequest()
+	// req.open("POST", "http://universefactory.net/tools/dump/", true)
+	// req.setRequestHeader("Content-type", "application/x-www-form-urlencoded")
+	// req.send("project=zomeerror&data=" + encodeURIComponent(JSON.stringify(report)))
 	document.body.innerHTML = [
 		"<p>Error in: " + url,
 		"<p>line " + line,
